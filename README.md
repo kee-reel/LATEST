@@ -1,4 +1,27 @@
-Autotests web-service for C language labs in university
+Language AGNOstic Testing
+
+Initially, I wrote this web-service to run autotests of C language labs solutions from students.
+
+In result I've got service that can autotest any program that could receive standard input and produce standard output.
+
+# How testing works
+
+Testing of solution have following stages:
+
+* Receiving solution file
+* Compilation of solution file
+* Generation of random test cases
+* Execution of reference solution with:
+	* User test cases
+	* Fixed test cases
+	* Random test cases
+* Execution of received solution with same test cases
+* Comparison of standard output of reference and received solution
+* Production of test report
+
+![Test result](/res/test-result.jpg)
+
+# How to start service
 
 Start application with:
 ```

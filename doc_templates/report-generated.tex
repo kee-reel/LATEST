@@ -1,0 +1,644 @@
+\chapter*{Задание 1. Функция}
+
+Вычислить значение функции:\\\n\begin{equation*}f(x,y) =\begin{cases}x + y, & \textrm{если x > 0,}\\x * y, & \textrm{если x <= 0, y < 0,}\\5 * x & \textrm{в остальных случаях.}\end{cases},\end{equation*}
+При вычислении значения необходимо использовать условную операцию сравнения ?:
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & x & int & [-100, 100] \\ 
+ \hline
+2 & y & int & [-100, 100] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран целое значение функции.
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c|c| }
+\hline
+x & y & Результат\\
+\hline
+0 & 0 & 0 \\\n \hline
+0 & 1 & 0 \\\n \hline
+1 & 0 & 1 \\\n \hline
+1 & 1 & 2 \\\n \hline
+-1 & 0 & -5 \\\n \hline
+0 & -1 & 0 \\\n \hline
+-1 & -1 & 1 \\\n \hline
+1 & -1 & 0 \\\n \hline
+-1 & 1 & -5 \\\n \hline
+-25 & 85 & -125 \\\n \hline
+-41 & 36 & -205 \\\n \hline
+35 & -52 & -17 \\\n \hline
+-77 & 85 & -385 \\\n \hline
+64 & -27 & 37 \\\n \hline
+42 & 83 & 125 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <stdio.h>
+
+#include <test_utils.h>
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, x);
+	ARG(2, int, y);
+	printf("%d", x > 0 ? x + y : (x <= 0 && y < 0 ? x * y : 5 * x));
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 2. Функция}
+
+Вычислить значение функции:\\\n\begin{equation*}z = x^2 - \cos{\frac{\ln{ \sqrt{|x|} } }{\tg{e^{-x}}} }\end{equation*}
+Необходимо определить ООФ и добавить проверки на входные параметры.
+Для вычисления значений функций воспользуйтесь математической библиотекой math.h
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & x & double & [-100, 100] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран вещественное значение функции с точностью до 2-х знаков.
+Если значение выходит за ООФ, выводить "Не определено".
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+x & Результат\\
+\hline
+-1.0 & 0.00 \\\n \hline
+1.0 & 0.00 \\\n \hline
+0.0 & -nan \\\n \hline
+0.00001 & -0.29 \\\n \hline
+-0.00001 & -0.29 \\\n \hline
+1.1111 & 0.25 \\\n \hline
+1000 & -nan \\\n \hline
+-1000 & 1000000.95 \\\n \hline
+-88.605532 & 7851.56 \\\n \hline
+-86.218128 & 7434.18 \\\n \hline
+-17.706825 & 313.40 \\\n \hline
+-3.214558 & 9.50 \\\n \hline
+-15.820694 & 250.11 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <math.h>
+#include <stdio.h>
+#define E_NUM 2.71828
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, double, x);
+	printf("%.2lf", pow(x, 2) - cos(log(sqrt(fabs(x))) / tanh(pow(E_NUM, -x)) ));
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 3. Координатная плоскость}
+
+Вывести на экран номер четверти, которой принадлежит точка с координатами (x,y), или указать, какой оси принадлежит эта точка.
+Необходимо использовать вложенный условный оператор.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & x & int & [-100, 100] \\ 
+ \hline
+2 & y & int & [-100, 100] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести целое значение, обозначающее номер четверти: 1 -- правая верхняя, 2 -- левая верхняя, 3 -- левая нижняя, 4 -- правая нижняя. Если точка лежит на одной из координатных осей, то необходимо вывести 0.
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c|c| }
+\hline
+x & y & Результат\\
+\hline
+0 & 0 & 0 \\\n \hline
+0 & 1 & 0 \\\n \hline
+1 & 0 & 0 \\\n \hline
+1 & 1 & 1 \\\n \hline
+0 & -1 & 0 \\\n \hline
+-1 & 0 & 0 \\\n \hline
+-1 & -1 & 3 \\\n \hline
+1 & -1 & 0 \\\n \hline
+-1 & 1 & 2 \\\n \hline
+-44 & 31 & 2 \\\n \hline
+-70 & 24 & 2 \\\n \hline
+-95 & 90 & 2 \\\n \hline
+-52 & -26 & 3 \\\n \hline
+-83 & -14 & 3 \\\n \hline
+-100 & 9 & 2 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <stdio.h>
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, x);
+	ARG(2, int, y);
+	int res = 0;
+	if(y > 0)
+	{
+	if(x > 0)
+	{
+		res = 1;
+	}
+	else if(x < 0)
+	{
+		res = 2;
+	}
+	}
+	else if(y < 0)
+	{
+	if(x < 0)
+	{
+		res = 3;
+	}
+	else if(x < 0)
+	{
+		res = 4;
+	}
+	}
+	printf("%d", res);
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 4. Последовательность}
+
+На вход подаётся натуральное число N. Вывести на экран последовательность вида "S=2*4*6*...*N", если N четное, или "S=1*3*5*...*N", если N нечетное.
+Необходимо использовать цикл for.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & N & int & [2, 30] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран последовательность чисел. Например, при N = 7 вывод должен быть таким: "S=1*3*5*7".
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+N & Результат\\
+\hline
+2 & S=2 \\\n \hline
+3 & S=1*3 \\\n \hline
+4 & S=2*4 \\\n \hline
+5 & S=1*3*5 \\\n \hline
+15 & S=1*3*5*7*9*11*13*15 \\\n \hline
+20 & S=2*4*6*8*10*12*14*16*18*20 \\\n \hline
+15 & S=1*3*5*7*9*11*13*15 \\\n \hline
+5 & S=1*3*5 \\\n \hline
+3 & S=1*3 \\\n \hline
+29 & S=1*3*5*7*9*11*13*15*17*19*21*23*25*27*29 \\\n \hline
+20 & S=2*4*6*8*10*12*14*16*18*20 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <stdio.h>
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, N);
+	printf("S=");
+	for(int i = 2 - N % 2; i <= N; i+=2)
+	{
+	printf("%d", i);
+	if(i != N)
+		printf("*");
+	}
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 5. Число Фиббоначи}
+
+Вывести первое найденное число Фибоначчи, большее заданного n. Каждый член последовательности Фибоначчи является суммой двух предыдущих: xn = xn-1 + xn-2, x0 = 0, x1 = 1.
+Необходимо использовать цикл while.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & n & int & [1, 1000] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран найденное число.
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+n & Результат\\
+\hline
+1 & 2 \\\n \hline
+5 & 8 \\\n \hline
+1000 & 1597 \\\n \hline
+31 & 34 \\\n \hline
+192 & 233 \\\n \hline
+138 & 144 \\\n \hline
+910 & 987 \\\n \hline
+211 & 233 \\\n \hline
+133 & 144 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <stdio.h>
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, n);
+	int a = 0, b = 1, temp;
+	while(b <= n)
+	{
+	temp = b;
+	b += a;
+	a = temp;
+	}
+	printf("%d", b);
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 6. Сократить дробь}
+
+M и N – числитель и знаменатель обыкновенной дроби. Составить программу, позволяющую сократить эту дробь.
+Необходимо использовать цикл do ... while.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & M & int & [-100, 100] \\ 
+ \hline
+2 & N & int & [-100, 100] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести сокращённую дробь на экран в формате "целая-часть числитель/знаменатель" -- например: "-18/8" -> "-2 1/4".
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c|c| }
+\hline
+M & N & Результат\\
+\hline
+0 & 0 & - \\\n \hline
+0 & 1 & 0 \\\n \hline
+1 & 0 & - \\\n \hline
+1 & 1 & 1 \\\n \hline
+16 & 16 & 1 \\\n \hline
+-16 & -4 & -4 \\\n \hline
+-3 & -66 & -1/22 \\\n \hline
+120 & 1 & 120 \\\n \hline
+27 & 13 & 2 1/13 \\\n \hline
+123 & -30 & -4 1/10 \\\n \hline
+36 & -59 & -36/59 \\\n \hline
+42 & 51 & 42/51 \\\n \hline
+-34 & -67 & -34/67 \\\n \hline
+-91 & 92 & -91/92 \\\n \hline
+96 & -35 & -2 26/35 \\\n \hline
+-48 & 4 & -12 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <stdio.h>
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, M);
+	ARG(2, int, N);
+	if(N == 0)
+	{
+		printf("-");
+		return 0;
+	}
+	char is_negative = M < 0 || N < 0;
+	M = M < 0 ? -M : M;
+	N = N < 0 ? -N : N;
+
+	int whole = M / N;
+	M -= N * whole;
+	while(M > 1 && N % M == 0)
+	{
+		N /= M;
+		M /= M;
+	}
+	if(whole || !M)
+	{
+		if(is_negative)
+			printf("-");
+		printf("%d", whole);
+	}
+	if(M)
+	{
+		if(whole)
+			printf(" ");
+		if(is_negative && !whole)
+			printf("-");
+		printf("%d/%d", M, N);
+	}
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 7. Сумма бесконечного ряда}
+
+Вывести на экран значение суммы бесконечного ряда
+ \begin{equation}S = 1 - \frac{x}{1!} + \frac{x^2}{2!} + ... + (-1)^n*\frac{x^n}{n!}\end{equasion}
+ С заданной точностью  \begin{equation}E = 10^{-4}\end{equasion}
+ Сравнить полученное значение с целевым можно через функцию:  \begin{equation}f = e^-{x}\end{equasion}
+Вычисление необходимо производить с помощью цикла, используя значения с предыдущих итераций.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & x & double & [-10, 10] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран вещественное число с точностью до указанного знака.
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+x & Результат\\
+\hline
+-1.0 & 2.7183 \\\n \hline
+1.0 & 0.3679 \\\n \hline
+0.0 & 1.0000 \\\n \hline
+0.5 & 0.6065 \\\n \hline
+-0.5 & 1.6487 \\\n \hline
+5.0 & 0.0067 \\\n \hline
+-4.5 & 90.0171 \\\n \hline
+-3.437609 & 31.1125 \\\n \hline
+3.689325 & 0.0250 \\\n \hline
+5.660770 & 0.0035 \\\n \hline
+8.896451 & 0.0001 \\\n \hline
+-1.615731 & 5.0316 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <math.h>
+#include <stdio.h>
+#define E_NUM 2.71828
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, double, x);
+	double sum = 1;
+	double x_mul = x;
+	int fact = 1;
+	char sign = -1;
+	double a = 1;
+	while(fabs(a) > 0.0001)
+	{
+	a = sign * x_mul;
+	for(int i = 1; i <= fact; i++)
+		a /= i;
+	sum += a;
+	x_mul *= x;
+	fact++;
+	sign *= -1;
+	}
+	printf("%.4lf", sum);
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 8. Сумма бесконечного ряда}
+
+Вывести на экран значение суммы бесконечного ряда \begin{equation}f(x)=\frac{x*\cos{\frac{\pi}{3}}}{1} + \frac{x^2*\cos{\frac{2*\pi}{3}}}{2} + ... + \frac{x^n*\cos{n*\frac{\pi}{3}}}{n} + ...\end{equasion}. С заданной точностью \begin{equation}E = 10^{-6}\end{equasion}.
+Значение функции для проверки: \begin{equation}y=-\frac{1}{2} * \ln{1 - 2*x * \cos{\frac{\pi}{3}} + x^2}\end{equasion}
+Вычисление необходимо производить с помощью цикла, используя значения с предыдущих итераций.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & x & double & [0.1, 0.8] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывести на экран вещественное число с точностью до указанного знака.
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+x & Результат\\
+\hline
+0.1 & 0.047206 0.047206 \\\n \hline
+0.8 & 0.087615 0.087616 \\\n \hline
+0.100001 & 0.047206 0.047206 \\\n \hline
+0.4 & 0.137460 0.137461 \\\n \hline
+0.799999 & 0.087615 0.087616 \\\n \hline
+0.491693 & 0.144096 0.144096 \\\n \hline
+0.692686 & 0.120087 0.120086 \\\n \hline
+0.456511 & 0.142861 0.142861 \\\n \hline
+0.647146 & 0.129997 0.129995 \\\n \hline
+0.198806 & 0.086858 0.086859 \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <math.h>
+#include <stdio.h>
+#define PI_NUM 3.14
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, double, x);
+	double sum = 0;
+	double x_mul = x;
+	int n = 1;
+	double a;
+	do
+	{
+	a = x_mul * cos(n * PI_NUM/3.) / n;
+	sum += a;
+	x_mul *= x;
+	n++;
+	}
+	while(fabs(a) > 0.000001);
+	printf("%lf ", -0.5 * log(1 - 2 * x * cos(PI_NUM/3) + x * x));
+	printf("%.6lf", sum);
+	return 0;
+}
+
+\end{lstlisting}
+\\
+\chapter*{Задание 9. Не простые числа}
+
+Дано целое k. Вывести на экран все числа из диапазона [2,k], не являющиеся простыми. Простые числа не имеют других делителей, кроме 1 и самого себя.
+Необходимо использовать вложенные циклы.
+
+\paragraph{Входные параметры}
+
+\begin{tabular}{ |c|c|c|c| }
+\hline
+Номер параметра & Название & Тип & Допустимые значения \\ 
+ \hline
+1 & k & int & [2, 100] \\ 
+ \hline
+
+\end{tabular}
+
+
+\paragraph{Выходные параметры}
+
+Вывод чисел в формате: "2,4,6,8,".
+
+\paragraph{Таблица тестирования}
+
+\begin{tabular}{ |c|c| }
+\hline
+k & Результат\\
+\hline
+2 & 2, \\\n \hline
+5 & 2,3,5, \\\n \hline
+47 & 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47, \\\n \hline
+71 & 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71, \\\n \hline
+3 & 2,3, \\\n \hline
+48 & 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47, \\\n \hline
+4 & 2,3, \\\n \hline
+94 & 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89, \\\n \hline
+4 & 2,3, \\\n \hline
+\end{tabular}
+
+
+\paragraph{Листинг}
+\begin{lstlisting}
+#include <math.h>
+#include <stdio.h>
+
+#include "test_utils.h"
+
+int main(int argc, char* argv[])
+{
+	ARG(1, int, k);
+	for(int i = 2; i <= k; i++)
+	{
+	int limit = sqrt(i);
+	char is_prime = 1;
+	for(int j = 2; j <= limit; j++)
+	{
+		if(i % j == 0)
+		{
+			is_prime = 0;
+			break;
+		}
+	}
+	if(is_prime)
+		printf("%d,", i);
+	}
+	return 0;
+}
+
+\end{lstlisting}
+\\

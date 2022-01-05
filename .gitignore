@@ -1,0 +1,4 @@
+prod_config.json
+tasks/
+*.mod
+*.sum

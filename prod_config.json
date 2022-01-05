@@ -1,0 +1,9 @@
+{
+	"DbName": "tasks.db",
+	"Host": "localhost",
+	"Port": 8081,
+	"EntryPoint": "solution",
+	"CertFilename": "",
+	"KeyFilename": "",
+	"Verbose": false
+}

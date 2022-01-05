@@ -1,0 +1,72 @@
+.task {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  gap: 15px 15px;
+  grid-auto-flow: row;
+  grid-template-areas:
+  	"label tests tests"
+    "file tests tests"
+    "button tests tests"
+	"text text text";
+  width: 100%;
+  margin: 40px auto;
+}
+
+.task_label {
+	grid-area: label;
+	align-self: start;
+    background-color: #1b1b1b;
+    border-color: #a7a7a7;
+    color: #aedf51;
+}
+
+.task_file {
+	grid-area: file;
+	align-self: start;
+    background-color: #1b1b1b;
+    border-color: #a7a7a7;
+    color: #00e5ff;
+}
+
+.get_work_button {
+	grid-area: button;
+	align-self: start;
+    background-color: #1b1b1b;
+    border-color: #aedf51;
+    color: #aedf51;
+}
+
+.task_button { 
+	grid-area: button;
+	align-self: start;
+    background-color: #1b1b1b;
+    border-color: #aedf51;
+    color: #aedf51;
+}
+
+.task_test_cases {
+    grid-area: tests;
+    background-color: #1b1b1b;
+    border-color: #a7a7a7;
+    color: #eeeeee;
+    font-family: "Lucida Console";
+}
+
+.task_text {
+    grid-area: text;
+    background-color: #1b1b1b;
+    border-color: #a7a7a7;
+    color: #eeeeee;
+    font-family: "Lucida Console";
+}
+
+.centered {
+	display: block;
+	margin: 15px auto;
+	text-align: center;
+}
+
+.hidden {
+    display: none;
+}

@@ -1,10 +1,10 @@
-Language AGNOstic Testing
+# Language AGNOstic Testing
 
 Initially, I wrote this web-service to run autotests of C language labs solutions from students.
 
 In result I've got service that can autotest any program that could receive standard input and produce standard output.
 
-# How testing works
+### How testing works
 
 Testing of solution have following stages:
 
@@ -21,7 +21,7 @@ Testing of solution have following stages:
 
 ![Test result](/res/test-result.jpg)
 
-# How to start service
+### How to start service
 
 Start application with:
 ```

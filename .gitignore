@@ -1,4 +1,5 @@
 prod_config.json
 tasks/
+tasks.db
 *.mod
 *.sum

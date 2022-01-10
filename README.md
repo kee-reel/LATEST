@@ -1,4 +1,4 @@
-# Language AGNOstic Testing
+# Language Agnostic TEsting
 
 Initially, I wrote this web-service to run autotests of C language labs solutions from students.
 

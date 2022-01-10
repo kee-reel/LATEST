@@ -117,9 +117,9 @@ func GenDoc(doc_type string, pages_content []M, user_data *UserData, suggested_d
 			return nil, err
 		}
 		template_text := string(template_text_raw)
-		template_text = strings.Replace(template_text, "`STUDENT-NAME`", user_data.Name, -1)
-		template_text = strings.Replace(template_text, "`GROUP-NAME`", user_data.Group, -1)
-		template_text = strings.Replace(template_text, "`TEACHER-NAME`", user_data.Teacher, -1)
+		//template_text = strings.Replace(template_text, "`STUDENT-NAME`", user_data.Name, -1)
+		//template_text = strings.Replace(template_text, "`GROUP-NAME`", user_data.Group, -1)
+		//template_text = strings.Replace(template_text, "`TEACHER-NAME`", user_data.Teacher, -1)
 
 		title_page_gen_path = GenTemplatePath("title-page")
 		err = ioutil.WriteFile(title_page_gen_path, []byte(template_text), 0777)

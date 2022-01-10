@@ -27,27 +27,39 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 		return nil, nil, err
 	}
 	var user_data UserData
-	flags, _ := GetQueryParam(r, "gen_doc")
-	user_data.GenerateDoc = flags != nil && (*flags)[0] == 1
-	if user_data.GenerateDoc {
-		user_data.Teacher = r.FormValue("teacher")
-		if len(user_data.Teacher) == 0 {
-			return nil, nil, errors.New("User teacher is empty")
-		}
-	}
+	//flags, _ := GetQueryParam(r, "gen_doc")
+	//user_data.GenerateDoc = flags != nil && (*flags)[0] == 1
+	//if user_data.GenerateDoc {
+	//	user_data.Teacher = r.FormValue("teacher")
+	//	if len(user_data.Teacher) == 0 {
+	//		return nil, nil, errors.New("User teacher is empty")
+	//	}
+	//}
 	tasks_raw := r.FormValue("tasks")
 	if len(tasks_raw) == 0 {
 		return nil, nil, errors.New("List of tasks is empty")
 	}
-	tasks := strings.Split(string(tasks_raw), ",")
-	solutions := make([]Solution, len(tasks))
-	for i, task := range tasks {
-		solution := &solutions[i]
-		solution.Task, err = strconv.Atoi(task)
+	var task_ids []int
+	for _, task_id_str := range strings.Split(string(tasks_raw), ",") {
+
+		task_id, err := strconv.Atoi(task_id_str)
 		if err != nil {
 			return nil, nil, err
 		}
-		file, _, err := r.FormFile(fmt.Sprintf("source_%s", task))
+		task_ids = append(task_ids, task_id)
+	}
+	tasks, err := GetTasks(task_ids, token)
+	if err != nil {
+		return nil, nil, err
+	}
+	solutions := make([]Solution, len(*tasks))
+	for i, task := range *tasks {
+		solution := &solutions[i]
+		solution.Task = &task
+		if err != nil {
+			return nil, nil, err
+		}
+		file, _, err := r.FormFile(fmt.Sprintf("source_%s", task.Id))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -56,7 +68,7 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 			return nil, nil, err
 		}
 		solution.Source = string(data)
-		solution.TestCases = r.FormValue(fmt.Sprintf("test_cases_%s", task))
+		solution.TestCases = r.FormValue(fmt.Sprintf("test_cases_%s", task.Id))
 		if len(solution.TestCases) > 50000 {
 			return nil, nil, errors.New("Test cases string is too big")
 		}
@@ -98,66 +110,82 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	generate_doc := true
-	values, _ := GetQueryParam(r, "gen_doc")
-	if values != nil {
-		log.Printf("Override doc generation: %s", values)
-		generate_doc = (*values)[0] == 1
-	}
-	task_ids, err := GetWorkTasks(token)
+	task_ids, err := GetTasksByToken(token)
 	if err != nil {
 		return err
 	}
 	if len(*task_ids) == 0 {
 		return errors.New("No tasks were found")
 	}
-	resp_tasks := map[int]interface{}{}
-	pages := map[int]*M{}
-	for _, task_id := range *task_ids {
-		task, err := GetTask(task_id)
-		if err != nil {
-			return err
-		}
-		if generate_doc {
-			page_content, err := GenTaskDesc(task, nil, nil)
-			if err != nil {
-				return err
-			}
-			pages[task.Number] = page_content
-		}
-		resp_tasks[task.Number] = map[string]interface{}{
-			"task_id": task_id,
-			"name":    task.Name,
-		}
+	tasks, err := GetTasks(*task_ids, token)
+	if err != nil {
+		return err
 	}
-	if generate_doc {
-		pages_content := make([]M, len(pages))
-		for num, page := range pages {
-			pages_content[num-1] = *page
+
+	resp_tasks := map[int]interface{}{}
+	resp_works := map[int]interface{}{}
+	resp_subjects := map[int]interface{}{}
+	for _, task := range *tasks {
+		_, ok := resp_works[task.Work]
+		if !ok {
+			work, err := GetWork(task.Work)
+			if err != nil {
+				log.Printf("Error: %s", err)
+				return nil
+			}
+			resp_works[task.Work] = map[string]interface{}{
+				"name":    work.Name,
+				"next_id": work.NextId,
+			}
+
 		}
-		suggested_doc_name := fmt.Sprintf("work-desc-%d-%d-%d", token.Subject, token.Work, token.Variant)
-		work_desc_filename, err := GenDoc("work-desc", pages_content, nil, &suggested_doc_name)
-		if err != nil {
-			return err
+
+		_, ok = resp_subjects[task.Subject]
+		if !ok {
+			subject, err := GetSubject(task.Subject)
+			if err != nil {
+				log.Printf("Error: %s", err)
+				return nil
+			}
+			resp_subjects[task.Subject] = map[string]interface{}{
+				"name": subject.Name,
+			}
 		}
-		(*resp)["link"] = work_desc_filename
+
+		task_input := []map[string]interface{}{}
+		for _, input := range task.Input {
+			task_input = append(task_input, map[string]interface{}{
+				"name":       input.Name,
+				"type":       input.Type,
+				"dimensions": input.Dimensions,
+				"range":      input.Range,
+			})
+		}
+		resp_tasks[task.Id] = map[string]interface{}{
+			"number":    task.Number,
+			"subject":   task.Subject,
+			"work":      task.Work,
+			"name":      task.Name,
+			"desc":      task.Desc,
+			"input":     task_input,
+			"output":    task.Output,
+			"is_passed": task.IsPassed,
+		}
 	}
 	(*resp)["tasks"] = resp_tasks
+	(*resp)["works"] = resp_works
+	(*resp)["subjects"] = resp_subjects
 	return nil
 }
 
 func PostSolution(r *http.Request, resp *map[string]interface{}) error {
-	solutions, user_data, err := ParseSolution(r)
+	solutions, _, err := ParseSolution(r)
 	if err != nil {
 		return err
 	}
-	pages_content := []M{}
+	//pages_content := []M{}
 	for _, solution := range *solutions {
-		task, err := GetTask(solution.Task)
-		if err != nil {
-			return err
-		}
-		test_result, is_user_tests_passed, test_err := BuildAndTest(task, &solution)
+		test_result, is_user_tests_passed, test_err := BuildAndTest(solution.Task, &solution)
 		SaveSolution(&solution, is_user_tests_passed, test_err == nil)
 		fail_count, err := GetFailedSolutions(&solution)
 		if err != nil {
@@ -168,21 +196,21 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 			return test_err
 		}
 		(*resp)["result"] = *test_result
-		if user_data.GenerateDoc {
-			page_content, err := GenTaskDesc(task, &solution.Source, test_result)
-			if err != nil {
-				return err
-			}
-			pages_content = append(pages_content, *page_content)
-		}
+		//	if user_data.GenerateDoc {
+		//		page_content, err := GenTaskDesc(task, &solution.Source, test_result)
+		//		if err != nil {
+		//			return err
+		//		}
+		//		pages_content = append(pages_content, *page_content)
+		//	}
 	}
-	if user_data.GenerateDoc {
-		gen_result_filename, err := GenDoc("report", pages_content, user_data, nil)
-		if err != nil {
-			return err
-		}
-		(*resp)["link"] = gen_result_filename
-	}
+	//if user_data.GenerateDoc {
+	//	gen_result_filename, err := GenDoc("report", pages_content, user_data, nil)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	(*resp)["link"] = gen_result_filename
+	//}
 	return nil
 }
 

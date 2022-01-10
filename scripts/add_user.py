@@ -3,8 +3,7 @@ import time
 import random
 import sqlite3 as db
 
-last_name, name, id_ = sys.argv[1:]
-number, group = int(id_[-2:]), id_[:4]
+last_name, name, number, group = sys.argv[1:]
 
 conn = db.connect('tasks.db')
 cur = conn.cursor()

@@ -129,8 +129,8 @@ func BuildSolution(task *Task, solution *Solution) error {
 		return err
 	}
 	err = ioutil.WriteFile(fmt.Sprintf("%s/solution-%d-%d-%d-%d-%d.c",
-		user_solutions_path, solution.Token.UserId, solution.Token.Subject,
-		solution.Token.Work, solution.Token.Variant, task.Number), []byte(solution.Source), 0777)
+		user_solutions_path, solution.Token.UserId, task.Subject,
+		task.Work, task.Variant, task.Number), []byte(solution.Source), 0777)
 	if err != nil {
 		log.Printf("Can't save solution: %s", err)
 	}

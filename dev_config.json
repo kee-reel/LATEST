@@ -1,9 +1,7 @@
 {
 	"DbName": "tasks.db",
 	"Host": "localhost",
-	"Port": 8082,
-	"EntryPoint": "solution-dev",
-	"CertFilename": "/etc/letsencrypt/live/kee-reel.com/fullchain.pem",
-	"KeyFilename": "/etc/letsencrypt/live/kee-reel.com/privkey.pem",
+	"Port": 1234,
+	"EntryPoint": "",
 	"Verbose": true
 }

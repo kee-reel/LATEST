@@ -27,14 +27,6 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 		return nil, nil, err
 	}
 	var user_data UserData
-	//flags, _ := GetQueryParam(r, "gen_doc")
-	//user_data.GenerateDoc = flags != nil && (*flags)[0] == 1
-	//if user_data.GenerateDoc {
-	//	user_data.Teacher = r.FormValue("teacher")
-	//	if len(user_data.Teacher) == 0 {
-	//		return nil, nil, errors.New("User teacher is empty")
-	//	}
-	//}
 	tasks_raw := r.FormValue("tasks")
 	if len(tasks_raw) == 0 {
 		return nil, nil, errors.New("List of tasks is empty")
@@ -56,11 +48,10 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 	for i, task := range *tasks {
 		solution := &solutions[i]
 		solution.Task = &task
+		file_name := fmt.Sprintf("source_%d", task.Id)
+		file, _, err := r.FormFile(file_name)
 		if err != nil {
-			return nil, nil, err
-		}
-		file, _, err := r.FormFile(fmt.Sprintf("source_%s", task.Id))
-		if err != nil {
+			log.Printf("Can't open file %s", file_name)
 			return nil, nil, err
 		}
 		data, err := ioutil.ReadAll(file)
@@ -183,7 +174,7 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	//pages_content := []M{}
+	solution_results := map[int]interface{}{}
 	for _, solution := range *solutions {
 		test_result, is_user_tests_passed, test_err := BuildAndTest(solution.Task, &solution)
 		SaveSolution(&solution, is_user_tests_passed, test_err == nil)
@@ -195,22 +186,9 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 		if test_err != nil {
 			return test_err
 		}
-		(*resp)["result"] = *test_result
-		//	if user_data.GenerateDoc {
-		//		page_content, err := GenTaskDesc(task, &solution.Source, test_result)
-		//		if err != nil {
-		//			return err
-		//		}
-		//		pages_content = append(pages_content, *page_content)
-		//	}
+		solution_results[solution.Task.Id] = *test_result
 	}
-	//if user_data.GenerateDoc {
-	//	gen_result_filename, err := GenDoc("report", pages_content, user_data, nil)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	(*resp)["link"] = gen_result_filename
-	//}
+	(*resp)["result"] = solution_results
 	return nil
 }
 

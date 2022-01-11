@@ -173,6 +173,7 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 			}
 		}
 
+		task.Id = task_id
 		task.Path = fmt.Sprintf("%s/subject-%d/work-%d/variant-%d/task-%d",
 			tasks_path, task.Subject, task.Work, task.Variant, task.Number)
 		tasks = append(tasks, task)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 )
 
 const build_script = "./scripts/build_solution.sh"
-const test_script = "./scripts/test_solution.sh"
+const test_script = "python3 scripts/test_solution.py"
 const tasks_path = "./tasks"
 const user_solution_src_filename = "solution.c"
 const user_solutions_path = "./solutions"
@@ -138,7 +139,7 @@ func BuildSolution(task *Task, solution *Solution) error {
 	return err
 }
 
-func RunTests(task *Task, user_test_data string, test_data string) (*string, bool, error) {
+func RunTests(task *Task, user_test_data string, test_data string) (*map[string]interface{}, bool, error) {
 	is_user_tests_passed := false
 	test_data_filename := fmt.Sprintf("./%s/%s", task.Path, user_tests_filename)
 	err := ioutil.WriteFile(test_data_filename, []byte(user_test_data), 0777)
@@ -151,21 +152,19 @@ func RunTests(task *Task, user_test_data string, test_data string) (*string, boo
 		return nil, is_user_tests_passed, err
 	}
 	cmd_str := fmt.Sprintf("%s %s", test_script, task.Path)
-	out, err := ExecCmd(cmd_str)
-	log.Print(out)
-	is_user_tests_passed = len(out) != 0 && out[0] == '+'
+	test_result_str, err := ExecCmd(cmd_str)
 	if err != nil {
-		return nil, is_user_tests_passed, fmt.Errorf("Тест для задачи %d провален.\n%s", task.Number, err.Error())
+		return nil, is_user_tests_passed, fmt.Errorf("Internal error while running task %d.\n%s", task.Number, err.Error())
 	}
-	read, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", task.Path, test_result_filename))
+	var test_result map[string]interface{}
+	err = json.Unmarshal([]byte(test_result_str), &test_result)
 	if err != nil {
-		return nil, is_user_tests_passed, err
+		return nil, is_user_tests_passed, fmt.Errorf("Internal error while running task %d.\n%s", task.Number, err.Error())
 	}
-	test_result := string(read)
 	return &test_result, is_user_tests_passed, nil
 }
 
-func BuildAndTest(task *Task, solution *Solution) (*string, bool, error) {
+func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool, error) {
 	err := BuildSolution(task, solution)
 	if err != nil {
 		return nil, false, err

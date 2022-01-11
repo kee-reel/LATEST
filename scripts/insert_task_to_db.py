@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import json
@@ -8,7 +9,7 @@ def parse_filename(filename):
     return re.search(r'(subject-(\d+)/)(work-(\d+)/)?(variant-(\d+)/)?(task-(\d+))?', filename).groups()
 
 
-def fill_db(cur, data, subject, work, variant, task):
+def fill_db(cur, data, filename, subject, work, variant, task):
     cur.execute('select id from subject where id = ?', (subject,))
     rows = cur.fetchone()
     name = data['name'] if work is None else ''
@@ -43,15 +44,23 @@ def fill_db(cur, data, subject, work, variant, task):
 
     if task is None:
         return
+    files = os.listdir(filename[:filename.rindex('/')])
+    extention = None
+    for f in files:
+        if 'complete_solution' in f:
+            extention = f[f.rindex('.')+1:]
+            break
     cur.execute('select id from task where subject = ? AND work = ? AND variant = ? AND number = ?', (subject, work, variant, task))
     rows = cur.fetchall()
     if rows:
         task_id = rows[0][0]
-        cur.execute('update task set subject = ?, work = ?, variant = ?, number = ?, name = ?, desc = ?, input = ?, output = ? where id = ?', (
+        cur.execute('''update task set subject = ?, work = ?, variant = ?, number = ?, 
+                extention = ?, name = ?, desc = ?, input = ?, output = ? where id = ?''', (
             subject,
             work,
             variant,
             task,
+            extention,
             data['name'],
             data['desc'],
             json.dumps(data['input'], ensure_ascii=False),
@@ -59,11 +68,13 @@ def fill_db(cur, data, subject, work, variant, task):
             task_id)
         )
     else:
-        cur.execute('insert into task(subject, work, variant, number, name, desc, input, output) values(?, ?, ?, ?, ?, ?, ?, ?)', (
+        cur.execute('''insert into task(subject, work, variant, number, extention, name, desc, input, output) 
+                values(?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             subject,
             work,
             variant,
             task,
+            extention,
             data['name'],
             data['desc'],
             json.dumps(data['input'], ensure_ascii=False),
@@ -83,7 +94,7 @@ def process(filename):
 
     conn = db.connect('tasks.db')
     cur=conn.cursor()
-    fill_db(cur, data, subject, work, variant, task)
+    fill_db(cur, data, filename, subject, work, variant, task)
     conn.commit()
 
 

@@ -22,17 +22,18 @@ type Work struct {
 }
 
 type Task struct {
-	Id       int
-	Subject  int
-	Work     int
-	Variant  int
-	Number   int
-	Name     string
-	Desc     string
-	Input    []TaskParamData
-	Output   string
-	Path     string
-	IsPassed bool
+	Id        int
+	Subject   int
+	Work      int
+	Variant   int
+	Number    int
+	Extention string
+	Name      string
+	Desc      string
+	Input     []TaskParamData
+	Output    string
+	Path      string
+	IsPassed  bool
 }
 
 type Token struct {
@@ -43,11 +44,12 @@ type Token struct {
 }
 
 type Solution struct {
-	Task      *Task
-	Source    string
-	Path      string
-	TestCases string
-	Token     *Token
+	Task          *Task
+	Source        string
+	Path          string
+	ExecExtention string
+	TestCases     string
+	Token         *Token
 }
 
 type UserData struct {

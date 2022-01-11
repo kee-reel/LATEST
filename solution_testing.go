@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -19,7 +20,7 @@ import (
 const build_script = "./scripts/build_solution.sh"
 const test_script = "python3 scripts/test_solution.py"
 const tasks_path = "./tasks"
-const user_solution_src_filename = "solution.c"
+const user_solution_src_filename = "solution"
 const user_solutions_path = "./solutions"
 const user_tests_filename = "user_tests.txt"
 const random_tests_filename = "random_tests.txt"
@@ -94,9 +95,10 @@ func GenTestParam(test_data []string, param TaskParamData, start_index int) int 
 	return last_index
 }
 
-func GenerateTests(task *Task) string {
+func GenerateTests(task *Task) *string {
+	result := ""
 	if len(task.Input) == 0 {
-		return ""
+		return &result
 	}
 	random_tests_count := 30
 	test_case_size := 1 // To add '\n' after every test case
@@ -120,38 +122,48 @@ func GenerateTests(task *Task) string {
 		test_data[start_index] = "\n"
 		start_index++
 	}
-	return strings.Join(test_data, "")
+	result = strings.Join(test_data, "")
+	return &result
 }
 
-func BuildSolution(task *Task, solution *Solution) error {
-	solution.Path = fmt.Sprintf("%s/%s", task.Path, user_solution_src_filename)
+func BuildSolution(solution *Solution) error {
+	solution.Path = fmt.Sprintf("%s/%s.%s", solution.Task.Path, user_solution_src_filename, solution.Task.Extention)
 	err := ioutil.WriteFile(solution.Path, []byte(solution.Source), 0777)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("%s/solution-%d-%d-%d-%d-%d.c",
-		user_solutions_path, solution.Token.UserId, task.Subject,
-		task.Work, task.Variant, task.Number), []byte(solution.Source), 0777)
+	_, err = os.Stat(user_solutions_path)
+	if os.IsNotExist(err) {
+		os.Mkdir(user_solutions_path, os.FileMode(0777))
+	}
+	err = ioutil.WriteFile(fmt.Sprintf("%s/solution-%d-%d-%d-%d-%d.%s",
+		user_solutions_path, solution.Token.UserId, solution.Task.Subject,
+		solution.Task.Work, solution.Task.Variant, solution.Task.Number,
+		solution.Task.Extention), []byte(solution.Source), 0777)
 	if err != nil {
 		log.Printf("Can't save solution: %s", err)
 	}
-	_, err = ExecCmd(fmt.Sprintf("%s %s", build_script, task.Path))
+	exec_ext, err := ExecCmd(fmt.Sprintf("%s %s %s", build_script, solution.Task.Path, solution.Task.Extention))
+	if err == nil {
+		solution.ExecExtention = exec_ext
+	}
 	return err
 }
 
-func RunTests(task *Task, user_test_data string, test_data string) (*map[string]interface{}, bool, error) {
+func RunTests(solution *Solution, test_data *string) (*map[string]interface{}, bool, error) {
+	task := solution.Task
 	is_user_tests_passed := false
 	test_data_filename := fmt.Sprintf("./%s/%s", task.Path, user_tests_filename)
-	err := ioutil.WriteFile(test_data_filename, []byte(user_test_data), 0777)
+	err := ioutil.WriteFile(test_data_filename, []byte(solution.TestCases), 0777)
 	if err != nil {
 		return nil, is_user_tests_passed, err
 	}
 	test_data_filename = fmt.Sprintf("./%s/%s", task.Path, random_tests_filename)
-	err = ioutil.WriteFile(test_data_filename, []byte(test_data), 0777)
+	err = ioutil.WriteFile(test_data_filename, []byte(*test_data), 0777)
 	if err != nil {
 		return nil, is_user_tests_passed, err
 	}
-	cmd_str := fmt.Sprintf("%s %s", test_script, task.Path)
+	cmd_str := fmt.Sprintf("%s %s %s", test_script, task.Path, solution.ExecExtention)
 	test_result_str, err := ExecCmd(cmd_str)
 	if err != nil {
 		return nil, is_user_tests_passed, fmt.Errorf("Internal error while running task %d.\n%s", task.Number, err.Error())
@@ -165,12 +177,12 @@ func RunTests(task *Task, user_test_data string, test_data string) (*map[string]
 }
 
 func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool, error) {
-	err := BuildSolution(task, solution)
+	err := BuildSolution(solution)
 	if err != nil {
 		return nil, false, err
 	}
 	test_data := GenerateTests(task)
-	test_result, is_user_tests_passed, err := RunTests(task, solution.TestCases, test_data)
+	test_result, is_user_tests_passed, err := RunTests(solution, test_data)
 	if err != nil {
 		return nil, is_user_tests_passed, err
 	}

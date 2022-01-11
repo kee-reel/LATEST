@@ -12,82 +12,12 @@ import (
 )
 
 const db_name = "tasks.db"
-const create_subject_table = `CREATE TABLE IF NOT EXISTS subject (
-	id INTEGER PRIMARY KEY,
-	name VARCHAR(64))`
-const create_work_table = `CREATE TABLE IF NOT EXISTS work (
-	id INTEGER,
-	subject INTEGER,
-	next_work_id INTEGER NULL,
-	name VARCHAR(64),
-	PRIMARY KEY(id, subject))`
-const create_variant_table = `CREATE TABLE IF NOT EXISTS variant (
-	id INTEGER,
-	subject INTEGER,
-	work INTEGER,
-	name VARCHAR(64),
-	PRIMARY KEY(id, subject, work))`
-const create_task_table = `CREATE TABLE IF NOT EXISTS task (
-	id INTEGER PRIMARY KEY,
-	subject INTEGER,
-	work INTEGER,
-	variant INTEGER,
-	number INTEGER,
-	name VARCHAR(64),
-	desc VARCHAR(1024),
-	input VARCHAR(512),
-	output VARCHAR(128),
-	UNIQUE(subject, work, variant, number))`
-const create_solution_table = `CREATE TABLE IF NOT EXISTS solution(
-	token_id INTEGER,
-	task_id INTEGER,
-	is_user_tests_passed BOOLEAN,
-	is_passed BOOLEAN,
-	dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
-const create_access_token_table = `CREATE TABLE IF NOT EXISTS access_token (
-	id INTEGER PRIMARY KEY,
-	token VARCHAR(256),
-	user_id INTEGER,
-	subject INTEGER,
-	variant INTEGER,
-	UNIQUE(token))`
-const create_user_table = `CREATE TABLE IF NOT EXISTS user (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	group_name VARCHAR(128),
-	number INTEGER,
-	name VARCHAR(128),
-	last_name VARCHAR(128),
-	UNIQUE(group_name, number))`
+const db_creation_script = "scripts/create_db.sh"
 
 func InitDB() {
-	create_table_queries := []string{
-		create_subject_table,
-		create_work_table,
-		create_variant_table,
-		create_task_table,
-		create_solution_table,
-		create_access_token_table,
-		create_user_table,
-	}
-	db, err := sql.Open("sqlite3", db_name)
+	_, err := ExecCmd(db_creation_script)
 	if err != nil {
 		panic(err)
-	}
-	tx, err := db.Begin()
-	defer tx.Rollback()
-	for _, query := range create_table_queries {
-		stmt, err := db.Prepare(query)
-		if err != nil {
-			panic(fmt.Sprintf("Error in query '%s': %s", query, err))
-		}
-		defer stmt.Close()
-		_, err = stmt.Exec()
-		if err != nil {
-			panic(fmt.Sprintf("Error in query '%s': %s", query, err))
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -100,7 +30,7 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 
 	var tasks []Task
 	for _, task_id := range tasks_id {
-		query, err := db.Prepare(`SELECT t.subject, t.work, t.variant, t.number, t.name, t.desc, t.input, t.output
+		query, err := db.Prepare(`SELECT t.subject, t.work, t.variant, t.number, t.extention, t.name, t.desc, t.input, t.output
 			FROM task AS t
 			WHERE t.id = ?`)
 		if err != nil {
@@ -111,7 +41,7 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 		var task Task
 		var in_params_str []byte
 		err = query.QueryRow(task_id).Scan(
-			&task.Subject, &task.Work, &task.Variant, &task.Number,
+			&task.Subject, &task.Work, &task.Variant, &task.Number, &task.Extention,
 			&task.Name, &task.Desc, &in_params_str, &task.Output)
 		if err != nil {
 			log.Printf("DB error: %s", err)
@@ -264,7 +194,7 @@ func SaveSolution(solution *Solution, is_user_tests_passed bool, is_passed bool)
 		log.Print(err)
 	}
 
-	_, err = query.Exec(solution.Token.Id, solution.Task, is_user_tests_passed, is_passed)
+	_, err = query.Exec(solution.Token.Id, solution.Task.Id, is_user_tests_passed, is_passed)
 	if err != nil {
 		log.Print(err)
 	}
@@ -285,7 +215,7 @@ func GetFailedSolutions(solution *Solution) (int, error) {
 	}
 
 	var count int
-	err = query.QueryRow(solution.Token.Id, solution.Task).Scan(&count)
+	err = query.QueryRow(solution.Token.Id, solution.Task.Id).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

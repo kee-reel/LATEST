@@ -13,13 +13,12 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 const build_script = "./scripts/build_solution.sh"
 const test_script = "python3 scripts/test_solution.py"
 const tasks_path = "./tasks"
+const complete_solution_src_filename = "complete_solution"
 const user_solution_src_filename = "solution"
 const user_solutions_path = "./solutions"
 const user_tests_filename = "user_tests.txt"
@@ -145,7 +144,8 @@ func BuildSolution(solution *Solution) error {
 	}
 	exec_ext, err := ExecCmd(fmt.Sprintf("%s %s %s", build_script, solution.Task.Path, solution.Task.Extention))
 	if err == nil {
-		solution.ExecExtention = exec_ext
+		solution.CompleteExecFilename = fmt.Sprintf("%s.%s", complete_solution_src_filename, exec_ext)
+		solution.ExecFilename = fmt.Sprintf("%s.%s", user_solution_src_filename, exec_ext)
 	}
 	return err
 }
@@ -153,18 +153,28 @@ func BuildSolution(solution *Solution) error {
 func RunTests(solution *Solution, test_data *string) (*map[string]interface{}, bool, error) {
 	task := solution.Task
 	is_user_tests_passed := false
-	test_data_filename := fmt.Sprintf("./%s/%s", task.Path, user_tests_filename)
-	err := ioutil.WriteFile(test_data_filename, []byte(solution.TestCases), 0777)
+	user_tests_path := fmt.Sprintf("./%s/%s", task.Path, user_tests_filename)
+	err := ioutil.WriteFile(user_tests_path, []byte(solution.TestCases), 0777)
 	if err != nil {
 		return nil, is_user_tests_passed, err
 	}
-	test_data_filename = fmt.Sprintf("./%s/%s", task.Path, random_tests_filename)
-	err = ioutil.WriteFile(test_data_filename, []byte(*test_data), 0777)
+	random_tests_path := fmt.Sprintf("./%s/%s", task.Path, random_tests_filename)
+	err = ioutil.WriteFile(random_tests_path, []byte(*test_data), 0777)
 	if err != nil {
+		_ = os.Remove(user_tests_path)
 		return nil, is_user_tests_passed, err
 	}
-	cmd_str := fmt.Sprintf("%s %s %s", test_script, task.Path, solution.ExecExtention)
+	cmd_str := fmt.Sprintf("%s %s %s %s", test_script, task.Path, solution.CompleteExecFilename, solution.ExecFilename)
 	test_result_str, err := ExecCmd(cmd_str)
+	// Remove all user files
+	_ = os.Remove(solution.Path)
+	_ = os.Remove(fmt.Sprintf("%s/%s", task.Path, solution.CompleteExecFilename))
+	_ = os.Remove(fmt.Sprintf("%s/%s", task.Path, solution.ExecFilename))
+	_ = os.Remove(solution.Path)
+	_ = os.Remove(user_tests_path)
+	_ = os.Remove(random_tests_path)
+	_ = os.Remove(random_tests_path)
+	_ = os.Remove(random_tests_path)
 	if err != nil {
 		return nil, is_user_tests_passed, fmt.Errorf("Internal error while running task %d.\n%s", task.Number, err.Error())
 	}

@@ -44,12 +44,13 @@ type Token struct {
 }
 
 type Solution struct {
-	Task          *Task
-	Source        string
-	Path          string
-	ExecExtention string
-	TestCases     string
-	Token         *Token
+	Task                 *Task
+	Source               string
+	Path                 string
+	ExecFilename         string
+	CompleteExecFilename string
+	TestCases            string
+	Token                *Token
 }
 
 type UserData struct {

@@ -4,8 +4,8 @@ import sys
 import json
 import subprocess
 
-SOLUTION = 'solution.'
-COMPLETE_SOLUTION = 'complete_solution.'
+SOLUTION = None
+COMPLETE_SOLUTION = None
 
 
 LANG_TO_EXEC = {
@@ -39,25 +39,29 @@ def run(exec_cmd, params=None):
         except ValueError as e:
             last_line_index = 0
         result = result[last_line_index:]
-        data['result'] = result
 
         if expected != result:
-            data['expected'] = expected
-            error = 'not_equal'
+            return {
+                'error': 'not_equal',
+                'expected': expected,
+                'result': result
+            }
     except subprocess.CalledProcessError as e:
-        error = e.stderr
-        data['result'] = e.stdout
-    return data, error
+        return {
+            'error': e.stderr,
+            'result': e.stdout
+        }
+    return None
 
 def main():
     path = sys.argv[1]
-    extention = sys.argv[2]
-    assert extention in LANG_TO_EXEC, 'Unsuppoted extention'
-    exec_cmd = LANG_TO_EXEC[extention]
     global SOLUTION
     global COMPLETE_SOLUTION
-    SOLUTION += extention
-    COMPLETE_SOLUTION += extention
+    SOLUTION = sys.argv[2]
+    COMPLETE_SOLUTION = sys.argv[2]
+    extention = COMPLETE_SOLUTION[COMPLETE_SOLUTION.rindex('.')+1:]
+    assert extention in LANG_TO_EXEC, 'Unsuppoted extention'
+    exec_cmd = LANG_TO_EXEC[extention]
     os.chdir(path)
     files = os.listdir('.')
     assert SOLUTION in files and COMPLETE_SOLUTION in files, \
@@ -67,8 +71,8 @@ def main():
         COMPLETE_SOLUTION = './' + COMPLETE_SOLUTION
     test_types = ['user', 'fixed', 'random']
     is_tested = False
+    data = {}
     error = None
-    result = []
     for t in test_types:
         if error:
             break
@@ -76,20 +80,20 @@ def main():
             line = f.readline()
             while line != '':
                 cmd_line = line.replace(';', '\n')
-                data, error = run(exec_cmd, cmd_line)
-                data['params'] = line[:-1] if line[-1] == '\n' else line
+                error = run(exec_cmd, cmd_line)
                 is_tested = True
                 if error:
-                    result = [data]
+                    error['params'] = line[:-1] if line[-1] == '\n' else line
                     break
-                result.append(data)
                 line = f.readline()
 
     # No test cases
     if not is_tested and not error:
-        data, error = run(exec_cmd)
-        result.append(data)
+        error = run(exec_cmd)
 
-    print(json.dumps({'results': result, 'error': error}))
+    if error:
+        data['error'] = error
+
+    print(json.dumps(data))
 
 main()

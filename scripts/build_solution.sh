@@ -3,7 +3,7 @@ P=$1
 EXT=$2
 
 if [[ $EXT != 'c' ]]; then
-	echo "$EXT"
+	echo -n "$EXT"
 	exit
 fi
 
@@ -13,4 +13,4 @@ rm -f complete_solution.exe
 rm -f solution.exe
 /usr/bin/gcc -o solution.exe solution.c -lm
 
-echo 'exe'
+echo -n 'exe'

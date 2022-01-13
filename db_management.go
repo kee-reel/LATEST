@@ -8,7 +8,7 @@ import (
 	"log"
 	"strconv"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const db_name = "tasks.db"
@@ -21,11 +21,16 @@ func InitDB() {
 	}
 }
 
-func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
-	db, err := sql.Open("sqlite3", db_name)
+func OpenDB() *sql.DB {
+	db, err := sql.Open("sqlite", db_name)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
+	return db
+}
+
+func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
+	db := OpenDB()
 	defer db.Close()
 
 	var tasks []Task
@@ -113,11 +118,7 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 }
 
 func GetTasksByToken(token *Token) (*[]int, error) {
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		log.Printf("DB error: %s", err)
-		return nil, err
-	}
+	db := OpenDB()
 	defer db.Close()
 	rows, err := db.Query(`SELECT t.id FROM task AS t WHERE t.subject = ? AND t.variant = ?`,
 		token.Subject, token.Variant)
@@ -141,10 +142,7 @@ func GetTasksByToken(token *Token) (*[]int, error) {
 }
 
 func GetSubject(subject_id int) (*Subject, error) {
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		return nil, err
-	}
+	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT s.name FROM subject AS s WHERE s.id = ?`)
 	if err != nil {
@@ -162,10 +160,7 @@ func GetSubject(subject_id int) (*Subject, error) {
 }
 
 func GetWork(work_id int) (*Work, error) {
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		return nil, err
-	}
+	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT w.name, w.next_work_id FROM work AS w WHERE w.id = ?`)
 	if err != nil {
@@ -183,10 +178,7 @@ func GetWork(work_id int) (*Work, error) {
 }
 
 func SaveSolution(solution *Solution, is_user_tests_passed bool, is_passed bool) error {
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		log.Print(err)
-	}
+	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`INSERT INTO solution(token_id, task_id, is_user_tests_passed, is_passed) VALUES(?, ?, ?, ?)`)
@@ -202,10 +194,7 @@ func SaveSolution(solution *Solution, is_user_tests_passed bool, is_passed bool)
 }
 
 func GetFailedSolutions(solution *Solution) (int, error) {
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		return -1, err
-	}
+	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT COUNT(*) FROM solution as s
@@ -231,11 +220,7 @@ func GetTokenData(token_str string) (*Token, error) {
 		log.Print("Received malformed token")
 		return nil, errors.New("Неизвестный токен доступа")
 	}
-	db, err := sql.Open("sqlite3", db_name)
-	if err != nil {
-		log.Printf("Got db error: %s", err)
-		return nil, errors.New("Неизвестный токен доступа")
-	}
+	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT a.id, a.user_id, a.subject, a.variant FROM access_token as a

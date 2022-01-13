@@ -10,8 +10,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
@@ -178,11 +176,13 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 	for _, solution := range *solutions {
 		test_result, is_user_tests_passed, test_err := BuildAndTest(solution.Task, &solution)
 		SaveSolution(&solution, is_user_tests_passed, test_err == nil)
-		fail_count, err := GetFailedSolutions(&solution)
-		if err != nil {
-			log.Print(err)
+		if test_result != nil {
+			fail_count, err := GetFailedSolutions(&solution)
+			if err != nil {
+				log.Print(err)
+			}
+			(*test_result)["fail_count"] = fail_count
 		}
-		(*resp)["fail_count"] = fail_count
 		if test_err != nil {
 			return test_err
 		}

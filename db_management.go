@@ -12,12 +12,85 @@ import (
 )
 
 const db_name = "tasks.db"
-const db_creation_script = "scripts/create_db.sh"
+const create_subject_table = `CREATE TABLE IF NOT EXISTS subject (
+	id INTEGER PRIMARY KEY,
+	name VARCHAR(64))`
+const create_work_table = `CREATE TABLE IF NOT EXISTS work (
+	id INTEGER,
+	subject INTEGER,
+	next_work_id INTEGER NULL,
+	name VARCHAR(64),
+	PRIMARY KEY(id, subject))`
+const create_variant_table = `CREATE TABLE IF NOT EXISTS variant (
+	id INTEGER,
+	subject INTEGER,
+	work INTEGER,
+	name VARCHAR(64),
+	PRIMARY KEY(id, subject, work))`
+const create_task_table = `CREATE TABLE IF NOT EXISTS task (
+	id INTEGER PRIMARY KEY,
+	subject INTEGER,
+	work INTEGER,
+	variant INTEGER,
+	number INTEGER,
+	name VARCHAR(64),
+	desc VARCHAR(1024),
+	input VARCHAR(512),
+	output VARCHAR(128),
+	UNIQUE(subject, work, variant, number))`
+const create_solution_table = `CREATE TABLE IF NOT EXISTS solution(
+	token_id INTEGER,
+	task_id INTEGER,
+	is_user_tests_passed BOOLEAN,
+	is_passed BOOLEAN,
+	dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
+const create_access_token_table = `CREATE TABLE IF NOT EXISTS access_token (
+	id INTEGER PRIMARY KEY,
+	token VARCHAR(256),
+	user_id INTEGER,
+	subject INTEGER,
+	variant INTEGER,
+	UNIQUE(token))`
+const create_user_table = `CREATE TABLE IF NOT EXISTS user (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	group_name VARCHAR(128),
+	number INTEGER,
+	name VARCHAR(128),
+	last_name VARCHAR(128),
+	UNIQUE(group_name, number))`
 
 func InitDB() {
-	_, err := ExecCmd(db_creation_script)
+	create_table_queries := []string{
+		create_subject_table,
+		create_work_table,
+		create_variant_table,
+		create_task_table,
+		create_solution_table,
+		create_access_token_table,
+		create_user_table,
+	}
+	db := OpenDB()
+	defer db.Close()
+
+	tx, err := db.Begin()
 	if err != nil {
 		panic(err)
+	}
+	defer tx.Rollback()
+
+	for _, query := range create_table_queries {
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			panic(fmt.Sprintf("Error in query '%s': %s", query, err))
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec()
+		if err != nil {
+			panic(fmt.Sprintf("Error in query '%s': %s", query, err))
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		log.Fatal(err)
 	}
 }
 

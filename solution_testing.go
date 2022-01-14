@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const build_script = "./scripts/build_solution.sh"
+const build_script = "python3 scripts/build_solution.py"
 const test_script = "python3 scripts/test_solution.py"
 const tasks_path = "./tasks"
 const complete_solution_src_filename = "complete_solution"
@@ -142,7 +142,9 @@ func BuildSolution(solution *Solution) error {
 	if err != nil {
 		log.Printf("Can't save solution: %s", err)
 	}
-	exec_ext, err := ExecCmd(fmt.Sprintf("%s %s %s", build_script, solution.Task.Path, solution.Task.Extention))
+	exec_ext, err := ExecCmd(fmt.Sprintf("%s %s %s.%s %s.%s", build_script, solution.Task.Path,
+		user_solution_src_filename, solution.Task.Extention,
+		complete_solution_src_filename, solution.Task.Extention))
 	if err == nil {
 		solution.CompleteExecFilename = fmt.Sprintf("%s.%s", complete_solution_src_filename, exec_ext)
 		solution.ExecFilename = fmt.Sprintf("%s.%s", user_solution_src_filename, exec_ext)

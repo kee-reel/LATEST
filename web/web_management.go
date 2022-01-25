@@ -42,6 +42,7 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	is_verbose := r.FormValue("verbose") == "true"
 	solutions := make([]Solution, len(*tasks))
 	for i, task := range *tasks {
 		solution := &solutions[i]
@@ -69,6 +70,7 @@ func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
 			}
 		}
 		solution.Token = token
+		solution.IsVerbose = is_verbose
 	}
 	return &solutions, &user_data, err
 }
@@ -115,29 +117,18 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	resp_works := map[int]interface{}{}
 	resp_subjects := map[int]interface{}{}
 	for _, task := range *tasks {
-		_, ok := resp_works[task.Work]
+		_, ok := resp_works[task.Work.Id]
 		if !ok {
-			work, err := GetWork(task.Work)
-			if err != nil {
-				log.Printf("Error: %s", err)
-				return nil
+			resp_works[task.Work.Id] = map[string]interface{}{
+				"name":    task.Work.Name,
+				"next_id": task.Work.NextId,
 			}
-			resp_works[task.Work] = map[string]interface{}{
-				"name":    work.Name,
-				"next_id": work.NextId,
-			}
-
 		}
 
-		_, ok = resp_subjects[task.Subject]
+		_, ok = resp_subjects[task.Subject.Id]
 		if !ok {
-			subject, err := GetSubject(task.Subject)
-			if err != nil {
-				log.Printf("Error: %s", err)
-				return nil
-			}
-			resp_subjects[task.Subject] = map[string]interface{}{
-				"name": subject.Name,
+			resp_subjects[task.Subject.Id] = map[string]interface{}{
+				"name": task.Subject.Name,
 			}
 		}
 
@@ -151,7 +142,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 			})
 		}
 		resp_tasks[task.Id] = map[string]interface{}{
-			"number":    task.Number,
+			"number":    task.Position,
 			"subject":   task.Subject,
 			"work":      task.Work,
 			"name":      task.Name,
@@ -174,8 +165,8 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 	}
 	solution_results := map[int]interface{}{}
 	for _, solution := range *solutions {
-		test_result, is_user_tests_passed, test_err := BuildAndTest(solution.Task, &solution)
-		SaveSolution(&solution, is_user_tests_passed, test_err == nil)
+		test_result, test_err := BuildAndTest(solution.Task, &solution)
+		SaveSolution(&solution, test_err == nil)
 		if test_result != nil {
 			fail_count, err := GetFailedSolutions(&solution)
 			if err != nil {

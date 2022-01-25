@@ -2,100 +2,117 @@ import os
 import re
 import sys
 import json
-import sqlite3 as db
+from db_helper import open_db
 
 
 def parse_filename(filename):
-    return re.search(r'(subject-(\d+)/)(work-(\d+)/)?(variant-(\d+)/)?(task-(\d+))?', filename).groups()
+    return re.findall(r'(.*?)/', filename)[1:]
 
 
-def fill_db(cur, data, filename, subject, work, variant, task):
-    cur.execute('select id from subject where id = ?', (subject,))
+def fill_db(data, path, subject, work=None, task=None):
+    conn = open_db()
+    cur = conn.cursor()
+    cur.execute('select id from subjects where folder_name = %s', (subject,))
     rows = cur.fetchone()
+    subject_id = rows[0] if rows else None
     name = data['name'] if work is None else ''
-    if rows and work is None:
-        cur.execute('update subject set name = ? where id = ?', (name, subject))
-    elif not rows:
-        cur.execute('insert into subject(id, name) values(?, ?)', (subject, name))
+    if subject_id and work is None:
+        cur.execute('update subjects set name = %s where id = %s', (name, subject_id))
+    elif not subject_id:
+        cur.execute('''insert into subjects(folder_name, name) values(%s, %s) returning id''', (subject, name))
+        subject_id = cur.fetchone()
 
     if work is None:
         return
-    cur.execute('select id from work where id = ?', (work,))
+    cur.execute('select id from works where folder_name = %s AND subject_id = %s', (work, subject_id))
     rows = cur.fetchone()
-    name = data['name'] if variant is None else ''
-    next_work_id = data.get('next', None) if variant is None else None
-    if rows and variant is None:
-        cur.execute('update work set next_work_id = ?, subject = ?, name = ? where id = ?', 
-                (next_work_id, subject, name, work))
-    elif not rows:
-        cur.execute('insert into work(id, next_work_id, subject, name) values(?, ?, ?, ?)',
-                (work, next_work_id, subject, name))
-
-    if variant is None:
-        return
-    cur.execute('select id from variant where id = ?', (variant,))
-    rows = cur.fetchone()
+    work_id = rows[0] if rows else None
     name = data['name'] if task is None else ''
-    if rows and task is None:
-        cur.execute('update variant set work = ?, subject = ?, name = ? where id = ?', (work, subject, name, variant))
-    elif not rows:
-        cur.execute('insert into variant(id, work, subject, name) values(?, ?, ?, ?)', 
-                (variant, work, subject, name))
+    next_work_id = data.get('next', None) if task is None else None
+    if work_id and task is None:
+        cur.execute('update works set next_work_id = %s, subject_id = %s, name = %s, folder_name = %s where id = %s', 
+                (next_work_id, subject_id, name, work, work_id))
+    elif not work_id:
+        cur.execute('''insert into works(folder_name, next_work_id, subject_id, name)
+            values(%s, %s, %s, %s) returning id''',
+                (work, next_work_id, subject_id, name))
+        work_id = cur.fetchone()
 
     if task is None:
         return
-    files = os.listdir(filename[:filename.rindex('/')])
+
+    folder_path = path[:path.rindex('/')]
+    files = os.listdir(folder_path)
     extention = None
     for f in files:
         if 'complete_solution' in f:
             extention = f[f.rindex('.')+1:]
             break
-    cur.execute('select id from task where subject = ? AND work = ? AND variant = ? AND number = ?', (subject, work, variant, task))
-    rows = cur.fetchall()
-    if rows:
-        task_id = rows[0][0]
-        cur.execute('''update task set subject = ?, work = ?, variant = ?, number = ?, 
-                extention = ?, name = ?, desc = ?, input = ?, output = ? where id = ?''', (
-            subject,
-            work,
-            variant,
+    if not extention:
+        print(f'[ERROR] No complete_solution for {path}', file=sys.stderr)
+        return
+
+    fixed_tests_path = f'{folder_path}/fixed_tests.txt'
+    source_code_path = f'{folder_path}/complete_solution.{extention}'
+    if not os.path.exists(fixed_tests_path) or not os.path.exists(source_code_path):
+        print(f'[ERROR] No fixed tests or complete solution provided for {path}')
+        return
+
+    task_pos = data.get('position', 0)
+    fixed_tests = open(fixed_tests_path, 'r').read()
+    source_code = open(source_code_path, 'r').read()
+
+    cur.execute('select id from tasks where subject_id = %s AND work_id = %s AND folder_name = %s', (subject_id, work_id, task))
+    rows = cur.fetchone()
+    task_id = rows[0] if rows else None
+    if task_id:
+        cur.execute('''update tasks set subject_id = %s, work_id = %s, position = %s, folder_name = %s,
+                extention = %s, name = %s, description = %s, input = %s, output = %s, source_code = %s, 
+                fixed_tests = %s where id = %s''', (
+            subject_id,
+            work_id,
+            task_pos,
             task,
             extention,
             data['name'],
             data['desc'],
             json.dumps(data['input'], ensure_ascii=False),
             data['output'],
+            source_code,
+            fixed_tests,
             task_id)
         )
     else:
-        cur.execute('''insert into task(subject, work, variant, number, extention, name, desc, input, output) 
-                values(?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
-            subject,
-            work,
-            variant,
+        print(f'With work {work_id}')
+        cur.execute('''insert into tasks(subject_id, work_id, position, folder_name,
+                    extention, name, description, input, output, source_code, fixed_tests) 
+                values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (
+            subject_id,
+            work_id,
+            task_pos,
             task,
             extention,
             data['name'],
             data['desc'],
             json.dumps(data['input'], ensure_ascii=False),
-            data['output'])
+            data['output'],
+            source_code,
+            fixed_tests)
         )
+    conn.commit()
 
 
 def process(filename):
     filename_data = parse_filename(filename)
-    subject, work, variant, task = filename_data[1], filename_data[3], filename_data[5], filename_data[7]
-    if subject is None:
+    if not filename_data:
+        print(f'Malformed path: {filename}', file=sys.stderr)
         return
 
     data = None
     with open(filename, 'r', encoding='utf-8') as f:
         data = json.loads(f.read())
 
-    conn = db.connect('tasks.db')
-    cur=conn.cursor()
-    fill_db(cur, data, filename, subject, work, variant, task)
-    conn.commit()
+    fill_db(data, filename, *filename_data)
 
 
 if len(sys.argv) >= 2:

@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+        db:
+                image: postgres:latest
+                restart: always
+                volumes:
+                        - ./init/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+                ports:
+                        - 5432:5432
+                environment:
+                        - POSTGRES_DB=tasks
+                        - POSTGRES_USER=root
+                        - POSTGRES_PASSWORD=pass
+                        - APP_DB_USER=docker
+                        - APP_DB_PASS=docker
+                        - APP_DB_NAME=docker
+                networks:
+                        - internet
+
+        web:
+                build: ./web
+                ports: 
+                        - 1234:1234
+                links:
+                        - db
+                        - runner
+                depends_on:
+                        - db
+                        - runner
+                environment:
+                        - DB_HOST=db
+                        - DB_PORT=5432
+                        - DB_USER=root
+                        - DB_PASS=pass
+                        - DB_NAME=tasks
+
+                        - WEB_ENTRY=/
+                        - WEB_HOST=0.0.0.0
+                        - WEB_PORT=1234
+                        - WEB_HTTP=true
+                        - WEB_CERT_FILE=
+                        - WEB_KEY_FILE=
+
+                        - RUNNER_HOST=runner
+                        - RUNNER_PORT=1337
+                        - RUNNER_VERBOSE=true
+
+                        - LOG_VERBOSE=true
+                networks:
+                        - internet
+                        - no-internet
+        runner:
+                build: ./runner
+                ports:
+                        - 1337:1337
+                networks:
+                        - no-internet
+
+networks:
+        no-internet:
+                driver: bridge
+                internal: true
+        internet:
+                driver: bridge

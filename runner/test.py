@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import json
 import subprocess
 
 
@@ -29,20 +28,20 @@ def execute(cmd, params):
         return e.stdout, e.stderr
 
 
-def run(exec_cmd, sol, comp_sol, params=None):
+def run(exec_cmd, sol, comp_sol, is_verbose, params=None):
     exit_code = 0
     error = None
 
     expected, err = execute(exec_cmd(comp_sol), params)
     if err:
-        return {
+        return None, {
             'error': err,
             'result': expected
         }
 
     result, err = execute(exec_cmd(sol), params)
     if err:
-        return {
+        return None, {
             'error': err,
             'result': result
         }
@@ -50,53 +49,52 @@ def run(exec_cmd, sol, comp_sol, params=None):
     expected = prepare_str(expected)
     result = prepare_str(result)
     if expected != result:
-        return {
+        return None, {
             'error': 'not_equal',
             'expected': expected,
             'result': result
         }
-    return None
+    elif is_verbose:
+        return {
+            'result': result
+        }, None
+    return None, None
 
-def main():
-    path = sys.argv[1]
-    solution = sys.argv[2]
-    complete_solution = sys.argv[3]
-
+def test_solution(solution, complete_solution, test_sets, is_verbose):
     extention = complete_solution[complete_solution.rindex('.')+1:]
     assert extention in LANG_TO_EXEC, 'Language not supported'
     exec_cmd = LANG_TO_EXEC[extention]
 
-    os.chdir(path)
-    files = os.listdir('.')
-    assert solution in files and complete_solution in files, \
-        'Target directory doesn\'t have required files'
+    if not os.path.exists(solution) or not os.path.exists(complete_solution):
+        return {
+            'err': f'Required files not found'
+        }
 
     is_tested = False
-    data = {}
+    results = []
     error = None
-    for t in ('user', 'fixed', 'random'):
-        with open(f'{t}_tests.txt', 'r') as f:
-            line = f.readline()
-            while line != '':
-                cmd_line = line.replace(';', '\n')
-                error = run(exec_cmd, solution, complete_solution, cmd_line)
-                is_tested = True
-                if error:
-                    error['params'] = line[:-1] if line[-1] == '\n' else line
-                    break
-                line = f.readline()
+    for tests in test_sets.values():
+        for test in tests.split('\n'):
+            if not test:
+                continue
+            cmd_line = test.replace(';', '\n')
+            result, error = run(exec_cmd, solution, complete_solution, is_verbose, cmd_line)
+
+            is_tested = True
+            if result:
+                result['params'] = test
+                results.append(result)
+            if error:
+                error['params'] = test
+                break
         if error:
             break
 
     # No test cases
     if not is_tested and not error:
-        error = run(sexec_cmd, solution, complete_solution)
+        result, error = run(exec_cmd, solution, complete_solution, is_verbose)
+        if result:
+            results.append(result)
 
-    if error:
-        data['error'] = error
-
-    print(json.dumps(data))
-
-
-main()
+    return results, error
 

@@ -5,7 +5,7 @@ services:
                 image: postgres:latest
                 restart: always
                 volumes:
-                        - ./init/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+                        - ./utils/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
                 ports:
                         - 5432:5432
                 environment:

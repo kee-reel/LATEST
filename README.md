@@ -1,48 +1,51 @@
 # Language Agnostic TEsting
 
-Initially, I wrote this web-service to run autotests of C language labs solutions from students.
+Web service that allows to run tests for programms written in these languages:
 
-In result I've got service that can autotest any program that could receive standard input and produce standard output.
+* C
+* Python
+* __Planned: Go, C++, C#, Pascal__
 
-### How testing works
+### How testing works ✅
 
-Testing of solution have following stages:
+* ✉️ Web service receives solution source code for specific task
+* 🔨 Source code is built inside separate docker container
+* 🏃 If build succeeded, then solution is tested with various test cases
+* ✅ User receives test result
 
-* Receiving solution file
-* Compilation of solution file
-* Generation of random test cases
-* Execution of reference solution with:
-	* User test cases
-	* Fixed test cases
-	* Random test cases
-* Execution of received solution with same test cases
-* Comparison of standard output of reference and received solution
-* Production of test report
+### Service containers
 
-![Test result](/res/test-result.jpg)
+Service have 3 containers:
+
+* web -- web service written in Go, that:
+	* Receives requests
+	* Communicates with **db**
+	* Sends solutions into runner container
+	* Responds with test result
+* runner -- internal web service written in Python, that:
+	* Receives solutions from **web** service
+	* Builds solutions (if it's not written with interpreted language)
+	* Tests solutions
+	* Responds with test result
+* db -- PostgreSQL container (postgres:latest)
 
 ### How to start service
 
-Start application with:
+You can easily start whole web service with docker-compose:
+
 ```
-go run .
+$ docker-compose up
 ```
-After that stop application.
 
-On start, application creates tasks.db file, that stores all neccessary data.
+### How to add tasks for testing
 
-To add new lab tasks:
-* Open "tasks" folder
-* Add new subject folder in format "subject-NUMBER", where NUMBER is integer
-* Inside subject folder add new work folder in format "work-NUMBER"
-* Inside work folder add new variant folder in format "variant-NUMBER"
-* Inside variant folder add new task folder in format "task-NUMBER"
-* Inside task folder create files "desc.json", "complete_solution.c" and "fixed_tests.c"
-* Run scripts/fill_db.sh script, to automatically fill tasks.db with created tasks
+> To manage web service you need to have Bash and Python3 installed.
 
-Scripts for DB management:
-* scripts/fill_db.sh -- fills tasks.db with complete solutions from "tasks/" folder
-* scripts/fill_users.sh FILENAME -- fills tasks.db with users. Each line in file must be in this format: "name last_name group_name". Group name must be in format like this: "o717b01"
-* python3 scripts/create_token.py SUBJECT WORK -- fills tasks.db with access tokens for specified SUBJECT and WORK. SUBJECT and WORK is numbers in name of respective tasks folder
+Folder "utils" contains various scripts written with Bash or Python -- these scripts implements various management functionallity.
 
-You can check how autotests is built in "scripts/build_solution.sh" and how it is ran in "scripts/test_solution.sh".
+On first run I recommend to run these scripts:
+
+* `fill\_db.sh` -- fills database with tasks, contained inside "tasks" folder
+* `create\_admin.sh` -- creates new user in database and gives token, that will be used to send solutions for tasks
+* `test\_get.sh` -- get tasks currently present inside database
+* `test\_send.sh TASK\_ID SOLUTION\_FILE\_PATH` -- send solution for specific task (task id you can get from previos script)

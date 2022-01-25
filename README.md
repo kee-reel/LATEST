@@ -9,8 +9,8 @@ Web service that allows to run tests for programms written in these languages:
 ### How testing works
 
 * ✉️ Web service receives solution source code for specific task
-* 🧪 Source code is built inside separate docker container
-* 🏃 If build succeeded, then solution is tested with various test cases
+* 🔨 Source code is built inside separate docker container
+* 🧪 If build succeeded, then solution is tested with various test cases
 * 📊 User receives test result
 
 ### Service containers

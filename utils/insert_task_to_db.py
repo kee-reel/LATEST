@@ -9,34 +9,34 @@ def parse_filename(filename):
     return re.findall(r'(.*?)/', filename)[1:]
 
 
-def fill_db(data, path, subject, work=None, task=None):
+def fill_db(data, path, project, unit=None, task=None):
     conn = open_db()
     cur = conn.cursor()
-    cur.execute('select id from subjects where folder_name = %s', (subject,))
+    cur.execute('select id from projects where folder_name = %s', (project,))
     rows = cur.fetchone()
-    subject_id = rows[0] if rows else None
-    name = data['name'] if work is None else ''
-    if subject_id and work is None:
-        cur.execute('update subjects set name = %s where id = %s', (name, subject_id))
-    elif not subject_id:
-        cur.execute('''insert into subjects(folder_name, name) values(%s, %s) returning id''', (subject, name))
-        subject_id = cur.fetchone()
+    project_id = rows[0] if rows else None
+    name = data['name'] if unit is None else ''
+    if project_id and unit is None:
+        cur.execute('update projects set name = %s where id = %s', (name, project_id))
+    elif not project_id:
+        cur.execute('''insert into projects(folder_name, name) values(%s, %s) returning id''', (project, name))
+        project_id = cur.fetchone()
 
-    if work is None:
+    if unit is None:
         return
-    cur.execute('select id from works where folder_name = %s AND subject_id = %s', (work, subject_id))
+    cur.execute('select id from units where folder_name = %s AND project_id = %s', (unit, project_id))
     rows = cur.fetchone()
-    work_id = rows[0] if rows else None
+    unit_id = rows[0] if rows else None
     name = data['name'] if task is None else ''
-    next_work_id = data.get('next', None) if task is None else None
-    if work_id and task is None:
-        cur.execute('update works set next_work_id = %s, subject_id = %s, name = %s, folder_name = %s where id = %s', 
-                (next_work_id, subject_id, name, work, work_id))
-    elif not work_id:
-        cur.execute('''insert into works(folder_name, next_work_id, subject_id, name)
+    next_unit_id = data.get('next', None) if task is None else None
+    if unit_id and task is None:
+        cur.execute('update units set next_unit_id = %s, project_id = %s, name = %s, folder_name = %s where id = %s', 
+                (next_unit_id, project_id, name, unit, unit_id))
+    elif not unit_id:
+        cur.execute('''insert into units(folder_name, next_unit_id, project_id, name)
             values(%s, %s, %s, %s) returning id''',
-                (work, next_work_id, subject_id, name))
-        work_id = cur.fetchone()
+                (unit, next_unit_id, project_id, name))
+        unit_id = cur.fetchone()
 
     if task is None:
         return
@@ -62,15 +62,15 @@ def fill_db(data, path, subject, work=None, task=None):
     fixed_tests = open(fixed_tests_path, 'r').read()
     source_code = open(source_code_path, 'r').read()
 
-    cur.execute('select id from tasks where subject_id = %s AND work_id = %s AND folder_name = %s', (subject_id, work_id, task))
+    cur.execute('select id from tasks where project_id = %s AND unit_id = %s AND folder_name = %s', (project_id, unit_id, task))
     rows = cur.fetchone()
     task_id = rows[0] if rows else None
     if task_id:
-        cur.execute('''update tasks set subject_id = %s, work_id = %s, position = %s, folder_name = %s,
+        cur.execute('''update tasks set project_id = %s, unit_id = %s, position = %s, folder_name = %s,
                 extention = %s, name = %s, description = %s, input = %s, output = %s, source_code = %s, 
                 fixed_tests = %s where id = %s''', (
-            subject_id,
-            work_id,
+            project_id,
+            unit_id,
             task_pos,
             task,
             extention,
@@ -83,12 +83,11 @@ def fill_db(data, path, subject, work=None, task=None):
             task_id)
         )
     else:
-        print(f'With work {work_id}')
-        cur.execute('''insert into tasks(subject_id, work_id, position, folder_name,
+        cur.execute('''insert into tasks(project_id, unit_id, position, folder_name,
                     extention, name, description, input, output, source_code, fixed_tests) 
                 values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''', (
-            subject_id,
-            work_id,
+            project_id,
+            unit_id,
             task_pos,
             task,
             extention,

@@ -18,7 +18,7 @@ Web service that allows to run tests for programms written in these languages:
 Service have 3 containers:
 
 * 🕸 web - web service written in Go, that:
-	* Receives requests
+	* Receives requests from clients
 	* Communicates with **db**
 	* Sends solutions into runner container
 	* Responds with test result
@@ -26,7 +26,7 @@ Service have 3 containers:
 	* Receives solutions from **web** service
 	* Builds solutions (if it's not written with interpreted language)
 	* Tests solutions
-	* Responds with test result
+	* Responds with test result to **web** service
 * 🗄 db - PostgreSQL container (postgres:latest)
 
 ### How to start service
@@ -41,7 +41,7 @@ $ docker-compose up
 
 > To manage web service you need to have Bash and Python3 installed.
 
-Folder "utils" contains various scripts written with Bash or Python - these scripts implements various management functionallity.
+Folder "utils" contains various scripts written with Bash or Python - these scripts implement various management functionallity.
 
 On first run I recommend to run these scripts:
 
@@ -49,3 +49,9 @@ On first run I recommend to run these scripts:
 * `create_admin.sh` - creates new user in database and gives token, that will be used to send solutions for tasks
 * `test_get.sh` - get tasks currently present inside database
 * `test_send.sh TASK_ID SOLUTION_FILE_PATH` - send solution for specific task (task id you can get from previos script)
+
+In production-like environment you'll need only two scripts:
+
+* `fill_db.sh` - already described above
+* `add_user.py NICK EMAIL` - add user into database
+* `create_token.py EMAIL PROJECT_ID` - give token to user

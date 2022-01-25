@@ -10,13 +10,13 @@ type TaskParamData struct {
 	TotalCount int
 }
 
-type Subject struct {
+type Project struct {
 	Id         int
 	Name       string
 	FolderName string
 }
 
-type Work struct {
+type Unit struct {
 	Id         int
 	NextId     *int
 	Name       string
@@ -25,8 +25,8 @@ type Work struct {
 
 type Task struct {
 	Id         int
-	Subject    *Subject
-	Work       *Work
+	Project    *Project
+	Unit       *Unit
 	Position   int
 	FolderName string
 	Extention  string
@@ -41,7 +41,7 @@ type Task struct {
 type Token struct {
 	Id      int
 	UserId  int
-	Subject int
+	Project int
 }
 
 type Solution struct {

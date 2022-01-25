@@ -114,21 +114,21 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	}
 
 	resp_tasks := map[int]interface{}{}
-	resp_works := map[int]interface{}{}
-	resp_subjects := map[int]interface{}{}
+	resp_units := map[int]interface{}{}
+	resp_projects := map[int]interface{}{}
 	for _, task := range *tasks {
-		_, ok := resp_works[task.Work.Id]
+		_, ok := resp_units[task.Unit.Id]
 		if !ok {
-			resp_works[task.Work.Id] = map[string]interface{}{
-				"name":    task.Work.Name,
-				"next_id": task.Work.NextId,
+			resp_units[task.Unit.Id] = map[string]interface{}{
+				"name":    task.Unit.Name,
+				"next_id": task.Unit.NextId,
 			}
 		}
 
-		_, ok = resp_subjects[task.Subject.Id]
+		_, ok = resp_projects[task.Project.Id]
 		if !ok {
-			resp_subjects[task.Subject.Id] = map[string]interface{}{
-				"name": task.Subject.Name,
+			resp_projects[task.Project.Id] = map[string]interface{}{
+				"name": task.Project.Name,
 			}
 		}
 
@@ -143,8 +143,8 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		}
 		resp_tasks[task.Id] = map[string]interface{}{
 			"number":    task.Position,
-			"subject":   task.Subject,
-			"work":      task.Work,
+			"project":   task.Project,
+			"unit":      task.Unit,
 			"name":      task.Name,
 			"desc":      task.Desc,
 			"input":     task_input,
@@ -153,8 +153,8 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		}
 	}
 	(*resp)["tasks"] = resp_tasks
-	(*resp)["works"] = resp_works
-	(*resp)["subjects"] = resp_subjects
+	(*resp)["units"] = resp_units
+	(*resp)["projects"] = resp_projects
 	return nil
 }
 

@@ -1,3 +1,4 @@
 #!/bin/bash
-python3 utils/add_user.py Ad Min 1 666
-python3 utils/create_token.py 1 1
+EMAIL=admin@admin.com
+python3 utils/add_user.py admin $EMAIL
+python3 utils/create_token.py $EMAIL 1

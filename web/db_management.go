@@ -28,10 +28,10 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 	defer db.Close()
 
 	var tasks []Task
-	works := map[int]*Work{}
-	subjects := map[int]*Subject{}
+	units := map[int]*Unit{}
+	projects := map[int]*Project{}
 	for _, task_id := range tasks_id {
-		query, err := db.Prepare(`SELECT t.subject_id, t.work_id, t.position, t.extention, t.folder_name,
+		query, err := db.Prepare(`SELECT t.project_id, t.unit_id, t.position, t.extention, t.folder_name,
 			t.name, t.description, t.input, t.output
 			FROM tasks AS t
 			WHERE t.id = $1`)
@@ -42,37 +42,37 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 
 		var task Task
 		var in_params_str []byte
-		var subject_id int
-		var work_id int
+		var project_id int
+		var unit_id int
 		err = query.QueryRow(task_id).Scan(
-			&subject_id, &work_id, &task.Position, &task.Extention, &task.FolderName,
+			&project_id, &unit_id, &task.Position, &task.Extention, &task.FolderName,
 			&task.Name, &task.Desc, &in_params_str, &task.Output)
 		if err != nil {
 			log.Printf("DB error: %s", err)
 			return nil, fmt.Errorf("Task with id %d not found", task_id)
 		}
 
-		subject, ok := subjects[subject_id]
+		project, ok := projects[project_id]
 		if !ok {
-			subject, err = GetSubject(subject_id)
+			project, err = GetProject(project_id)
 			if err != nil {
-				log.Printf("Not found subject for task %d", task_id)
+				log.Printf("Not found project for task %d", task_id)
 				return nil, err
 			}
-			subjects[subject_id] = subject
+			projects[project_id] = project
 		}
-		task.Subject = subject
+		task.Project = project
 
-		work, ok := works[work_id]
+		unit, ok := units[unit_id]
 		if !ok {
-			work, err = GetWork(work_id)
+			unit, err = GetUnit(unit_id)
 			if err != nil {
-				log.Printf("Not found work for task %d", task_id)
+				log.Printf("Not found unit for task %d", task_id)
 				return nil, err
 			}
-			works[work_id] = work
+			units[unit_id] = unit
 		}
-		task.Work = work
+		task.Unit = unit
 
 		err = json.Unmarshal(in_params_str, &task.Input)
 		if err != nil {
@@ -157,7 +157,7 @@ func GetTaskTestData(task_id int) (*string, *string, error) {
 func GetTasksByToken(token *Token) (*[]int, error) {
 	db := OpenDB()
 	defer db.Close()
-	rows, err := db.Query(`SELECT t.id FROM tasks AS t WHERE t.subject_id = $1`, token.Subject)
+	rows, err := db.Query(`SELECT t.id FROM tasks AS t WHERE t.project_id = $1`, token.Project)
 	if err != nil {
 		log.Printf("DB error: %s", err)
 		return nil, err
@@ -177,40 +177,40 @@ func GetTasksByToken(token *Token) (*[]int, error) {
 	return &tasks, nil
 }
 
-func GetSubject(subject_id int) (*Subject, error) {
+func GetProject(project_id int) (*Project, error) {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`SELECT s.name, s.folder_name FROM subjects AS s WHERE s.id = $1`)
+	query, err := db.Prepare(`SELECT s.name, s.folder_name FROM projects AS s WHERE s.id = $1`)
 	if err != nil {
 		return nil, err
 	}
 
-	var subject Subject
-	err = query.QueryRow(subject_id).Scan(&subject.Name, &subject.FolderName)
+	var project Project
+	err = query.QueryRow(project_id).Scan(&project.Name, &project.FolderName)
 	if err != nil {
 		log.Printf("DB error: %s", err)
-		return nil, fmt.Errorf("Subject with id %d not found", subject_id)
+		return nil, fmt.Errorf("Project with id %d not found", project_id)
 	}
-	subject.Id = subject_id
-	return &subject, nil
+	project.Id = project_id
+	return &project, nil
 }
 
-func GetWork(work_id int) (*Work, error) {
+func GetUnit(unit_id int) (*Unit, error) {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`SELECT w.name, w.next_work_id, w.folder_name FROM works AS w WHERE w.id = $1`)
+	query, err := db.Prepare(`SELECT w.name, w.next_unit_id, w.folder_name FROM units AS w WHERE w.id = $1`)
 	if err != nil {
 		return nil, err
 	}
 
-	var work Work
-	err = query.QueryRow(work_id).Scan(&work.Name, &work.NextId, &work.FolderName)
+	var unit Unit
+	err = query.QueryRow(unit_id).Scan(&unit.Name, &unit.NextId, &unit.FolderName)
 	if err != nil {
 		log.Printf("DB error: %s", err)
-		return nil, fmt.Errorf("Work with id %d not found", work_id)
+		return nil, fmt.Errorf("Unit with id %d not found", unit_id)
 	}
-	work.Id = work_id
-	return &work, nil
+	unit.Id = unit_id
+	return &unit, nil
 }
 
 func SaveSolution(solution *Solution, is_passed bool) error {
@@ -269,13 +269,13 @@ func GetTokenData(token_str string) (*Token, error) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT t.id, t.user_id, t.subject_id FROM tokens as t WHERE t.token = $1`)
+	query, err := db.Prepare(`SELECT t.id, t.user_id, t.project_id FROM tokens as t WHERE t.token = $1`)
 	if err != nil {
 		log.Printf("db error on prepare: %s", err)
 		return nil, errors.New("Неизвестный токен доступа")
 	}
 	var token Token
-	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId, &token.Subject)
+	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId, &token.Project)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
 		return nil, errors.New("Неизвестный токен доступа")

@@ -43,6 +43,14 @@ $ docker-compose up
 
 Folder "utils" contains various scripts written with Bash or Python - these scripts implement various management functionallity.
 
+Before using scripts you need to put some tests inside "tasks" folder. To get started try to pull existing sample tests:
+
+```
+mkdir tasks
+cd tasks
+git clone git@github.com:kee-reel/late-sample-project.git
+```
+
 On first run I recommend to run these scripts:
 
 * `fill_db.sh` - fills database with tasks, contained inside "tasks" folder

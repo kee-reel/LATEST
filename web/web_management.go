@@ -14,65 +14,73 @@ import (
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
-func ParseSolution(r *http.Request) (*[]Solution, *UserData, error) {
+func ParseSolution(r *http.Request) (*Solution, error) {
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	token_str := r.FormValue("token")
 	token, err := GetTokenData(token_str)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	var user_data UserData
-	tasks_raw := r.FormValue("tasks")
-	if len(tasks_raw) == 0 {
-		return nil, nil, errors.New("List of tasks is empty")
+	task_id_str := r.FormValue("task_id")
+	if len(task_id_str) == 0 {
+		return nil, errors.New("Task id is not specified")
 	}
-	var task_ids []int
-	for _, task_id_str := range strings.Split(string(tasks_raw), ",") {
-
-		task_id, err := strconv.Atoi(task_id_str)
-		if err != nil {
-			return nil, nil, err
-		}
-		task_ids = append(task_ids, task_id)
+	task_id, err := strconv.Atoi(task_id_str)
+	if err != nil {
+		return nil, err
 	}
+	task_ids := make([]int, 1)
+	task_ids[0] = task_id
 	tasks, err := GetTasks(task_ids, token)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	is_verbose := r.FormValue("verbose") == "true"
-	solutions := make([]Solution, len(*tasks))
-	for i, task := range *tasks {
-		solution := &solutions[i]
-		solution.Task = &task
-		file_name := fmt.Sprintf("source_%d", task.Id)
-		file, _, err := r.FormFile(file_name)
+
+	var solution Solution
+	task := (*tasks)[0]
+
+	var solution_text *string
+	source_text := r.FormValue("source_text")
+	if source_text != "" {
+		solution_text = &source_text
+	} else {
+		file, _, err := r.FormFile("source_file")
 		if err != nil {
-			log.Printf("Can't open file %s", file_name)
-			return nil, nil, err
+			return nil, errors.New("No solution file or text provided")
 		}
-		data, err := ioutil.ReadAll(file)
+		raw_data, err := ioutil.ReadAll(file)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		solution.Source = string(data)
-		solution.TestCases = r.FormValue(fmt.Sprintf("test_cases_%s", task.Id))
-		if len(solution.TestCases) > 50000 {
-			return nil, nil, errors.New("Test cases string is too big")
-		}
-		if len(solution.TestCases) > 0 {
-			solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
-			matches := user_tests_re.MatchString(solution.TestCases)
-			if !matches {
-				return nil, nil, errors.New("Test cases string have incorrect format")
-			}
-		}
-		solution.Token = token
-		solution.IsVerbose = is_verbose
+		str_data := string(raw_data)
+		solution_text = &str_data
 	}
-	return &solutions, &user_data, err
+
+	if len(*solution_text) > 50000 {
+		return nil, errors.New("Solution is too big")
+	}
+
+	solution.Source = *solution_text
+	solution.TestCases = r.FormValue("test_cases")
+	if len(solution.TestCases) > 50000 {
+		return nil, errors.New("Test cases string is too big")
+	}
+	if len(solution.TestCases) > 0 {
+		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
+		matches := user_tests_re.MatchString(solution.TestCases)
+		if !matches {
+			return nil, errors.New("Test cases string have incorrect format")
+		}
+	}
+
+	solution.Task = &task
+	solution.Token = token
+	solution.IsVerbose = r.FormValue("verbose") == "true"
+
+	return &solution, err
 }
 
 func GetQueryParam(r *http.Request, key string) (*[]int, error) {
@@ -159,27 +167,24 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 }
 
 func PostSolution(r *http.Request, resp *map[string]interface{}) error {
-	solutions, _, err := ParseSolution(r)
+	solution, err := ParseSolution(r)
 	if err != nil {
 		return err
 	}
-	solution_results := map[int]interface{}{}
-	for _, solution := range *solutions {
-		test_result, test_err := BuildAndTest(solution.Task, &solution)
-		SaveSolution(&solution, test_err == nil)
-		if test_result != nil {
-			fail_count, err := GetFailedSolutions(&solution)
-			if err != nil {
-				log.Print(err)
-			}
-			(*test_result)["fail_count"] = fail_count
+
+	test_result, test_err := BuildAndTest(solution.Task, solution)
+	SaveSolution(solution, test_err == nil)
+	if test_result != nil {
+		fail_count, err := GetFailedSolutions(solution)
+		if err != nil {
+			log.Print(err)
 		}
-		if test_err != nil {
-			return test_err
-		}
-		solution_results[solution.Task.Id] = *test_result
+		(*test_result)["fail_count"] = fail_count
 	}
-	(*resp)["result"] = solution_results
+	if test_err != nil {
+		return test_err
+	}
+	(*resp)["result"] = *test_result
 	return nil
 }
 

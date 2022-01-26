@@ -31,7 +31,7 @@ Service have 4 containers:
 	* Builds solutions (if it's not written with interpreted language)
 	* Tests solutions
 	* Responds with test result to **web** service
-* 🏗 manage - container with Bash and Python script, that could be used for:
+* 🏗 manage - container with Bash and Python scripts, that could be used for:
 	* Filling database with tests
 	* Creating users
 	* Giving tokens to users, that's required to send any solutions for testing
@@ -47,7 +47,7 @@ cd late # Go inside
 
 sudo docker-compose up -d # Run all containers in detached mode
 
-# Get id of manage container and open bash inside "manage" of it
+# Get id of "manage" container and open interactive bash shell inside of it
 sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
 ```
 
@@ -55,7 +55,7 @@ Inside **manage** container:
 
 ```bash
 # Stage 1 - preparing tests
-mkdir tests # Create tests folder inside project directory
+mkdir tests # Create tests folder
 cd tests # Go inside
 git clone https://github.com/kee-reel/late-sample-project # Clone sample project
 cd .. # Go back
@@ -103,6 +103,20 @@ Tests is organized this way:
 	* "input" - format of input data for program
 	* "output" - text description of output format
 
+This is example of `desc.json` file for `task`:
+
+```json
+{
+	"name": "Addition",
+	"desc": "Add two numbers and output the result",
+	"input": [
+		{"name": "A", "type": "int", "range": ["-1000", "1000"]}, 
+		{"name": "B", "type": "int", "range": ["-1000", "1000"]}
+	],
+	"output": "Result of adding A to B"
+}
+```
+
 Apart from `desc.json` file, task folder also must contain 2 files:
 
 * `complete_solution.[c|py]` - file with source code of reference solution. Output of this file will be compared with incoming solutions - if output differs, than test of incoming solution fails
@@ -114,29 +128,46 @@ I have [repository](https://github.com/kee-reel/late-sample-project) with exampl
 
 You can easily start web service with docker-compose:
 
-```
+```bash
 $ docker-compose up # Add "-d" to run it in detached mode
 ```
 
 After that you can manage web server via **manage** container. To open interactive bash shell inside of **manage** run:
 
-```
+```bash
 # Get id of manage container and open bash inside "manage" of it
 sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
 ```
 
-Inside this container you can run this scripts, to fammiliarize yourself with general workflow:
+Then you need to prepare tests - user yours or use mine for this time:
+
+```bash
+mkdir tests # Create tests folder
+cd tests # Go inside
+git clone https://github.com/kee-reel/late-sample-project # Clone sample project
+cd .. # Go back
+```
+
+Test are ready, lets insert them into database and create new user:
+
+
+```bash
+python3 fill_db.py # Fill database with sample project
+python3 create_user.py TestUser test@email.com # Create new user for testing
+python3 create_token.py test@email.com # Give token for test user
+```
+
+All set, now we can try to sent GET and POST requests to web server:
 
 ```
-mkdir tests # Create tests folder inside project directory
-cd tests # Go inside
-git clone git@github.com:kee-reel/late-sample-project.git # Clone sample project
-cd .. # Go back
+# GET example - get all available tasks
+curl http://web:1234?token=$(python3 get_test_token.py) # Send GET request 
 
-python3 fill_db.py # Fill database with sample project
-./create_admin.sh # Create admin user for testing
-./test_get.sh # Get project's data
-./test_post.sh 1 tests/late-sample-project/unit-1/task-1/complete_solution.c # Post solution
+# POST example - test solution file
+curl -F token=$(python3 get_test_token.py) -F source_file=@tests/late-sample-project/unit-1/task-1/complete_solution.c -F task_id=3 -F verbose=true http://web:1234
+
+# POST example - test solution text (this solution won't pass tests)
+curl -F token=$(python3 get_test_token.py) -F source_text='print(4)' -F task_id=1 -F verbose=true http://web:1234
 ```
 
 Scripts description:

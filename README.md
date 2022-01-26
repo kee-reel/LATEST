@@ -139,7 +139,7 @@ After that you can manage web server via **manage** container. To open interacti
 sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
 ```
 
-Then you need to prepare tests - user yours or use mine for this time:
+Then you need to prepare tests - you can use mine for this time:
 
 ```bash
 mkdir tests # Create tests folder
@@ -157,9 +157,9 @@ python3 create_user.py TestUser test@email.com # Create new user for testing
 python3 create_token.py test@email.com # Give token for test user
 ```
 
-All set, now we can try to sent GET and POST requests to web server:
+All set, now we can try to send GET and POST requests to web server:
 
-```
+```bash
 # GET example - get all available tasks
 curl http://web:1234?token=$(python3 get_test_token.py) # Send GET request 
 

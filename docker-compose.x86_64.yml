@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+        db:
+                image: postgres:latest
+        web:
+                build: ./web
+        runner:
+                build:
+                        context: runner
+                        dockerfile: runner/Dockerfile
+                        args:
+                                IMAGE: matthewfeickert/docker-python3-ubuntu
+        manage:
+                build: ./manage

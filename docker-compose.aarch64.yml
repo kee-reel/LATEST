@@ -9,9 +9,9 @@ services:
                 build:
                         context: runner
                         args:
-                                IMAGE: python:latest
+                                IMAGE: arm64v8/python
         manage:
-                build:
+                build: 
                         context: manage
                         args:
-                                IMAGE: matthewfeickert/docker-python3-ubuntu
+                                IMAGE: arm64v8/python

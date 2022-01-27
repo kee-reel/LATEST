@@ -3,7 +3,8 @@ FROM $IMAGE
 EXPOSE 1337
 
 USER root
-RUN if [[ ! -e /home/docker ]]; then useradd -m docker; fi
+# Some images doesn't create docker user
+RUN if [ ! -e /home/docker ]; then useradd -m docker; fi
 ENV DIRPATH /home/docker/app
 WORKDIR $DIRPATH
 

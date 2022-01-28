@@ -135,11 +135,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 }
 
 func PostSolution(r *http.Request, resp *map[string]interface{}) error {
-	solution, err := ParseSolution(r)
-	if err != nil {
-		return err
-	}
-
+	solution := ParseSolution(r)
 	test_result, test_err := BuildAndTest(solution.Task, solution)
 	SaveSolution(solution, test_err == nil)
 	if test_result != nil {
@@ -163,7 +159,7 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
-		err = GetSolution(r, &resp)
+		GetSolution(r, &resp)
 	case "POST":
 		err = PostSolution(r, &resp)
 	default:

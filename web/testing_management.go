@@ -12,13 +12,6 @@ import (
 	"time"
 )
 
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func GenTestParam(test_data []string, param TaskParamData, start_index int) int {
 	delimiter := ';'
 	values_to_generate := 1

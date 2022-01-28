@@ -2,42 +2,35 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
-func ParseSolution(r *http.Request) (*Solution, error) {
+func ParseSolution(r *http.Request) *Solution {
 	err := r.ParseMultipartForm(32 << 20)
-	if err != nil {
-		return nil, err
-	}
+	Err(err)
 	token_str := r.FormValue("token")
 	token, err := GetTokenData(token_str)
-	if err != nil {
-		return nil, err
-	}
+	Err(err)
 	task_id_str := r.FormValue("task_id")
 	if len(task_id_str) == 0 {
-		return nil, errors.New("Task id is not specified")
+		panic("Task id is not specified")
 	}
 	task_id, err := strconv.Atoi(task_id_str)
-	if err != nil {
-		return nil, err
-	}
+	Err(err)
 	task_ids := make([]int, 1)
 	task_ids[0] = task_id
 	tasks, err := GetTasks(task_ids, token)
-	if err != nil {
-		return nil, err
-	}
+	Err(err)
 
 	var solution Solution
 	task := (*tasks)[0]
@@ -49,30 +42,28 @@ func ParseSolution(r *http.Request) (*Solution, error) {
 	} else {
 		file, _, err := r.FormFile("source_file")
 		if err != nil {
-			return nil, errors.New("No solution file or text provided")
+			panic("No solution file or text provided")
 		}
 		raw_data, err := ioutil.ReadAll(file)
-		if err != nil {
-			return nil, err
-		}
+		Err(err)
 		str_data := string(raw_data)
 		solution_text = &str_data
 	}
 
 	if len(*solution_text) > 50000 {
-		return nil, errors.New("Solution is too big")
+		panic("Solution is too big")
 	}
 
 	solution.Source = *solution_text
 	solution.TestCases = r.FormValue("test_cases")
 	if len(solution.TestCases) > 50000 {
-		return nil, errors.New("Test cases string is too big")
+		panic("Test cases string is too big")
 	}
 	if len(solution.TestCases) > 0 {
 		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
 		matches := user_tests_re.MatchString(solution.TestCases)
 		if !matches {
-			return nil, errors.New("Test cases string have incorrect format")
+			panic("Test cases string have incorrect format")
 		}
 	}
 
@@ -80,46 +71,24 @@ func ParseSolution(r *http.Request) (*Solution, error) {
 	solution.Token = token
 	solution.IsVerbose = r.FormValue("verbose") == "true"
 
-	return &solution, err
+	return &solution
 }
 
-func GetQueryParam(r *http.Request, key string) (*[]int, error) {
-	params, ok := r.URL.Query()[key]
-	if !ok || len(params[0]) < 1 {
-		return nil, fmt.Errorf("Parameter %s not found in query", key)
-	}
-	res := make([]int, len(params))
-	for i, str_value := range params {
-		value, err := strconv.Atoi(str_value)
-		if err != nil {
-			return nil, err
-		}
-		res[i] = value
-	}
-	return &res, nil
-}
-
-func GetSolution(r *http.Request, resp *map[string]interface{}) error {
+func GetSolution(r *http.Request, resp *map[string]interface{}) {
 	var err error
 	params, ok := r.URL.Query()["token"]
 	if !ok || len(params[0]) < 1 {
-		return errors.New("Parameter 'token' not specified")
+		panic("Parameter 'token' not specified")
 	}
 	token, err := GetTokenData(params[0])
-	if err != nil {
-		return err
-	}
+	Err(err)
 	task_ids, err := GetTasksByToken(token)
-	if err != nil {
-		return err
-	}
+	Err(err)
 	if len(*task_ids) == 0 {
-		return errors.New("No tasks were found")
+		panic("No tasks were found")
 	}
 	tasks, err := GetTasks(*task_ids, token)
-	if err != nil {
-		return err
-	}
+	Err(err)
 
 	resp_tasks := map[int]interface{}{}
 	resp_units := map[int]interface{}{}
@@ -163,7 +132,6 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	(*resp)["tasks"] = resp_tasks
 	(*resp)["units"] = resp_units
 	(*resp)["projects"] = resp_projects
-	return nil
 }
 
 func PostSolution(r *http.Request, resp *map[string]interface{}) error {
@@ -192,13 +160,90 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{}
 	var err error
 
+	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
 		err = GetSolution(r, &resp)
 	case "POST":
 		err = PostSolution(r, &resp)
 	default:
-		err = errors.New("Only GET and POST methods are supported")
+		Err(fmt.Errorf("Only GET and POST methods are supported"))
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		resp["error"] = fmt.Sprintf("Error: %s", err.Error())
+	}
+	jsonResp, err := json.Marshal(resp)
+	Err(err)
+	log.Printf("[RESP]: %s", jsonResp)
+	w.Write(jsonResp)
+}
+
+func GetIP(r *http.Request) (string, error) {
+	//Get IP from the X-REAL-IP header
+	ip := r.Header.Get("X-REAL-IP")
+	netIP := net.ParseIP(ip)
+	if netIP != nil {
+		return ip, nil
+	}
+
+	//Get IP from X-FORWARDED-FOR header
+	ips := r.Header.Get("X-FORWARDED-FOR")
+	splitIps := strings.Split(ips, ",")
+	for _, ip := range splitIps {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			return ip, nil
+		}
+	}
+
+	//Get IP from RemoteAddr
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	Err(err)
+	netIP = net.ParseIP(ip)
+	if netIP != nil {
+		return ip, nil
+	}
+	return "", fmt.Errorf("Can't resolve client ip")
+}
+
+func GetLogin(r *http.Request, resp *map[string]interface{}) {
+	query := r.URL.Query()
+	params, ok := query["email"]
+	if !ok || len(params[0]) < 1 {
+		panic("email is not specified")
+	}
+	email := params[0]
+	params, ok = query["pass"]
+	if !ok || len(params[0]) < 1 {
+		panic("pass is not specified")
+	}
+	pass := params[0]
+	if len(pass) < 6 {
+		panic("Password is too weak, please use at least 6 characters")
+	}
+	ip, err := GetIP(r)
+	if err != nil {
+		panic(err)
+	}
+	token := GetTokenForConnection(email, pass, ip)
+
+	(*resp)["token"] = *token
+}
+
+func ProcessLogin(w http.ResponseWriter, r *http.Request) {
+	resp := map[string]interface{}{}
+	var err error
+
+	defer RecoverRequest(w)
+	switch r.Method {
+	case "GET":
+		GetLogin(r, &resp)
+	case "POST":
+	default:
+		err = fmt.Errorf("Only GET and POST methods are supported")
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -208,10 +253,18 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 		resp["error"] = fmt.Sprintf("Error: %s", err.Error())
 	}
 	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		log.Printf("Can't prepare response JSON, error: %s", err.Error())
-		jsonResp = []byte(`{"error": "Error happened in response JSON creation"`)
-	}
+	Err(err)
 	log.Printf("[RESP]: %s", jsonResp)
 	w.Write(jsonResp)
+}
+
+func RecoverRequest(w http.ResponseWriter) {
+	if r := recover(); r != nil {
+		debug.PrintStack()
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		response := fmt.Sprintf("{\"error\": \"%s\"}", r)
+		log.Printf("[RESP]: %s", response)
+		w.Write([]byte(response))
+	}
 }

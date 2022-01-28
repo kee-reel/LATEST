@@ -43,12 +43,13 @@ CREATE TABLE IF NOT EXISTS tokens (
 	id SERIAL PRIMARY KEY,
 	token VARCHAR(256) NOT NULL,
 	user_id INTEGER NOT NULL,
-	project_id INTEGER NOT NULL,
-	UNIQUE(token));
+	ip VARCHAR(15) NOT NULL,
+	UNIQUE(token),
+	UNIQUE(user_id, ip));
 
 CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,
 	email VARCHAR(128) NOT NULL,
-	nick VARCHAR(128) NOT NULL,
-	UNIQUE(email, nick));
+	pass VARCHAR(256) NOT NULL,
+	UNIQUE(email));
 

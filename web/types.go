@@ -39,9 +39,8 @@ type Task struct {
 }
 
 type Token struct {
-	Id      int
-	UserId  int
-	Project int
+	Id     int
+	UserId int
 }
 
 type Solution struct {

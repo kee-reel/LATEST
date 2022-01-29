@@ -9,14 +9,6 @@ services:
                         - 5432:5432
                 networks:
                         - internet
-                environment:
-                        - POSTGRES_DB=tasks
-                        - POSTGRES_USER=root
-                        - POSTGRES_PASSWORD=pass
-                        - APP_DB_USER=docker
-                        - APP_DB_PASS=docker
-                        - APP_DB_NAME=docker
-
         web:
                 ports: 
                         - 1234:1234
@@ -29,22 +21,6 @@ services:
                 networks:
                         - internet
                         - no-internet
-                environment:
-                        - DB_HOST=db
-                        - DB_PORT=5432
-                        - DB_USER=root
-                        - DB_PASS=pass
-                        - DB_NAME=tasks
-                        - WEB_ENTRY=/
-                        - WEB_HOST=0.0.0.0
-                        - WEB_PORT=1234
-                        - WEB_HTTP=true
-                        - WEB_CERT_FILE=
-                        - WEB_KEY_FILE=
-                        - RUNNER_HOST=runner
-                        - RUNNER_PORT=1337
-                        - RUNNER_VERBOSE=true
-                        - LOG_VERBOSE=true
         runner:
                 ports:
                         - 1337:1337
@@ -58,12 +34,6 @@ services:
                         - internet
                 stdin_open: true
                 tty: true
-                environment:
-                        - DB_HOST=db
-                        - DB_PORT=5432
-                        - DB_USER=root
-                        - DB_PASS=pass
-                        - DB_NAME=tasks
 
 networks:
         no-internet:

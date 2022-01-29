@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+        db:
+                environment:
+                        - POSTGRES_DB=tasks
+                        - POSTGRES_USER=root
+                        - POSTGRES_PASSWORD=pass
+                        - APP_DB_USER=docker
+                        - APP_DB_PASS=docker
+                        - APP_DB_NAME=docker
+
+        web:
+                environment:
+                        - DB_HOST=db
+                        - DB_PORT=5432
+                        - DB_USER=root
+                        - DB_PASS=pass
+                        - DB_NAME=tasks
+                        - WEB_ENTRY=/
+                        - WEB_HOST=0.0.0.0
+                        - WEB_PORT=1234
+                        - WEB_HTTP=true
+                        - RUNNER_HOST=runner
+                        - RUNNER_PORT=1337
+                        - RUNNER_VERBOSE=true
+                        - LOG_VERBOSE=true
+        manage:
+                environment:
+                        - DB_HOST=db
+                        - DB_PORT=5432
+                        - DB_USER=root
+                        - DB_PASS=pass
+                        - DB_NAME=tasks
+

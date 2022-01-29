@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+        db:
+                environment:
+                        - POSTGRES_DB=tasks
+                        - POSTGRES_USER=root
+                        - POSTGRES_PASSWORD=pass
+                        - APP_DB_USER=docker
+                        - APP_DB_PASS=docker
+                        - APP_DB_NAME=docker
+
+        web:
+                volumes:
+                        - /etc/letsencrypt:/etc/letsencrypt
+                environment:
+                        - DB_HOST=db
+                        - DB_PORT=5432
+                        - DB_USER=root
+                        - DB_PASS=pass
+                        - DB_NAME=tasks
+                        - WEB_ENTRY=/
+                        - WEB_HOST=0.0.0.0
+                        - WEB_PORT=1234
+                        - WEB_HTTP=false
+                        - WEB_CERT_FILE=/etc/letsencrypt/live/YOURSITE/fullchain.pem
+                        - WEB_KEY_FILE=/etc/letsencrypt/live/YOURSITE/privkey.pem
+                        - RUNNER_HOST=runner
+                        - RUNNER_PORT=1337
+                        - RUNNER_VERBOSE=true
+                        - LOG_VERBOSE=true
+        manage:
+                environment:
+                        - DB_HOST=db
+                        - DB_PORT=5432
+                        - DB_USER=root
+                        - DB_PASS=pass
+                        - DB_NAME=tasks
+

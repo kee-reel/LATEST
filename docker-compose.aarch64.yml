@@ -14,4 +14,4 @@ services:
                 build: 
                         context: manage
                         args:
-                                IMAGE: arm64v8/python
+                          IMAGE: ubuntu:latest

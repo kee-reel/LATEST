@@ -14,4 +14,4 @@ services:
                 build:
                         context: manage
                         args:
-                                IMAGE: matthewfeickert/docker-python3-ubuntu
+                          IMAGE: ubuntu:latest

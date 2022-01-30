@@ -209,7 +209,7 @@ func GetFailedSolutions(solution *Solution) (int, error) {
 	return count, nil
 }
 
-func GetTokenForConnection(email string, pass string, ip string) *string {
+func GetTokenForConnection(email string, pass string, ip string) (*string, error) {
 	db := OpenDB()
 	defer db.Close()
 
@@ -220,12 +220,18 @@ func GetTokenForConnection(email string, pass string, ip string) *string {
 	var hash string
 	err = query.QueryRow(email).Scan(&user_id, &hash)
 	if err == nil {
+		log.Printf("Pass: %s, hash: %s", pass, hash)
 		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
-		panic(fmt.Errorf("Wrong password"))
+		if err != nil {
+			return nil, fmt.Errorf("Wrong password")
+		}
 	} else {
 		hash_raw, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 		Err(err)
+
 		hash = string(hash_raw)
+		log.Printf("Pass: %s, New hash: %s", pass, hash)
+
 		query, err = db.Prepare("INSERT INTO users(email, pass) VALUES($1, $2) RETURNING id")
 		Err(err)
 		err = query.QueryRow(email, hash).Scan(&user_id)
@@ -238,18 +244,17 @@ func GetTokenForConnection(email string, pass string, ip string) *string {
 	var token string
 	err = query.QueryRow(user_id, ip).Scan(&token)
 	if err == nil {
-		return &token
+		return &token, nil
 	}
 
 	// If token not found, then generate new one
-	token = GenerateToken()
-	token = string(token)
+	token = string(GenerateToken())
 	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip) VALUES($1, $2, $3)`)
 	Err(err)
 	_, err = query.Exec(token, user_id, ip)
 	Err(err)
 
-	return &token
+	return &token, nil
 }
 
 func GetTokenData(token_str string) (*Token, error) {

@@ -1,6 +1,5 @@
 ARG IMAGE
 FROM $IMAGE
-WORKDIR /app
 
 USER root
 # Some images doesn't create docker user
@@ -10,10 +9,12 @@ WORKDIR $DIRPATH
 
 COPY requirements.txt .
 
+RUN apt update && apt upgrade -y 
+RUN apt install -y libpq-dev python3 python3-pip
+
 USER docker
 
 ENV PATH $PATH:/home/docker/.local/bin
-RUN python3 -m pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 COPY . .

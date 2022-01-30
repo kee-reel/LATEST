@@ -177,12 +177,12 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-func GetIP(r *http.Request) (string, error) {
+func GetIP(r *http.Request) string {
 	//Get IP from the X-REAL-IP header
 	ip := r.Header.Get("X-REAL-IP")
 	netIP := net.ParseIP(ip)
 	if netIP != nil {
-		return ip, nil
+		return ip
 	}
 
 	//Get IP from X-FORWARDED-FOR header
@@ -191,7 +191,7 @@ func GetIP(r *http.Request) (string, error) {
 	for _, ip := range splitIps {
 		netIP := net.ParseIP(ip)
 		if netIP != nil {
-			return ip, nil
+			return ip
 		}
 	}
 
@@ -200,33 +200,34 @@ func GetIP(r *http.Request) (string, error) {
 	Err(err)
 	netIP = net.ParseIP(ip)
 	if netIP != nil {
-		return ip, nil
+		return ip
 	}
-	return "", fmt.Errorf("Can't resolve client ip")
+	panic("Can't resolve client's ip")
 }
 
-func GetLogin(r *http.Request, resp *map[string]interface{}) {
+func GetLogin(r *http.Request, resp *map[string]interface{}) error {
 	query := r.URL.Query()
 	params, ok := query["email"]
 	if !ok || len(params[0]) < 1 {
-		panic("email is not specified")
+		return fmt.Errorf("email is not specified")
 	}
 	email := params[0]
 	params, ok = query["pass"]
 	if !ok || len(params[0]) < 1 {
-		panic("pass is not specified")
+		return fmt.Errorf("pass is not specified")
 	}
 	pass := params[0]
 	if len(pass) < 6 {
-		panic("Password is too weak, please use at least 6 characters")
+		return fmt.Errorf("Password is too weak, please use at least 6 characters")
 	}
-	ip, err := GetIP(r)
+	ip := GetIP(r)
+	token, err := GetTokenForConnection(email, pass, ip)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	token := GetTokenForConnection(email, pass, ip)
 
 	(*resp)["token"] = *token
+	return nil
 }
 
 func ProcessLogin(w http.ResponseWriter, r *http.Request) {
@@ -236,7 +237,7 @@ func ProcessLogin(w http.ResponseWriter, r *http.Request) {
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
-		GetLogin(r, &resp)
+		err = GetLogin(r, &resp)
 	case "POST":
 	default:
 		err = fmt.Errorf("Only GET and POST methods are supported")

@@ -26,8 +26,13 @@ Web service that allows to run tests for programms written in these languages:
 Get user token, that will be used in all other requests. New user will be created if "email" is unknown to server.
 
 ```bash
-curl https://DOMAIN/login?email=test@test.com&pass=123456
+curl -X GET https://DOMAIN/login?email=test@test.com\&pass=123456
 ```
+
+Query parameters:
+
+* email - login
+* pass - password (must be at least 6 symbols)
 
 Result example:
 
@@ -39,8 +44,12 @@ Result example:
 
 Returns data about all projects, units and tasks stored in database. To send solutions you need to pick id (key in "tasks") for according task.
 
+Query parameters:
+
+* token - token, returned on registration/login
+
 ```bash
-curl https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i
+curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i
 ```
 
 Result example:
@@ -137,7 +146,11 @@ Result example:
 
 Sends solution for specified task.
 
-Fields:
+Query parameters:
+
+* token - token, returned on registration/login
+
+Form fields:
 
 * task\_id - id of task
 * source\_text - text of task solution
@@ -147,7 +160,7 @@ Fields:
 > Either source\_text or source\_file must be specified
 
 ```bash
-curl https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i \
+curl -X POST https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i \
 	-F task_id=1 \
 	--form-string source_text='#include <stdio.h>
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \

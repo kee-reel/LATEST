@@ -19,7 +19,7 @@ Web service that allows to run tests for programms written in these languages:
 
 # TLDR; How to use
 
-## Requests to service
+## Request examples
 
 ### Registration/login
 

@@ -54,6 +54,9 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
 
 Result example:
 
+> is\_passed - is given tasks was passed by user.
+> Meaning of other fields could be found in chapter "Tests structure".
+
 ```json
 {
    "projects": {
@@ -89,6 +92,7 @@ Result example:
             }
          ],
          "is_passed": false,
+         "language": "py",
          "name": "Сложение",
          "number": 0,
          "output": "Результат сложения A и B",
@@ -99,6 +103,7 @@ Result example:
          "desc": "Вывести строку \"Hello world!\"",
          "input": [],
          "is_passed": false,
+         "language": "c",
          "name": "Hello world",
          "number": 0,
          "output": "Строка \"Hello world!\"",
@@ -121,6 +126,7 @@ Result example:
             }
          ],
          "is_passed": false,
+         "language": "c",
          "name": "Сложить нечётные, вычесть чётные",
          "number": 0,
          "output": "Результат сложения и вычитания чисел",

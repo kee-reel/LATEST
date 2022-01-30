@@ -123,6 +123,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 			"unit":      task.Unit.Id,
 			"name":      task.Name,
 			"desc":      task.Desc,
+			"language":      task.Extention,
 			"input":     task_input,
 			"output":    task.Output,
 			"is_passed": task.IsPassed,

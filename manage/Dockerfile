@@ -10,7 +10,9 @@ WORKDIR $DIRPATH
 COPY requirements.txt .
 
 RUN apt update && apt upgrade -y 
-RUN apt install -y libpq-dev python3 python3-pip
+RUN apt install -y libpq-dev python3 python3-pip git
+
+RUN mkdir tests && chown docker tests
 
 USER docker
 

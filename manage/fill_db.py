@@ -97,6 +97,7 @@ for t, paths in type_to_paths.items():
         data = json.loads(open(p, 'r', encoding='utf-8').read())
         id_ = globals().get(f'add_{t}')(cur, data, p, *folders_data)
         folders_to_id[folders] = id_
+        print(f'Add {p}')
 conn.commit()
 
 

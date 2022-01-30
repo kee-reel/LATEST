@@ -17,6 +17,179 @@ Web service that allows to run tests for programms written in these languages:
 
 * docker-compose
 
+# TLDR; How to use
+
+## Requests to service
+
+### Registration/login
+
+Get user token, that will be used in all other requests. New user will be created if "email" is unknown to server.
+
+```bash
+curl https://DOMAIN/login?email=test@test.com&pass=123456
+```
+
+Result example:
+
+```json
+{"token":"MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i"}
+```
+
+### Get available tasks
+
+Returns data about all projects, units and tasks stored in database. To send solutions you need to pick id (key in "tasks") for according task.
+
+```bash
+curl https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i
+```
+
+Result example:
+
+```json
+{
+   "projects": {
+      "1": {
+         "name": "Competition"
+      }
+   },
+   "tasks": {
+      "1": {
+         "desc": "Сложить два числа и вывести результат",
+         "input": [
+            {
+               "dimensions": [
+                  1
+               ],
+               "name": "A",
+               "range": [
+                  "-1000",
+                  "1000"
+               ],
+               "type": "int"
+            },
+            {
+               "dimensions": [
+                  1
+               ],
+               "name": "B",
+               "range": [
+                  "-1000",
+                  "1000"
+               ],
+               "type": "int"
+            }
+         ],
+         "is_passed": false,
+         "name": "Сложение",
+         "number": 0,
+         "output": "Результат сложения A и B",
+         "project": 1,
+         "unit": 1
+      },
+      "2": {
+         "desc": "Вывести строку \"Hello world!\"",
+         "input": [],
+         "is_passed": false,
+         "name": "Hello world",
+         "number": 0,
+         "output": "Строка \"Hello world!\"",
+         "project": 1,
+         "unit": 2
+      },
+      "3": {
+         "desc": "На вход даётся N чисел. Сложить между собой нечётные, вычесть из них чётные и вывести результат. Сначала на вход подаётся количество чисел, а затем сами числа.",
+         "input": [
+            {
+               "dimensions": [
+                  50
+               ],
+               "name": "A",
+               "range": [
+                  "-1000",
+                  "1000"
+               ],
+               "type": "int"
+            }
+         ],
+         "is_passed": false,
+         "name": "Сложить нечётные, вычесть чётные",
+         "number": 0,
+         "output": "Результат сложения и вычитания чисел",
+         "project": 1,
+         "unit": 3
+      }
+   },
+   "units": {
+      "1": {
+         "name": "Intro"
+      },
+      "2": {
+         "name": "Intro"
+      },
+      "3": {
+         "name": "Intro"
+      }
+   }
+}
+```
+
+### Send solution to testing
+
+Sends solution for specified task.
+
+Fields:
+
+* task\_id - id of task
+* source\_text - text of task solution
+* source\_file - file with task solution
+* verbose - expanded testing data will be returned ("false" by default)
+
+> Either source\_text or source\_file must be specified
+
+```bash
+curl https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i \
+	-F task_id=1 \
+	--form-string source_text='#include <stdio.h>
+int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
+	-F verbose=false
+```
+
+Result example (no errors):
+
+```json
+{"result":{"error":null}}
+```
+
+Result example (testing error):
+
+```json
+{"result":{"error":{"error":"not_equal","expected":"2","params":"1;1;","result":"3"},"fail_count":0}}
+```
+
+Result example (if verbose parameter set to "true", results and parameters of all tests is shown):
+
+```json
+{"result":{"error":null,"fail_count":0,"results":[{"params":"1;1;","result":"2"},{"params":"0;0;","result":"0"},{"params":"-1;1;","result":"0"},{"params":"10;10;","result":"20"},{"params":"20;-20;","result":"0"},{"params":"-100;-100;","result":"-200"},{"params":"347;-379;","result":"-32"},{"params":"-313;137;","result":"-176"},{"params":"-319;491;","result":"172"},{"params":"268;-819;","result":"-551"},{"params":"-296;-546;","result":"-842"},{"params":"435;-123;","result":"312"},{"params":"878;-621;","result":"257"},{"params":"110;79;","result":"189"},{"params":"546;330;","result":"876"},{"params":"533;786;","result":"1319"},{"params":"-45;535;","result":"490"},{"params":"439;973;","result":"1412"},{"params":"-615;561;","result":"-54"},{"params":"-958;-703;","result":"-1661"},{"params":"855;-408;","result":"447"},{"params":"767;-154;","result":"613"},{"params":"-413;278;","result":"-135"},{"params":"-461;23;","result":"-438"},{"params":"-425;913;","result":"488"},{"params":"142;656;","result":"798"},{"params":"-53;-950;","result":"-1003"},{"params":"-539;814;","result":"275"},{"params":"-229;-918;","result":"-1147"},{"params":"-619;56;","result":"-563"},{"params":"-736;151;","result":"-585"},{"params":"407;102;","result":"509"},{"params":"-789;544;","result":"-245"},{"params":"-238;668;","result":"430"},{"params":"742;-848;","result":"-106"},{"params":"129;-207;","result":"-78"}]}}
+```
+
+## Commands to start web server
+
+```bash
+git clone git@github.com:kee-reel/LATE.git late # Clone this repo
+cd late # Go inside
+
+./run-docker-compose.sh dev up -d # Run all containers in detached mode for dev environment
+
+# Get id of "manage" container and open interactive bash shell inside of it
+sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
+```
+
+Inside **manage** container:
+
+```bash
+./fill_db_with_test_data.sh # Fill database with sample project
+```
+
 # Architecture
 
 Service have 4 containers:
@@ -36,46 +209,6 @@ Service have 4 containers:
 	* Creating users
 	* Giving tokens to users, that's required to send any solutions for testing
 * 🗄 db - PostgreSQL container (postgres:latest)
-
-# How to use
-
-## TLDR; Commands for first start
-
-```bash
-git clone git@github.com:kee-reel/LATE.git late # Clone this repo
-cd late # Go inside
-
-sudo docker-compose up -d # Run all containers in detached mode
-
-# Get id of "manage" container and open interactive bash shell inside of it
-sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
-```
-
-Inside **manage** container:
-
-```bash
-# Stage 1 - preparing tests
-mkdir tests # Create tests folder
-cd tests # Go inside
-git clone https://github.com/kee-reel/late-sample-project # Clone sample project
-cd .. # Go back
-
-# Stage 2 - creating user and giving away token
-python3 fill_db.py # Fill database with sample project
-python3 create_user.py TestUser test@email.com # Create new user for testing
-python3 create_token.py test@email.com # Give token for test user
-
-# Stage 3 - usage (same code could be find in test_send.sh and test_post.sh)
-
-# GET example - get all available tasks
-curl http://web:1234?token=$(python3 get_test_token.py) # Send GET request 
-
-# POST example - test solution file
-curl -F token=$(python3 get_test_token.py) -F source_file=@tests/late-sample-project/unit-1/task-1/complete_solution.c -F task_id=3 -F verbose=true http://web:1234
-
-# POST example - test solution text (this solution won't pass tests)
-curl -F token=$(python3 get_test_token.py) -F source_text='print(4)' -F task_id=1 -F verbose=true http://web:1234
-```
 
 ## Tests structure
 
@@ -129,7 +262,7 @@ I have [repository](https://github.com/kee-reel/late-sample-project) with exampl
 You can easily start web service with docker-compose:
 
 ```bash
-$ docker-compose up # Add "-d" to run it in detached mode
+./run-docker-compose.sh dev up -d # Run all containers in detached mode for dev environment
 ```
 
 After that you can manage web server via **manage** container. To open interactive bash shell inside of **manage** run:
@@ -153,29 +286,6 @@ Test are ready, lets insert them into database and create new user:
 
 ```bash
 python3 fill_db.py # Fill database with sample project
-python3 create_user.py TestUser test@email.com # Create new user for testing
-python3 create_token.py test@email.com # Give token for test user
 ```
 
-All set, now we can try to send GET and POST requests to web server:
-
-```bash
-# GET example - get all available tasks
-curl http://web:1234?token=$(python3 get_test_token.py) # Send GET request 
-
-# POST example - test solution file
-curl -F token=$(python3 get_test_token.py) -F source_file=@tests/late-sample-project/unit-1/task-1/complete_solution.c -F task_id=3 -F verbose=true http://web:1234
-
-# POST example - test solution text (this solution won't pass tests)
-curl -F token=$(python3 get_test_token.py) -F source_text='print(4)' -F task_id=1 -F verbose=true http://web:1234
-```
-
-Scripts description:
-
-* `fill_db.py` - fills database with tasks, contained inside "tasks" folder
-* `create_admin.sh` - creates new user in database and gives token, that will be used to send solutions for tasks
-* `test_get.sh` - get tasks currently present inside database
-* `test_post.sh TASK_ID SOLUTION_FILE_PATH` - send solution for specific task (task id you can get from previos script)
-* `add_user.py NICK EMAIL` - add user into database
-* `create_token.py EMAIL PROJECT_ID` - give token to user
-
+All set, now we can try to send requests to web server.

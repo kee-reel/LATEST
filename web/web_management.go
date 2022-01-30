@@ -98,7 +98,6 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 		if !ok {
 			resp_units[task.Unit.Id] = map[string]interface{}{
 				"name":    task.Unit.Name,
-				"next_id": task.Unit.NextId,
 			}
 		}
 
@@ -120,8 +119,8 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 		}
 		resp_tasks[task.Id] = map[string]interface{}{
 			"number":    task.Position,
-			"project":   task.Project,
-			"unit":      task.Unit,
+			"project":   task.Project.Id,
+			"unit":      task.Unit.Id,
 			"name":      task.Name,
 			"desc":      task.Desc,
 			"input":     task_input,

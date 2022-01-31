@@ -29,7 +29,7 @@ func ParseSolution(r *http.Request) *Solution {
 	Err(err)
 	task_ids := make([]int, 1)
 	task_ids[0] = task_id
-	tasks, err := GetTasks(task_ids, token)
+	tasks, err := GetTasks(task_ids)
 	Err(err)
 
 	var solution Solution
@@ -75,19 +75,18 @@ func ParseSolution(r *http.Request) *Solution {
 }
 
 func GetSolution(r *http.Request, resp *map[string]interface{}) {
-	var err error
 	params, ok := r.URL.Query()["token"]
 	if !ok || len(params[0]) < 1 {
 		panic("Parameter 'token' not specified")
 	}
-	token, err := GetTokenData(params[0])
+	_, err := GetTokenData(params[0])
 	Err(err)
-	task_ids, err := GetTasksByToken(token)
+	task_ids, err := GetTaskIds()
 	Err(err)
 	if len(*task_ids) == 0 {
 		panic("No tasks were found")
 	}
-	tasks, err := GetTasks(*task_ids, token)
+	tasks, err := GetTasks(*task_ids)
 	Err(err)
 
 	resp_tasks := map[int]interface{}{}
@@ -97,7 +96,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 		_, ok := resp_units[task.Unit.Id]
 		if !ok {
 			resp_units[task.Unit.Id] = map[string]interface{}{
-				"name":    task.Unit.Name,
+				"name": task.Unit.Name,
 			}
 		}
 
@@ -123,7 +122,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 			"unit":      task.Unit.Id,
 			"name":      task.Name,
 			"desc":      task.Desc,
-			"language":      task.Extention,
+			"language":  task.Extention,
 			"input":     task_input,
 			"output":    task.Output,
 			"is_passed": task.IsPassed,

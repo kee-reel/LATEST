@@ -24,7 +24,7 @@ func OpenDB() *sql.DB {
 	return db
 }
 
-func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
+func GetTasks(tasks_id []int) (*[]Task, error) {
 	db := OpenDB()
 	defer db.Close()
 
@@ -66,12 +66,12 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 		err = json.Unmarshal(in_params_str, &task.Input)
 		Err(err)
 
-		query, err = db.Prepare(`SELECT COUNT(*) FROM solutions AS s 
-			WHERE s.token_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE`)
+		query, err = db.Prepare(`SELECT COUNT(*) FROM solutions AS s
+			WHERE s.task_id = $1 AND s.is_passed = TRUE`)
 		Err(err)
 
 		var passed_count int
-		err = query.QueryRow(token.Id, task_id).Scan(&passed_count)
+		err = query.QueryRow(task_id).Scan(&passed_count)
 		Err(err)
 		task.IsPassed = passed_count > 0
 
@@ -105,7 +105,7 @@ func GetTasks(tasks_id []int, token *Token) (*[]Task, error) {
 				int_range[1], _ = strconv.Atoi(param_range[1])
 				input.IntRange = &int_range
 			default:
-				panic(fmt.Sprint("Param type \"%s\" mot supported", param_type))
+				Err(fmt.Errorf("Param type \"%s\" mot supported", param_type))
 			}
 		}
 
@@ -130,7 +130,7 @@ func GetTaskTestData(task_id int) (*string, *string, error) {
 	return &source_code, &fixed_tests, nil
 }
 
-func GetTasksByToken(token *Token) (*[]int, error) {
+func GetTaskIds() (*[]int, error) {
 	db := OpenDB()
 	defer db.Close()
 	rows, err := db.Query(`SELECT t.id FROM tasks AS t`)
@@ -196,13 +196,13 @@ func GetFailedSolutions(solution *Solution) (int, error) {
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT COUNT(*) FROM solutions as s
-		WHERE s.token_id = $1 AND s.task_id = $2 AND s.is_passed = FALSE`)
+		WHERE s.task_id = $1 AND s.is_passed = FALSE`)
 	if err != nil {
 		return -1, err
 	}
 
 	var count int
-	err = query.QueryRow(solution.Token.Id, solution.Task.Id).Scan(&count)
+	err = query.QueryRow(solution.Task.Id).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

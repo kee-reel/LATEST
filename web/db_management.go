@@ -191,22 +191,18 @@ func SaveSolution(solution *Solution, is_passed bool) error {
 	return nil
 }
 
-func GetFailedSolutions(solution *Solution) (int, error) {
+func GetFailedSolutions(solution *Solution) int {
 	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT COUNT(*) FROM solutions as s
 		WHERE s.task_id = $1 AND s.is_passed = FALSE`)
-	if err != nil {
-		return -1, err
-	}
+	Err(err)
 
 	var count int
 	err = query.QueryRow(solution.Task.Id).Scan(&count)
-	if err != nil {
-		return -1, err
-	}
-	return count, nil
+	Err(err)
+	return count
 }
 
 func GetTokenForConnection(email string, pass string, ip string) (*string, error) {

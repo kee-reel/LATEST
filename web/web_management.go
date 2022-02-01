@@ -133,22 +133,15 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 	(*resp)["projects"] = resp_projects
 }
 
-func PostSolution(r *http.Request, resp *map[string]interface{}) error {
+func PostSolution(r *http.Request, resp *map[string]interface{}) {
 	solution := ParseSolution(r)
-	test_result, test_err := BuildAndTest(solution.Task, solution)
-	SaveSolution(solution, test_err == nil)
-	if test_result != nil {
-		fail_count, err := GetFailedSolutions(solution)
-		if err != nil {
-			log.Print(err)
-		}
+	test_result, is_passed := BuildAndTest(solution.Task, solution)
+	if is_passed {
+		fail_count := GetFailedSolutions(solution)
 		(*test_result)["fail_count"] = fail_count
 	}
-	if test_err != nil {
-		return test_err
-	}
-	(*resp)["result"] = *test_result
-	return nil
+	SaveSolution(solution, is_passed)
+	*resp = *test_result
 }
 
 func ProcessSolution(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +153,7 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		GetSolution(r, &resp)
 	case "POST":
-		err = PostSolution(r, &resp)
+		PostSolution(r, &resp)
 	default:
 		Err(fmt.Errorf("Only GET and POST methods are supported"))
 	}

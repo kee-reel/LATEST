@@ -48,7 +48,7 @@ func GenTestParam(test_data []string, param TaskParamData, start_index int) int 
 			test_data[i] = fmt.Sprintf(type_spec, value, delimiter)
 		}
 	default:
-		panic(fmt.Sprintf("Unknown parameter type: %s", param.Type))
+		Err(fmt.Errorf("Unknown parameter type: %s", param.Type))
 	}
 	return last_index
 }
@@ -84,11 +84,9 @@ func GenerateTests(task *Task) *string {
 	return &result
 }
 
-func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, error) {
+func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool) {
 	complete_solution_source, fixed_tests, err := GetTaskTestData(task.Id)
-	if err != nil {
-		panic(err)
-	}
+	Err(err)
 	random_tests := GenerateTests(task)
 
 	runner_url := fmt.Sprintf("http://%s:%s", Env("RUNNER_HOST"), Env("RUNNER_PORT"))
@@ -105,20 +103,14 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, erro
 		"extention":         {task.Extention},
 		"verbose":           {verbose_text},
 	})
-	if err != nil {
-		panic(err)
-	}
+	Err(err)
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
+	Err(err)
 
 	var test_result map[string]interface{}
 	err = json.Unmarshal([]byte(body), &test_result)
-	if err != nil {
-		return nil, fmt.Errorf("Internal error while running task %d.\n%s", task.Id, err.Error())
-	}
+	Err(err)
 
-	return &test_result, nil
+	return &test_result, test_result['error'] == nil
 }

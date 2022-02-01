@@ -62,7 +62,7 @@ def run_test():
     os.remove(comp_sol_fn_new)
     data = {'error': err}
     if results:
-        data['results'] = results
+        data['result'] = results
     return data
 
 app.run(host='0.0.0.0', port=1337)

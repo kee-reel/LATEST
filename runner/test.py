@@ -11,6 +11,8 @@ LANG_TO_EXEC = {
 
 
 def prepare_str(s):
+    if not s:
+        return s
     if s[-1] == '\n':
         s = s[:-1]
     try:

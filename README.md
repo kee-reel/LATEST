@@ -40,7 +40,8 @@ for _ in range(n):
 print(s) # Output addition result
 ```
 
-> Yes I know about command line arguments, but I've built it this way, so programms could be executed and tested as usual.
+> Yes I know about command line arguments, but I've built it this way, so programms still can be executed and tested manually as usual.
+> 
 > I don't consider that it's good idea to teach begginers in programming about command line arguments at first lesson.
 
 # Requirements

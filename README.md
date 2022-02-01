@@ -18,6 +18,19 @@ This testing system is "language agnostic" because:
 * All input parameters is passed via standard input
 * Result is received in specific format via standard output
 
+This is example of program for this testing system:
+
+```python
+n = int(input()) # Receive count
+s = 0
+for _ in range(n):
+    s += int(input()) # Receive numbers n times
+print(s) # Output addition result
+```
+
+> Yes I know about command line arguments, but I've built it this way, so programms could be executed and tested as usual.
+> I don't consider that it's good idea to teach begginers in programming about command line arguments at first lesson.
+
 # Requirements
 
 * docker-compose

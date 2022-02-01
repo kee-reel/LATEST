@@ -13,6 +13,11 @@ Web service that allows to run tests for programms written in these languages:
 * 🧪 If build succeeded, then solution is tested with various test cases
 * 📊 User receives test result
 
+This testing system is "language agnostic" because:
+
+* All input parameters is passed via standard input
+* Result is received in specific format via standard output
+
 # Requirements
 
 * docker-compose

@@ -50,7 +50,6 @@ def run(exec_cmd, sol, comp_sol, is_verbose, params=None):
     result = prepare_str(result)
     if expected != result:
         return None, {
-            'error': 'not_equal',
             'expected': expected,
             'result': result
         }

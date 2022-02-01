@@ -17,11 +17,26 @@ Web service that allows to run tests for programms written in these languages:
 
 * docker-compose
 
-# TLDR; How to use
+# Setup environment
 
-## Request examples
+```bash
+# Run all containers in detached mode for dev environment
+./run-docker-compose.sh dev up -d
 
-### Registration/login
+# Get id of "manage" container and open interactive bash shell inside of it
+sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
+```
+
+Inside **manage** container:
+
+```bash
+# Fill database with sample project, create user and run all available requests
+./test_service.sh
+```
+
+# Requests
+
+## Registration/login
 
 Get user token, that will be used in all other requests. New user will be created if "email" is unknown to server.
 
@@ -29,22 +44,22 @@ Get user token, that will be used in all other requests. New user will be create
 curl -X GET https://DOMAIN/login?email=test@test.com\&pass=123456
 ```
 
-Query parameters:
+### Query parameters:
 
 * email - login
 * pass - password (must be at least 6 symbols)
 
-Result example:
+### Result example:
 
 ```json
 {"token":"MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i"}
 ```
 
-### Get available tasks
+## Get available tasks
 
 Returns data about all projects, units and tasks stored in database. To send solutions you need to pick id (key in "tasks") for according task.
 
-Query parameters:
+### Query parameters:
 
 * token - token, returned on registration/login
 
@@ -52,7 +67,7 @@ Query parameters:
 curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlCw6tzHElSqxhV8P8F24w25yTlUHPpttJanfbsKaH2NMKVR1yu8YCm6nfstbNLcXCbQSfW6LowfeDoERJGwuEQr2UKJVYlBCzN9an5ndxPucz4sxWbEmAqbsNM38eAqHcQYjQqdu0icjwI7h9fi8CNSPTECzvxFbeeq9EonZgMTLmmXkWqb4I9wLupT80Avy3kQ6Xxkp9thcMLIRP9i
 ```
 
-Result example:
+### Result example:
 
 > is\_passed - is given tasks was passed by user.
 > Meaning of other fields could be found in chapter "Tests structure".
@@ -148,15 +163,15 @@ Result example:
 }
 ```
 
-### Send solution to testing
+## Send solution to testing
 
 Sends solution for specified task.
 
-Query parameters:
+### Query parameters:
 
 * token - token, returned on registration/login
 
-Form fields:
+### Form fields:
 
 * task\_id - id of task
 * source\_text - text of task solution
@@ -173,39 +188,28 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 	-F verbose=false
 ```
 
-Result example (no errors):
+### Result example - no errors:
 
 ```json
 {"error":null}
 ```
 
-Result example (testing error):
+### Result example - build error:
 
 ```json
-{"error":{"error":"not_equal","expected":"2","params":"1;1;","result":"3"},"fail_count":0}
+{"error":{"stage":"build","msg":"./uploads/solution_oK0y2aFu.c: In function ‘main’:\n./uploads/solution_oK0y2aFu.c:6:2: warning: implicit declaration of function ‘rintf’ [-Wimplicit-function-declaration]\n    6 |  rintf(\"%d\", a + 1 + b);\n      |  ^~~~~\n./uploads/solution_oK0y2aFu.c:6:2: warning: incompatible implicit declaration of built-in function ‘rintf’\n./uploads/solution_oK0y2aFu.c:2:1: note: include ‘<math.h>’ or provide a declaration of ‘rintf’\n    1 | #include <stdio.h>\n  +++ |+#include <math.h>\n    2 | int main()\n./uploads/solution_oK0y2aFu.c:6:8: error: incompatible type for argument 1 of ‘rintf’\n    6 |  rintf(\"%d\", a + 1 + b);\n      |        ^~~~\n      |        |\n      |        char *\n./uploads/solution_oK0y2aFu.c:6:8: note: expected ‘float’ but argument is of type ‘char *’\n./uploads/solution_oK0y2aFu.c:6:2: error: too many arguments to function ‘rintf’\n    6 |  rintf(\"%d\", a + 1 + b);\n      |  ^~~~~\n"},"fail_count":0}
 ```
 
-Result example (if verbose parameter set to "true", results and parameters of all tests is shown):
+### Result example - test error:
+
+```json
+{"error":{"stage":"test","expected":"2","params":"1;1;","result":"3"},"fail_count":0}
+```
+
+### Result example - verbose mode (verbose parameter set to "true"):
 
 ```json
 {"error":null,"fail_count":0,"result":[{"params":"1;1;","result":"2"},{"params":"0;0;","result":"0"},{"params":"-1;1;","result":"0"},{"params":"10;10;","result":"20"},{"params":"20;-20;","result":"0"},{"params":"-100;-100;","result":"-200"},{"params":"347;-379;","result":"-32"},{"params":"-313;137;","result":"-176"},{"params":"-319;491;","result":"172"},{"params":"268;-819;","result":"-551"},{"params":"-296;-546;","result":"-842"},{"params":"435;-123;","result":"312"},{"params":"878;-621;","result":"257"},{"params":"110;79;","result":"189"},{"params":"546;330;","result":"876"},{"params":"533;786;","result":"1319"},{"params":"-45;535;","result":"490"},{"params":"439;973;","result":"1412"},{"params":"-615;561;","result":"-54"},{"params":"-958;-703;","result":"-1661"},{"params":"855;-408;","result":"447"},{"params":"767;-154;","result":"613"},{"params":"-413;278;","result":"-135"},{"params":"-461;23;","result":"-438"},{"params":"-425;913;","result":"488"},{"params":"142;656;","result":"798"},{"params":"-53;-950;","result":"-1003"},{"params":"-539;814;","result":"275"},{"params":"-229;-918;","result":"-1147"},{"params":"-619;56;","result":"-563"},{"params":"-736;151;","result":"-585"},{"params":"407;102;","result":"509"},{"params":"-789;544;","result":"-245"},{"params":"-238;668;","result":"430"},{"params":"742;-848;","result":"-106"},{"params":"129;-207;","result":"-78"}]}
-```
-
-## Commands to start web server
-
-```bash
-# Run all containers in detached mode for dev environment
-./run-docker-compose.sh dev up -d
-
-# Get id of "manage" container and open interactive bash shell inside of it
-sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
-```
-
-Inside **manage** container:
-
-```bash
-# Fill database with sample project and run all available requests
-./test_service.sh
 ```
 
 # Architecture

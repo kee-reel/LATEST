@@ -176,28 +176,26 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 Result example (no errors):
 
 ```json
-{"result":{"error":null}}
+{"error":null}
 ```
 
 Result example (testing error):
 
 ```json
-{"result":{"error":{"error":"not_equal","expected":"2","params":"1;1;","result":"3"},"fail_count":0}}
+{"error":{"error":"not_equal","expected":"2","params":"1;1;","result":"3"},"fail_count":0}
 ```
 
 Result example (if verbose parameter set to "true", results and parameters of all tests is shown):
 
 ```json
-{"result":{"error":null,"fail_count":0,"results":[{"params":"1;1;","result":"2"},{"params":"0;0;","result":"0"},{"params":"-1;1;","result":"0"},{"params":"10;10;","result":"20"},{"params":"20;-20;","result":"0"},{"params":"-100;-100;","result":"-200"},{"params":"347;-379;","result":"-32"},{"params":"-313;137;","result":"-176"},{"params":"-319;491;","result":"172"},{"params":"268;-819;","result":"-551"},{"params":"-296;-546;","result":"-842"},{"params":"435;-123;","result":"312"},{"params":"878;-621;","result":"257"},{"params":"110;79;","result":"189"},{"params":"546;330;","result":"876"},{"params":"533;786;","result":"1319"},{"params":"-45;535;","result":"490"},{"params":"439;973;","result":"1412"},{"params":"-615;561;","result":"-54"},{"params":"-958;-703;","result":"-1661"},{"params":"855;-408;","result":"447"},{"params":"767;-154;","result":"613"},{"params":"-413;278;","result":"-135"},{"params":"-461;23;","result":"-438"},{"params":"-425;913;","result":"488"},{"params":"142;656;","result":"798"},{"params":"-53;-950;","result":"-1003"},{"params":"-539;814;","result":"275"},{"params":"-229;-918;","result":"-1147"},{"params":"-619;56;","result":"-563"},{"params":"-736;151;","result":"-585"},{"params":"407;102;","result":"509"},{"params":"-789;544;","result":"-245"},{"params":"-238;668;","result":"430"},{"params":"742;-848;","result":"-106"},{"params":"129;-207;","result":"-78"}]}}
+{"error":null,"fail_count":0,"result":[{"params":"1;1;","result":"2"},{"params":"0;0;","result":"0"},{"params":"-1;1;","result":"0"},{"params":"10;10;","result":"20"},{"params":"20;-20;","result":"0"},{"params":"-100;-100;","result":"-200"},{"params":"347;-379;","result":"-32"},{"params":"-313;137;","result":"-176"},{"params":"-319;491;","result":"172"},{"params":"268;-819;","result":"-551"},{"params":"-296;-546;","result":"-842"},{"params":"435;-123;","result":"312"},{"params":"878;-621;","result":"257"},{"params":"110;79;","result":"189"},{"params":"546;330;","result":"876"},{"params":"533;786;","result":"1319"},{"params":"-45;535;","result":"490"},{"params":"439;973;","result":"1412"},{"params":"-615;561;","result":"-54"},{"params":"-958;-703;","result":"-1661"},{"params":"855;-408;","result":"447"},{"params":"767;-154;","result":"613"},{"params":"-413;278;","result":"-135"},{"params":"-461;23;","result":"-438"},{"params":"-425;913;","result":"488"},{"params":"142;656;","result":"798"},{"params":"-53;-950;","result":"-1003"},{"params":"-539;814;","result":"275"},{"params":"-229;-918;","result":"-1147"},{"params":"-619;56;","result":"-563"},{"params":"-736;151;","result":"-585"},{"params":"407;102;","result":"509"},{"params":"-789;544;","result":"-245"},{"params":"-238;668;","result":"430"},{"params":"742;-848;","result":"-106"},{"params":"129;-207;","result":"-78"}]}
 ```
 
 ## Commands to start web server
 
 ```bash
-git clone git@github.com:kee-reel/LATE.git late # Clone this repo
-cd late # Go inside
-
-./run-docker-compose.sh dev up -d # Run all containers in detached mode for dev environment
+# Run all containers in detached mode for dev environment
+./run-docker-compose.sh dev up -d
 
 # Get id of "manage" container and open interactive bash shell inside of it
 sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
@@ -206,7 +204,8 @@ sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
 Inside **manage** container:
 
 ```bash
-./fill_db_with_test_data.sh # Fill database with sample project
+# Fill database with sample project and run all available requests
+./test_service.sh
 ```
 
 # Architecture
@@ -307,4 +306,4 @@ Test are ready, lets insert them into database and create new user:
 python3 fill_db.py # Fill database with sample project
 ```
 
-All set, now we can try to send requests to web server.
+All set, now we can try to send requests to web server. You can check request examples in [/manage/test\_service.sh](/manage/test_service.sh).

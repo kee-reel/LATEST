@@ -54,13 +54,15 @@ def run_test():
         os.remove(sol_fn)
         os.remove(comp_sol_fn)
     if err:
+        err['stage'] = 'build'
         return {'error': err}
 
     results, err = test_solution(sol_fn_new, comp_sol_fn_new, tests, is_verbose)
-
     os.remove(sol_fn_new)
     os.remove(comp_sol_fn_new)
     data = {'error': err}
+    if err:
+        err['stage'] = 'test'
     if results:
         data['result'] = results
     return data

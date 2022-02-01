@@ -12,7 +12,7 @@ def execute(cmd):
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=3, check=True)
         return p.stdout, None
     except subprocess.CalledProcessError as e:
-        return e.stdout, e.stderr
+        return e.stdout, {'msg': e.stderr}
 
 
 def build_solution(solution, complete_solution):

@@ -256,11 +256,11 @@ func GetTokenForConnection(email string, pass string, ip string) (*string, error
 func GetTokenData(token_str string) (*Token, error) {
 	if len(token_str) == 0 {
 		log.Print("No token received")
-		return nil, fmt.Errorf("Токен доступа не указан")
+		return nil, fmt.Errorf("Token not specified")
 	}
 	if len(token_str) != token_len {
 		log.Print("Received malformed token")
-		return nil, fmt.Errorf("Неизвестный токен доступа")
+		return nil, fmt.Errorf("Unknown token")
 	}
 	db := OpenDB()
 	defer db.Close()
@@ -268,13 +268,13 @@ func GetTokenData(token_str string) (*Token, error) {
 	query, err := db.Prepare(`SELECT t.id, t.user_id FROM tokens as t WHERE t.token = $1`)
 	if err != nil {
 		log.Printf("db error on prepare: %s", err)
-		return nil, fmt.Errorf("Неизвестный токен доступа")
+		return nil, fmt.Errorf("Unknown token")
 	}
 	var token Token
 	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
-		return nil, fmt.Errorf("Неизвестный токен доступа")
+		return nil, fmt.Errorf("Unknown token")
 	}
 	return &token, nil
 }

@@ -15,22 +15,36 @@ import (
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
-func ParseSolution(r *http.Request) *Solution {
+func GetTokenFromRequest(r *http.Request) (*Token, error) {
+	params, ok := r.URL.Query()["token"]
+	if !ok || len(params[0]) < 1 {
+		return nil, fmt.Errorf("Token not specified")
+	}
+	return GetTokenData(params[0])
+}
+
+func ParseSolution(r *http.Request) (*Solution, error) {
 	err := r.ParseMultipartForm(32 << 20)
-	Err(err)
-	token_str := r.FormValue("token")
-	token, err := GetTokenData(token_str)
-	Err(err)
+	token, err := GetTokenFromRequest(r)
+	if err != nil {
+		return nil, err
+	}
 	task_id_str := r.FormValue("task_id")
 	if len(task_id_str) == 0 {
-		panic("Task id is not specified")
+		return nil, fmt.Errorf("Task id is not specified")
 	}
 	task_id, err := strconv.Atoi(task_id_str)
-	Err(err)
+	if err != nil {
+		print(err)
+		return nil, fmt.Errorf("Task id must be number")
+	}
 	task_ids := make([]int, 1)
 	task_ids[0] = task_id
 	tasks, err := GetTasks(task_ids)
 	Err(err)
+	if len(*tasks) == 0 {
+		return nil, fmt.Errorf("Task not found")
+	}
 
 	var solution Solution
 	task := (*tasks)[0]
@@ -42,7 +56,7 @@ func ParseSolution(r *http.Request) *Solution {
 	} else {
 		file, _, err := r.FormFile("source_file")
 		if err != nil {
-			panic("No solution file or text provided")
+			return nil, fmt.Errorf("No solution file or text provided")
 		}
 		raw_data, err := ioutil.ReadAll(file)
 		Err(err)
@@ -51,19 +65,19 @@ func ParseSolution(r *http.Request) *Solution {
 	}
 
 	if len(*solution_text) > 50000 {
-		panic("Solution is too big")
+		return nil, fmt.Errorf("Solution is too big")
 	}
 
 	solution.Source = *solution_text
 	solution.TestCases = r.FormValue("test_cases")
 	if len(solution.TestCases) > 50000 {
-		panic("Test cases string is too big")
+		return nil, fmt.Errorf("Test cases string is too big")
 	}
 	if len(solution.TestCases) > 0 {
 		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
 		matches := user_tests_re.MatchString(solution.TestCases)
 		if !matches {
-			panic("Test cases string have incorrect format")
+			return nil, fmt.Errorf("Test cases string have incorrect format")
 		}
 	}
 
@@ -71,23 +85,24 @@ func ParseSolution(r *http.Request) *Solution {
 	solution.Token = token
 	solution.IsVerbose = r.FormValue("verbose") == "true"
 
-	return &solution
+	return &solution, nil
 }
 
-func GetSolution(r *http.Request, resp *map[string]interface{}) {
-	params, ok := r.URL.Query()["token"]
-	if !ok || len(params[0]) < 1 {
-		panic("Parameter 'token' not specified")
+func GetSolution(r *http.Request, resp *map[string]interface{}) error {
+	_, err := GetTokenFromRequest(r)
+	if err != nil {
+		return err
 	}
-	_, err := GetTokenData(params[0])
-	Err(err)
 	task_ids, err := GetTaskIds()
 	Err(err)
 	if len(*task_ids) == 0 {
-		panic("No tasks were found")
+		return fmt.Errorf("No tasks were found")
 	}
 	tasks, err := GetTasks(*task_ids)
 	Err(err)
+	if len(*tasks) == 0 {
+		return fmt.Errorf("No tasks were found")
+	}
 
 	resp_tasks := map[int]interface{}{}
 	resp_units := map[int]interface{}{}
@@ -131,10 +146,14 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) {
 	(*resp)["tasks"] = resp_tasks
 	(*resp)["units"] = resp_units
 	(*resp)["projects"] = resp_projects
+	return nil
 }
 
-func PostSolution(r *http.Request, resp *map[string]interface{}) {
-	solution := ParseSolution(r)
+func PostSolution(r *http.Request, resp *map[string]interface{}) error {
+	solution, err := ParseSolution(r)
+	if err != nil {
+		return err
+	}
 	test_result, is_passed := BuildAndTest(solution.Task, solution)
 	if is_passed {
 		fail_count := GetFailedSolutions(solution)
@@ -142,6 +161,7 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) {
 	}
 	SaveSolution(solution, is_passed)
 	*resp = *test_result
+	return nil
 }
 
 func ProcessSolution(w http.ResponseWriter, r *http.Request) {
@@ -151,9 +171,9 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
-		GetSolution(r, &resp)
+		err = GetSolution(r, &resp)
 	case "POST":
-		PostSolution(r, &resp)
+		err = PostSolution(r, &resp)
 	default:
 		Err(fmt.Errorf("Only GET and POST methods are supported"))
 	}

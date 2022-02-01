@@ -112,5 +112,5 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool
 	err = json.Unmarshal([]byte(body), &test_result)
 	Err(err)
 
-	return &test_result, test_result['error'] == nil
+	return &test_result, test_result["error"] == nil
 }

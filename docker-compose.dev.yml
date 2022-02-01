@@ -27,6 +27,9 @@ services:
                         - LOG_VERBOSE=true
         manage:
                 environment:
+                        - WEB_ENTRY=/
+                        - WEB_HOST=web
+                        - WEB_PORT=1234
                         - DB_HOST=db
                         - DB_PORT=5432
                         - DB_USER=root

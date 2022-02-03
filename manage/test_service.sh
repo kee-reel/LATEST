@@ -7,19 +7,25 @@ if [[ -z "$(ls tests)" ]]; then
 	python3 fill_db.py
 fi
 
-DOMAIN=$WEB_HOST:$WEB_PORT$WEB_ENTRY
-TOKEN=$(curl -s http://${DOMAIN}login?email=test@test.com\&pass=123456 | grep -Po '[\w\d]{256}')
+DOMAIN=http$(if [[ "$WEB_HTTP" == 'false' ]]; then echo s; fi)://$WEB_HOST:$WEB_PORT$WEB_ENTRY
+echo "Testing $DOMAIN"
+
+TOKEN=$(curl -s ${DOMAIN}login?email=test@test.com\&pass=123456 | grep -Po '[\w\d]{256}')
 
 echo "Token: $TOKEN
 ===
 Existing tasks:"
-curl -X GET http://$DOMAIN?token=$TOKEN
+TASKS=$(curl -X GET $DOMAIN?token=$TOKEN)
+echo $TASKS
+
+TASK_ID=$(echo $TASKS | jq '.tasks | keys[1]' | tr -d '"')
+echo "Test task $TASK_ID"
 
 echo '
 ===
 Post solution:'
-curl -X POST http://$DOMAIN?token=$TOKEN \
-	-F task_id=2 \
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 	-F verbose=false
@@ -27,8 +33,8 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 echo '
 ===
 Post wrong solution:'
-curl -X POST http://$DOMAIN?token=$TOKEN \
-	-F task_id=2 \
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+1+b);}' \
 	-F verbose=false
@@ -36,8 +42,8 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+1+b);}' \
 echo '
 ===
 Post malformed solution:'
-curl -X POST http://$DOMAIN?token=$TOKEN \
-	-F task_id=2 \
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
 	--form-string source_text='#include <stdio.h> 
 int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}' \
 	-F verbose=false
@@ -45,8 +51,8 @@ int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}' \
 echo '
 ===
 Post solution with verbose flag:'
-curl -X POST http://$DOMAIN?token=$TOKEN \
-	-F task_id=2 \
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 	-F verbose=true

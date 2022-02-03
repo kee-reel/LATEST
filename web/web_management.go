@@ -112,6 +112,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		if !ok {
 			resp_units[task.Unit.Id] = map[string]interface{}{
 				"name": task.Unit.Name,
+				"folder_name": task.Unit.FolderName,
 			}
 		}
 
@@ -119,6 +120,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		if !ok {
 			resp_projects[task.Project.Id] = map[string]interface{}{
 				"name": task.Project.Name,
+				"folder_name": task.Project.FolderName,
 			}
 		}
 
@@ -136,6 +138,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 			"project":   task.Project.Id,
 			"unit":      task.Unit.Id,
 			"name":      task.Name,
+			"folder_name": task.FolderName,
 			"desc":      task.Desc,
 			"language":  task.Extention,
 			"input":     task_input,

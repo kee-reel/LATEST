@@ -30,6 +30,7 @@ services:
                         - WEB_ENTRY=/
                         - WEB_HOST=web
                         - WEB_PORT=1234
+                        - WEB_HTTP=true
                         - DB_HOST=db
                         - DB_PORT=5432
                         - DB_USER=root

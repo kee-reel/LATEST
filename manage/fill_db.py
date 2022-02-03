@@ -81,7 +81,9 @@ cur = conn.cursor()
 type_to_paths = OrderedDict()
 expansion = '/*'
 for t in ('project', 'unit', 'task'):
-    type_to_paths[t] = glob(f'tests{expansion}/desc.json')
+    paths = glob(f'tests{expansion}/desc.json')
+    paths.sort()
+    type_to_paths[t] = paths
     expansion += '/*'
 
 folders_to_id = {}

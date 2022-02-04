@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -88,22 +86,7 @@ func ParseSolution(r *http.Request) (*Solution, error) {
 	return &solution, nil
 }
 
-func GetSolution(r *http.Request, resp *map[string]interface{}) error {
-	_, err := GetTokenFromRequest(r)
-	if err != nil {
-		return err
-	}
-	task_ids, err := GetTaskIds()
-	Err(err)
-	if len(*task_ids) == 0 {
-		return fmt.Errorf("No tasks were found")
-	}
-	tasks, err := GetTasks(*task_ids)
-	Err(err)
-	if len(*tasks) == 0 {
-		return fmt.Errorf("No tasks were found")
-	}
-
+func FillResponse(tasks *[]Task, resp *map[string]interface{}) {
 	resp_tasks := map[int]interface{}{}
 	resp_units := map[int]interface{}{}
 	resp_projects := map[int]interface{}{}
@@ -149,6 +132,78 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	(*resp)["tasks"] = resp_tasks
 	(*resp)["units"] = resp_units
 	(*resp)["projects"] = resp_projects
+}
+
+func FillResponseFolders(tasks *[]Task, resp *map[string]interface{}) {
+	for _, task := range *tasks {
+		project, ok := (*resp)[task.Project.FolderName].(map[string]interface{})
+		if !ok {
+			project = map[string]interface{}{
+				"id": task.Project.Id,
+				"name": task.Project.Name,
+				"units": map[string]interface{}{},
+			}
+			(*resp)[task.Project.FolderName] = project
+		}
+
+		unit, ok := project["units"].(map[string]interface{})[task.Unit.FolderName].(map[string]interface{})
+		if !ok {
+			unit = map[string]interface{}{
+				"id": task.Unit.Id,
+				"name": task.Unit.Name,
+				"tasks": map[string]interface{}{},
+			}
+			project["units"].(map[string]interface{})[task.Unit.FolderName] = unit
+		}
+
+		task_input := []map[string]interface{}{}
+		for _, input := range task.Input {
+			task_input = append(task_input, map[string]interface{}{
+				"name":       input.Name,
+				"type":       input.Type,
+				"dimensions": input.Dimensions,
+				"range":      input.Range,
+			})
+		}
+		unit["tasks"].(map[string]interface{})[task.FolderName] = map[string]interface{}{
+			"id": task.Id,
+			"number":    task.Position,
+			"name":      task.Name,
+			"desc":      task.Desc,
+			"language":  task.Extention,
+			"input":     task_input,
+			"output":    task.Output,
+			"is_passed": task.IsPassed,
+		}
+	}
+}
+
+func GetSolution(r *http.Request, resp *map[string]interface{}) error {
+	_, err := GetTokenFromRequest(r)
+	if err != nil {
+		return err
+	}
+	task_ids, err := GetTaskIds()
+	Err(err)
+	if len(*task_ids) == 0 {
+		return fmt.Errorf("No tasks were found")
+	}
+
+	query := r.URL.Query()
+	params, ok := query["folders"]
+	is_folder_structure := ok && len(params[0]) >= 1 && params[0] == "true";
+
+	tasks, err := GetTasks(*task_ids)
+	Err(err)
+	if len(*tasks) == 0 {
+		return fmt.Errorf("No tasks were found")
+	}
+
+	if is_folder_structure {
+		FillResponseFolders(tasks, resp);
+	} else {
+		FillResponse(tasks, resp);
+	}
 	return nil
 }
 
@@ -165,59 +220,6 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) error {
 	SaveSolution(solution, is_passed)
 	*resp = *test_result
 	return nil
-}
-
-func ProcessSolution(w http.ResponseWriter, r *http.Request) {
-	resp := map[string]interface{}{}
-	var err error
-
-	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		err = GetSolution(r, &resp)
-	case "POST":
-		err = PostSolution(r, &resp)
-	default:
-		Err(fmt.Errorf("Only GET and POST methods are supported"))
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		resp["error"] = fmt.Sprintf("Error: %s", err.Error())
-	}
-	jsonResp, err := json.Marshal(resp)
-	Err(err)
-	log.Printf("[RESP]: %s", jsonResp)
-	w.Write(jsonResp)
-}
-
-func GetIP(r *http.Request) string {
-	//Get IP from the X-REAL-IP header
-	ip := r.Header.Get("X-REAL-IP")
-	netIP := net.ParseIP(ip)
-	if netIP != nil {
-		return ip
-	}
-
-	//Get IP from X-FORWARDED-FOR header
-	ips := r.Header.Get("X-FORWARDED-FOR")
-	splitIps := strings.Split(ips, ",")
-	for _, ip := range splitIps {
-		netIP := net.ParseIP(ip)
-		if netIP != nil {
-			return ip
-		}
-	}
-
-	//Get IP from RemoteAddr
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	Err(err)
-	netIP = net.ParseIP(ip)
-	if netIP != nil {
-		return ip
-	}
-	panic("Can't resolve client's ip")
 }
 
 func GetLogin(r *http.Request, resp *map[string]interface{}) error {
@@ -245,19 +247,47 @@ func GetLogin(r *http.Request, resp *map[string]interface{}) error {
 	return nil
 }
 
-func ProcessLogin(w http.ResponseWriter, r *http.Request) {
+func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{}
-	var err error
-
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
-		err = GetLogin(r, &resp)
+		err := GetSolution(r, &resp)
 	case "POST":
+		err := PostSolution(r, &resp)
 	default:
-		err = fmt.Errorf("Only GET and POST methods are supported")
+		Err(fmt.Errorf("Unsupported method"))
 	}
 
+	HandleResponse(w, &resp, err)
+}
+
+func ProcessLogin(w http.ResponseWriter, r *http.Request) {
+	resp := map[string]interface{}{}
+	defer RecoverRequest(w)
+	switch r.Method {
+	case "GET":
+		err := GetLogin(r, &resp)
+	default:
+		Err(fmt.Errorf("Unsupported method"))
+	}
+
+	HandleResponse(w, &resp, err)
+}
+
+func ProcessTemplate(w http.ResponseWriter, r *http.Request) {
+	resp := map[string]interface{}{}
+	defer RecoverRequest(w)
+	switch r.Method {
+	case "GET":
+		err := GetLogin(r, &resp)
+	default:
+		Err(fmt.Errorf("Unsupported method"))
+	}
+	HandleResponse(w, &resp, err)
+}
+
+func HandleResponse(w http.ResponseWriter, resp *map[string]interface{}, err error) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {

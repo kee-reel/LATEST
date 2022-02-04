@@ -28,10 +28,10 @@ func GetTasks(tasks_id []int) (*[]Task, error) {
 	db := OpenDB()
 	defer db.Close()
 
-	var tasks []Task
+	tasks := make([]Task, len(tasks_id))
 	units := map[int]*Unit{}
 	projects := map[int]*Project{}
-	for _, task_id := range tasks_id {
+	for task_index, task_id := range tasks_id {
 		query, err := db.Prepare(`SELECT t.project_id, t.unit_id, t.position, t.extention, t.folder_name,
 			t.name, t.description, t.input, t.output
 			FROM tasks AS t
@@ -110,7 +110,7 @@ func GetTasks(tasks_id []int) (*[]Task, error) {
 		}
 
 		task.Id = task_id
-		tasks = append(tasks, task)
+		tasks[task_index] = task
 	}
 
 	return &tasks, nil
@@ -163,11 +163,11 @@ func GetProject(project_id int) (*Project, error) {
 func GetUnit(unit_id int) (*Unit, error) {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`SELECT w.name, w.next_unit_id, w.folder_name FROM units AS w WHERE w.id = $1`)
+	query, err := db.Prepare(`SELECT u.name, u.project_id, u.folder_name FROM units AS u WHERE u.id = $1`)
 	Err(err)
 
 	var unit Unit
-	err = query.QueryRow(unit_id).Scan(&unit.Name, &unit.NextId, &unit.FolderName)
+	err = query.QueryRow(unit_id).Scan(&unit.Name, &unit.ProjectId, &unit.FolderName)
 	Err(err)
 	unit.Id = unit_id
 	return &unit, nil

@@ -18,7 +18,7 @@ type Project struct {
 
 type Unit struct {
 	Id         int
-	NextId     *int
+	ProjectId int
 	Name       string
 	FolderName string
 }

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"net"
+	"strings"
+	"net/http"
 	"crypto/rand"
 	"fmt"
 	"log"
@@ -36,4 +39,32 @@ func ErrMsg(err error, msg string) {
 		log.Printf("[ERROR] %s", err)
 		panic(fmt.Errorf(msg))
 	}
+}
+
+func GetIP(r *http.Request) string {
+	//Get IP from the X-REAL-IP header
+	ip := r.Header.Get("X-REAL-IP")
+	netIP := net.ParseIP(ip)
+	if netIP != nil {
+		return ip
+	}
+
+	//Get IP from X-FORWARDED-FOR header
+	ips := r.Header.Get("X-FORWARDED-FOR")
+	splitIps := strings.Split(ips, ",")
+	for _, ip := range splitIps {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			return ip
+		}
+	}
+
+	//Get IP from RemoteAddr
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	Err(err)
+	netIP = net.ParseIP(ip)
+	if netIP != nil {
+		return ip
+	}
+	panic("Can't resolve client's ip")
 }

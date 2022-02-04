@@ -27,6 +27,7 @@ services:
                 networks:
                         - no-internet
         manage:
+                build: ./manage
                 links:
                         - web
                         - db

@@ -1,5 +1,5 @@
 ARG IMAGE
-FROM $IMAGE
+FROM ubuntu:latest
 
 USER root
 # Some images doesn't create docker user

@@ -13,7 +13,12 @@ var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
 func ParseSolution(r *http.Request) (*Solution, error) {
 	err := r.ParseMultipartForm(32 << 20)
-	token, err := GetTokenFromRequest(r)
+	params, ok := r.URL.Query()["token"]
+	if !ok || len(params[0]) < 1 {
+		return nil, fmt.Errorf("Token not specified")
+	}
+	ip := GetIP(r)
+	token, err := GetTokenData(params[0], ip)
 	if err != nil {
 		return nil, err
 	}
@@ -169,18 +174,25 @@ func FillResponseFolders(tasks *[]Task, resp *map[string]interface{}) {
 }
 
 func GetSolution(r *http.Request, resp *map[string]interface{}) error {
-	_, err := GetTokenFromRequest(r)
+	query := r.URL.Query()
+
+	params, ok := query["token"]
+	if !ok || len(params[0]) < 1 {
+		return fmt.Errorf("Token not specified")
+	}
+	ip := GetIP(r)
+	_, err := GetTokenData(params[0], ip)
 	if err != nil {
 		return err
 	}
+
 	task_ids, err := GetTaskIds()
 	Err(err)
 	if len(*task_ids) == 0 {
 		return fmt.Errorf("No tasks were found")
 	}
 
-	query := r.URL.Query()
-	params, ok := query["folders"]
+	params, ok = query["folders"]
 	is_folder_structure := ok && len(params[0]) >= 1 && params[0] == "true"
 
 	tasks, err := GetTasks(*task_ids)

@@ -10,8 +10,3 @@ services:
                         context: runner
                         args:
                                 IMAGE: arm64v8/python
-        manage:
-                build: 
-                        context: manage
-                        args:
-                          IMAGE: ubuntu:latest

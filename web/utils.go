@@ -27,15 +27,6 @@ func GenerateToken() string {
 	return string(token_raw)
 }
 
-func GetTokenFromRequest(r *http.Request) (*Token, error) {
-	params, ok := r.URL.Query()["token"]
-	if !ok || len(params[0]) < 1 {
-		return nil, fmt.Errorf("Token not specified")
-	}
-	ip := GetIP(r)
-	return GetTokenData(params[0], ip)
-}
-
 func Err(err error) {
 	if err != nil {
 		log.Printf("[ERROR] %s", err)

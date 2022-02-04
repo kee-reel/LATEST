@@ -269,6 +269,7 @@ func GetTokenForConnection(email string, pass string, ip string) (*string, error
 }
 
 func GetTokenData(token_str string, ip string) (*Token, error) {
+	log.Print(token_str, ip)
 	if len(token_str) == 0 {
 		log.Print("No token received")
 		return nil, fmt.Errorf("Token not specified")
@@ -287,7 +288,7 @@ func GetTokenData(token_str string, ip string) (*Token, error) {
 	}
 	var token Token
 	var ip_from_db string
-	err = query.QueryRow(token_str).Scan(&token.Id, &ip_from_db, &token.UserId)
+	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId, &ip_from_db)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
 		return nil, fmt.Errorf("Unknown token")

@@ -109,17 +109,24 @@ Tests is organized this way:
 	* "position" - position inside unit when it will be presented to user
 	* "desc" - text description that will help user to understant given task
 	* "input" - format of input data for program
+		* "name" - name of input parameter
+		* "type" - type of passed values
+		* "range" - range (from min to max) in which values for random tests will be generated
+		* "dimensions" - if this field is not specified, then it is just single value, if value specified - it is specification of array size and dimensions. Each value specifies size of dimension. Examples:
+			* [50] - programm could receive array from 1 up to 50 elements (size will be randomly generated in each test)
+			* [10, 5] - matrix 10x5 (each size for each dimension will be generated randomly in range [1,10]x[1,5])
+			* [3, 0] - if zero is specified, size will be the same as previous one (in given example, possible sizes for matrix are 1x1, 2x2, 3x3)
 	* "output" - text description of output format
 
-This is example of `desc.json` file for `task`:
+This is example of `desc.json` file for some `task`:
 
 ```json
 {
-	"name": "Addition",
-	"desc": "Add two numbers and output the result",
+	"name": "Add to array",
+	"desc": "Add a number to all values in an array",
 	"input": [
 		{"name": "A", "type": "int", "range": ["-1000", "1000"]}, 
-		{"name": "B", "type": "int", "range": ["-1000", "1000"]}
+		{"name": "B", "type": "int", "range": ["-1000", "1000"], "dimensions": [50]}
 	],
 	"output": "Result of adding A to B"
 }
@@ -246,8 +253,8 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
          "name": "Сложение",
          "number": 0,
          "output": "Результат сложения A и B",
-         "project": 1,
-         "unit": 1
+         "project_id": 1,
+         "unit_id": 1
       },
       "2": {
          "desc": "Вывести строку \"Hello world!\"",
@@ -257,8 +264,8 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
          "name": "Hello world",
          "number": 0,
          "output": "Строка \"Hello world!\"",
-         "project": 1,
-         "unit": 2
+         "project_id": 1,
+         "unit_id": 2
       },
       "3": {
          "desc": "На вход даётся N чисел. Сложить между собой нечётные, вычесть из них чётные и вывести результат. Сначала на вход подаётся количество чисел, а затем сами числа.",
@@ -280,8 +287,8 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
          "name": "Сложить нечётные, вычесть чётные",
          "number": 0,
          "output": "Результат сложения и вычитания чисел",
-         "project": 1,
-         "unit": 3
+         "project_id": 1,
+         "unit_id": 3
       }
    },
    "units": {

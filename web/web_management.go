@@ -94,7 +94,7 @@ func FillResponse(tasks *[]Task, resp *map[string]interface{}) {
 		_, ok := resp_units[task.Unit.Id]
 		if !ok {
 			resp_units[task.Unit.Id] = map[string]interface{}{
-				"name": task.Unit.Name,
+				"name":        task.Unit.Name,
 				"folder_name": task.Unit.FolderName,
 			}
 		}
@@ -102,7 +102,7 @@ func FillResponse(tasks *[]Task, resp *map[string]interface{}) {
 		_, ok = resp_projects[task.Project.Id]
 		if !ok {
 			resp_projects[task.Project.Id] = map[string]interface{}{
-				"name": task.Project.Name,
+				"name":        task.Project.Name,
 				"folder_name": task.Project.FolderName,
 			}
 		}
@@ -117,16 +117,16 @@ func FillResponse(tasks *[]Task, resp *map[string]interface{}) {
 			})
 		}
 		resp_tasks[task.Id] = map[string]interface{}{
-			"number":    task.Position,
-			"project":   task.Project.Id,
-			"unit":      task.Unit.Id,
-			"name":      task.Name,
+			"number":      task.Position,
+			"project_id":  task.Project.Id,
+			"unit_id":     task.Unit.Id,
+			"name":        task.Name,
 			"folder_name": task.FolderName,
-			"desc":      task.Desc,
-			"language":  task.Extention,
-			"input":     task_input,
-			"output":    task.Output,
-			"is_passed": task.IsPassed,
+			"desc":        task.Desc,
+			"language":    task.Extention,
+			"input":       task_input,
+			"output":      task.Output,
+			"is_passed":   task.IsPassed,
 		}
 	}
 	(*resp)["tasks"] = resp_tasks

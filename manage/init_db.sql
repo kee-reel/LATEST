@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 	output VARCHAR(128) NOT NULL,
 	source_code TEXT NOT NULL,
 	fixed_tests TEXT NOT NULL,
+	template_source_code TEXT NOT NULL,
 	UNIQUE(folder_name, project_id, unit_id));
 
 CREATE TABLE IF NOT EXISTS solutions(

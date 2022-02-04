@@ -130,6 +130,21 @@ func GetTaskTestData(task_id int) (*string, *string, error) {
 	return &source_code, &fixed_tests, nil
 }
 
+func GetTaskTemplate(task_id int) (*string, error) {
+	db := OpenDB()
+	defer db.Close()
+	query, err := db.Prepare(`SELECT t.template_source_code FROM tasks AS t WHERE t.id = $1`)
+	Err(err)
+
+	var source_code string
+	err = query.QueryRow(task_id).Scan(&source_code)
+	if err != nil {
+		return nil, fmt.Errorf("Template for this task is not found")
+	}
+
+	return &source_code, nil
+}
+
 func GetTaskIds() (*[]int, error) {
 	db := OpenDB()
 	defer db.Close()
@@ -253,7 +268,7 @@ func GetTokenForConnection(email string, pass string, ip string) (*string, error
 	return &token, nil
 }
 
-func GetTokenData(token_str string) (*Token, error) {
+func GetTokenData(token_str string, ip string) (*Token, error) {
 	if len(token_str) == 0 {
 		log.Print("No token received")
 		return nil, fmt.Errorf("Token not specified")
@@ -265,16 +280,21 @@ func GetTokenData(token_str string) (*Token, error) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT t.id, t.user_id FROM tokens as t WHERE t.token = $1`)
+	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip FROM tokens as t WHERE t.token = $1`)
 	if err != nil {
 		log.Printf("db error on prepare: %s", err)
 		return nil, fmt.Errorf("Unknown token")
 	}
 	var token Token
-	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId)
+	var ip_from_db string
+	err = query.QueryRow(token_str).Scan(&token.Id, &ip_from_db, &token.UserId)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
 		return nil, fmt.Errorf("Unknown token")
+	}
+	if ip != ip_from_db {
+		log.Print("IP for token does not match")
+		return nil, fmt.Errorf("Given token is bound to other IP")
 	}
 	return &token, nil
 }

@@ -72,6 +72,7 @@ def add_task(cur, desc, path, project_id, unit_id, folder):
         'output': desc['output'],
         'source_code': open(f'{folder_path}/complete_solution.{extention}', 'r').read(),
         'fixed_tests': open(f'{folder_path}/fixed_tests.txt', 'r').read(),
+        'template_source_code': open(f'{folder_path}/template.{extention}', 'r').read(),
     }
     return upsert(cur, 'tasks', keys, data)
 

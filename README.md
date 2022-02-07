@@ -132,10 +132,11 @@ This is example of `desc.json` file for some `task`:
 }
 ```
 
-Apart from `desc.json` file, task folder also must contain 2 files:
+Apart from `desc.json` file, task folder also must contain other files:
 
-* `complete_solution.[c|py]` - file with source code of reference solution. Output of this file will be compared with incoming solutions - if output differs, than test of incoming solution fails
+* `complete_solution.*` - file with source code of reference solution. Output of this file will be compared with incoming solutions - if output differs, than test of incoming solution fails
 * `fixed_tests.txt` - file with tests for solution. It contains values that will be passed into both reference and incoming solutions
+* `template.*` - file with template for solution. Contents of this file could be used on UI side, to provide user with sample code for easy start
 
 I have [repository](https://github.com/kee-reel/late-sample-project) with example project - you can use it for for reference.
 

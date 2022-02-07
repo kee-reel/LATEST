@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
@@ -24,7 +25,7 @@ func OpenDB() *sql.DB {
 	return db
 }
 
-func GetTasks(tasks_id []int) (*[]Task, error) {
+func GetTasks(tasks_id []int) *[]Task {
 	db := OpenDB()
 	defer db.Close()
 
@@ -113,7 +114,7 @@ func GetTasks(tasks_id []int) (*[]Task, error) {
 		tasks[task_index] = task
 	}
 
-	return &tasks, nil
+	return &tasks
 }
 
 func GetTaskTestData(task_id int) (*string, *string, error) {
@@ -145,21 +146,39 @@ func GetTaskTemplate(task_id int) (*string, error) {
 	return &source_code, nil
 }
 
-func GetTaskIds() (*[]int, error) {
+func GetTaskIds(task_str_ids *[]string) (*[]int, error) {
 	db := OpenDB()
 	defer db.Close()
-	rows, err := db.Query(`SELECT t.id FROM tasks AS t`)
+	var sb strings.Builder
+	sb.WriteString("SELECT t.id FROM tasks AS t")
+	if len(*task_str_ids) > 0 {
+		sb.WriteString(" WHERE ")
+		last_i := len(*task_str_ids) - 1
+		for i, task_str_id := range *task_str_ids {
+			_, err := strconv.Atoi(task_str_id)
+			if err != nil {
+				return nil, fmt.Errorf("Task id must be a number")
+			}
+			sb.WriteString("t.id=")
+			sb.WriteString(task_str_id)
+			if i != last_i {
+				sb.WriteString(" OR ")
+			}
+		}
+	}
+
+	rows, err := db.Query(sb.String())
 	Err(err)
 
 	defer rows.Close()
-	tasks := []int{}
+	task_ids := []int{}
 	for rows.Next() {
 		var task_id int
 		err := rows.Scan(&task_id)
 		Err(err)
-		tasks = append(tasks, task_id)
+		task_ids = append(task_ids, task_id)
 	}
-	return &tasks, nil
+	return &task_ids, nil
 }
 
 func GetProject(project_id int) (*Project, error) {

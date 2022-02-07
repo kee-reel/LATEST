@@ -33,8 +33,7 @@ func ParseSolution(r *http.Request) (*Solution, error) {
 	}
 	task_ids := make([]int, 1)
 	task_ids[0] = task_id
-	tasks, err := GetTasks(task_ids)
-	Err(err)
+	tasks := GetTasks(task_ids)
 	if len(*tasks) == 0 {
 		return nil, fmt.Errorf("Task not found")
 	}
@@ -186,17 +185,38 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		return err
 	}
 
-	task_ids, err := GetTaskIds()
-	Err(err)
-	if len(*task_ids) == 0 {
-		return fmt.Errorf("No tasks were found")
-	}
-
 	params, ok = query["folders"]
 	is_folder_structure := ok && len(params[0]) >= 1 && params[0] == "true"
 
-	tasks, err := GetTasks(*task_ids)
-	Err(err)
+	if is_folder_structure {
+		var task_folders []string
+		params, ok = query["task_folders"]
+		if ok && len(params[0]) > 1 {
+			task_folders = strings.Split(string(params[0]), ",")
+		}
+		task_ids, err := GetTaskIds(&task_str_ids)
+		if err != nil {
+			return err
+		}
+		if len(*task_ids) == 0 {
+			return fmt.Errorf("No tasks were found")
+		}
+	} else {
+		var task_str_ids []string
+		params, ok = query["task_ids"]
+		if ok && len(params[0]) > 1 {
+			task_str_ids = strings.Split(string(params[0]), ",")
+		}
+		task_ids, err := GetTaskIds(&task_str_ids)
+		if err != nil {
+			return err
+		}
+		if len(*task_ids) == 0 {
+			return fmt.Errorf("No tasks were found")
+		}
+	}
+
+	tasks := GetTasks(*task_ids)
 	if len(*tasks) == 0 {
 		return fmt.Errorf("No tasks were found")
 	}

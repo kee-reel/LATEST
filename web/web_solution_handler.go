@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -10,75 +11,6 @@ import (
 )
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
-
-func ParseSolution(r *http.Request) (*Solution, error) {
-	err := r.ParseMultipartForm(32 << 20)
-	params, ok := r.URL.Query()["token"]
-	if !ok || len(params[0]) < 1 {
-		return nil, fmt.Errorf("Token not specified")
-	}
-	ip := GetIP(r)
-	token, err := GetTokenData(params[0], ip)
-	if err != nil {
-		return nil, err
-	}
-	task_id_str := r.FormValue("task_id")
-	if len(task_id_str) == 0 {
-		return nil, fmt.Errorf("Task id is not specified")
-	}
-	task_id, err := strconv.Atoi(task_id_str)
-	if err != nil {
-		print(err)
-		return nil, fmt.Errorf("Task id must be number")
-	}
-	task_ids := make([]int, 1)
-	task_ids[0] = task_id
-	tasks := GetTasks(task_ids)
-	if len(*tasks) == 0 {
-		return nil, fmt.Errorf("Task not found")
-	}
-
-	var solution Solution
-	task := (*tasks)[0]
-
-	var solution_text *string
-	source_text := r.FormValue("source_text")
-	if source_text != "" {
-		solution_text = &source_text
-	} else {
-		file, _, err := r.FormFile("source_file")
-		if err != nil {
-			return nil, fmt.Errorf("No solution file or text provided")
-		}
-		raw_data, err := ioutil.ReadAll(file)
-		Err(err)
-		str_data := string(raw_data)
-		solution_text = &str_data
-	}
-
-	if len(*solution_text) > 50000 {
-		return nil, fmt.Errorf("Solution is too big")
-	}
-
-	solution.Source = *solution_text
-	solution.TestCases = r.FormValue("test_cases")
-	if len(solution.TestCases) > 50000 {
-		return nil, fmt.Errorf("Test cases string is too big")
-	}
-	if len(solution.TestCases) > 0 {
-		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
-		matches := user_tests_re.MatchString(solution.TestCases)
-		if !matches {
-			return nil, fmt.Errorf("Test cases string have incorrect format")
-		}
-	}
-
-	solution.Task = &task
-	solution.Token = token
-	solution.IsVerbose = r.FormValue("verbose") == "true"
-
-	return &solution, nil
-}
 
 func FillResponse(tasks *[]Task, resp *map[string]interface{}) {
 	resp_tasks := map[int]interface{}{}
@@ -164,7 +96,6 @@ func FillResponseFolders(tasks *[]Task, resp *map[string]interface{}) {
 			"number":    task.Position,
 			"name":      task.Name,
 			"desc":      task.Desc,
-			"language":  task.Extention,
 			"input":     task_input,
 			"output":    task.Output,
 			"is_passed": task.IsPassed,
@@ -180,7 +111,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		return fmt.Errorf("Token not specified")
 	}
 	ip := GetIP(r)
-	_, err := GetTokenData(params[0], ip)
+	_, err := GetTokenData(params[0], ip, true)
 	if err != nil {
 		return err
 	}
@@ -188,33 +119,33 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 	params, ok = query["folders"]
 	is_folder_structure := ok && len(params[0]) >= 1 && params[0] == "true"
 
-	if is_folder_structure {
-		var task_folders []string
-		params, ok = query["task_folders"]
-		if ok && len(params[0]) > 1 {
-			task_folders = strings.Split(string(params[0]), ",")
-		}
-		task_ids, err := GetTaskIds(&task_str_ids)
-		if err != nil {
-			return err
-		}
-		if len(*task_ids) == 0 {
-			return fmt.Errorf("No tasks were found")
-		}
-	} else {
-		var task_str_ids []string
-		params, ok = query["task_ids"]
-		if ok && len(params[0]) > 1 {
-			task_str_ids = strings.Split(string(params[0]), ",")
-		}
-		task_ids, err := GetTaskIds(&task_str_ids)
-		if err != nil {
-			return err
-		}
-		if len(*task_ids) == 0 {
-			return fmt.Errorf("No tasks were found")
-		}
+	//if is_folder_structure {
+	/*params, ok = query["task_folders"]
+	if ok && len(params[0]) > 1 {
+		task_folders = strings.Split(string(params[0]), ",")
 	}
+	task_ids, err := GetTaskIds(&task_str_ids)
+	if err != nil {
+		return err
+	}
+	if len(*task_ids) == 0 {
+		return fmt.Errorf("No tasks were found")
+	}*/
+	//} else {
+	var task_str_ids []string
+	params, ok = query["task_ids"]
+	if ok && len(params[0]) > 1 {
+		task_str_ids = strings.Split(string(params[0]), ",")
+	}
+	task_ids, err := GetTaskIds(&task_str_ids)
+	if err != nil {
+		return err
+	}
+	if len(*task_ids) == 0 {
+		return fmt.Errorf("No tasks were found")
+	}
+	//}
+	log.Printf("tasks %s", task_ids)
 
 	tasks := GetTasks(*task_ids)
 	if len(*tasks) == 0 {
@@ -227,6 +158,80 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) error {
 		FillResponse(tasks, resp)
 	}
 	return nil
+}
+
+func ParseSolution(r *http.Request) (*Solution, error) {
+	err := r.ParseMultipartForm(32 << 20)
+	params, ok := r.URL.Query()["token"]
+	if !ok || len(params[0]) < 1 {
+		return nil, fmt.Errorf("Token not specified")
+	}
+	ip := GetIP(r)
+	token, err := GetTokenData(params[0], ip, true)
+	if err != nil {
+		return nil, err
+	}
+	task_id_str := r.FormValue("task_id")
+	if len(task_id_str) == 0 {
+		return nil, fmt.Errorf("Task id is not specified")
+	}
+	solution_ext := r.FormValue("lang")
+	if len(solution_ext) == 0 {
+		return nil, fmt.Errorf("Solution language is not specified")
+	}
+	task_id, err := strconv.Atoi(task_id_str)
+	if err != nil {
+		print(err)
+		return nil, fmt.Errorf("Task id must be number")
+	}
+	task_ids := make([]int, 1)
+	task_ids[0] = task_id
+	tasks := GetTasks(task_ids)
+	if len(*tasks) == 0 {
+		return nil, fmt.Errorf("Task not found")
+	}
+
+	var solution Solution
+	task := (*tasks)[0]
+
+	var solution_text *string
+	source_text := r.FormValue("source_text")
+	if source_text != "" {
+		solution_text = &source_text
+	} else {
+		file, _, err := r.FormFile("source_file")
+		if err != nil {
+			return nil, fmt.Errorf("No solution file or text provided")
+		}
+		raw_data, err := ioutil.ReadAll(file)
+		Err(err)
+		str_data := string(raw_data)
+		solution_text = &str_data
+	}
+
+	if len(*solution_text) > 50000 {
+		return nil, fmt.Errorf("Solution is too big")
+	}
+
+	solution.Source = *solution_text
+	solution.TestCases = r.FormValue("test_cases")
+	if len(solution.TestCases) > 50000 {
+		return nil, fmt.Errorf("Test cases string is too big")
+	}
+	if len(solution.TestCases) > 0 {
+		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
+		matches := user_tests_re.MatchString(solution.TestCases)
+		if !matches {
+			return nil, fmt.Errorf("Test cases string have incorrect format")
+		}
+	}
+
+	solution.Task = &task
+	solution.Token = token
+	solution.IsVerbose = r.FormValue("verbose") == "true"
+	solution.Extention = solution_ext
+
+	return &solution, nil
 }
 
 func PostSolution(r *http.Request, resp *map[string]interface{}) error {

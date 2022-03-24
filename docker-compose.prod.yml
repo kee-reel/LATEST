@@ -29,11 +29,25 @@ services:
                         - RUNNER_PORT=1337
                         - RUNNER_VERBOSE=true
                         - LOG_VERBOSE=true
+                        - MAIL_ENABLE=true
+                        - MAIL_EMAIL=YOUR_EMAIL
+                        - MAIL_PASS=SMTP_SERVER_PASS
+                        - MAIL_SUBJECT=MAIL SUBJECT
+                        - >
+                          MAIL_MSG=MAIL\n\nTEXT
         manage:
                 environment:
+                        - WEB_ENTRY=/
+                        - WEB_HOST=web
+                        - WEB_PORT=1234
+                        - WEB_HTTP=true
                         - DB_HOST=db
                         - DB_PORT=5432
                         - DB_USER=root
                         - DB_PASS=pass
                         - DB_NAME=tasks
+                        - GIT_REPO=https://github.com/kee-reel/late-sample-project
+                        - GIT_REPO_FOLDER=sample_tests
+                        - TEST_MAIL=
+                        - TEST_PASS=
 

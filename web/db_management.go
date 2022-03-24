@@ -239,56 +239,50 @@ func GetFailedSolutions(solution *Solution) int {
 	return count
 }
 
-func GetTokenForConnection(email string, pass string, ip string) (*string, error) {
+func GetTokenForConnection(email string, pass string, ip string) (*Token, error) {
 	db := OpenDB()
 	defer db.Close()
+	var token Token
+	token.IP = ip
 
 	query, err := db.Prepare(`SELECT u.id, u.pass FROM users as u WHERE u.email = $1`)
 	Err(err)
 
-	var user_id int64
 	var hash string
-	err = query.QueryRow(email).Scan(&user_id, &hash)
+	err = query.QueryRow(email).Scan(&token.UserId, &hash)
 	if err == nil {
-		log.Printf("Pass: %s, hash: %s", pass, hash)
 		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 		if err != nil {
 			return nil, fmt.Errorf("Wrong password")
 		}
 	} else {
-		hash_raw, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
-		Err(err)
-
-		hash = string(hash_raw)
-		log.Printf("Pass: %s, New hash: %s", pass, hash)
-
 		query, err = db.Prepare("INSERT INTO users(email, pass) VALUES($1, $2) RETURNING id")
 		Err(err)
-		err = query.QueryRow(email, hash).Scan(&user_id)
+		hash_raw, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
+		Err(err)
+		err = query.QueryRow(email, string(hash_raw)).Scan(&token.UserId)
 		Err(err)
 	}
 
-	query, err = db.Prepare(`SELECT token FROM tokens WHERE user_id = $1 AND ip = $2`)
+	query, err = db.Prepare(`SELECT id, token, is_verified FROM tokens WHERE user_id = $1 AND ip = $2`)
 	Err(err)
 
-	var token string
-	err = query.QueryRow(user_id, ip).Scan(&token)
+	err = query.QueryRow(token.UserId, token.IP).Scan(&token.Id, &token.Token, &token.IsVerified)
 	if err == nil {
 		return &token, nil
 	}
 
 	// If token not found, then generate new one
-	token = string(GenerateToken())
-	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip) VALUES($1, $2, $3)`)
+	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip) VALUES($1, $2, $3) RETURNING id`)
 	Err(err)
-	_, err = query.Exec(token, user_id, ip)
+	token.Token = string(GenerateToken())
+	err = query.QueryRow(token.Token, token.UserId, token.IP).Scan(&token.Id)
 	Err(err)
 
 	return &token, nil
 }
 
-func GetTokenData(token_str string, ip string) (*Token, error) {
-	log.Print(token_str, ip)
+func GetTokenData(token_str string, ip string, verified_only bool) (*Token, error) {
 	if len(token_str) == 0 {
 		log.Print("No token received")
 		return nil, fmt.Errorf("Token not specified")
@@ -300,21 +294,35 @@ func GetTokenData(token_str string, ip string) (*Token, error) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip FROM tokens as t WHERE t.token = $1`)
+	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip, t.is_verified 
+		FROM tokens as t WHERE t.token = $1`)
 	if err != nil {
 		log.Printf("db error on prepare: %s", err)
 		return nil, fmt.Errorf("Unknown token")
 	}
 	var token Token
-	var ip_from_db string
-	err = query.QueryRow(token_str).Scan(&token.Id, &token.UserId, &ip_from_db)
+	token.Token = token_str
+	err = query.QueryRow(token.Token).Scan(&token.Id, &token.UserId, &token.IP, &token.IsVerified)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
 		return nil, fmt.Errorf("Unknown token")
 	}
-	if ip != ip_from_db {
+	if verified_only && !token.IsVerified {
+		log.Printf("passed non verified token")
+		return nil, fmt.Errorf("Email for this IP is not verified, please open link that was sent to your email")
+	}
+	if ip != token.IP {
 		log.Print("IP for token does not match")
 		return nil, fmt.Errorf("Given token is bound to other IP")
 	}
 	return &token, nil
+}
+
+func VerifyToken(token *Token) {
+	db := OpenDB()
+	defer db.Close()
+	query, err := db.Prepare(`UPDATE tokens SET is_verified = TRUE WHERE id = $1`)
+	Err(err)
+	_, err = query.Exec(token.Id)
+	Err(err)
 }

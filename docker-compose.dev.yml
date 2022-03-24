@@ -25,6 +25,12 @@ services:
                         - RUNNER_PORT=1337
                         - RUNNER_VERBOSE=true
                         - LOG_VERBOSE=true
+                        - MAIL_ENABLE=true
+                        - MAIL_EMAIL=YOUR_EMAIL
+                        - MAIL_PASS=SMTP_SERVER_PASS
+                        - MAIL_SUBJECT=Регистрация на kee-reel.com
+                        - >
+                          MAIL_MSG=Привет! Тут на сайте https://kee-reel.com пришла заявочка на регистрацию с IP адреса: %s\n\nЕсли она твоя, то перейди по ссылке, чтобы завершить регистрацию: %s\n\nА если нет, то кто-то там пытается зарегистрироваться по твоей почте, прими меры!
         manage:
                 environment:
                         - WEB_ENTRY=/
@@ -36,4 +42,8 @@ services:
                         - DB_USER=root
                         - DB_PASS=pass
                         - DB_NAME=tasks
+                        - GIT_REPO=https://github.com/kee-reel/late-sample-project
+                        - GIT_REPO_FOLDER=sample_tests
+                        - TEST_MAIL=
+                        - TEST_PASS=
 

@@ -9,14 +9,14 @@ from test import test_solution
 from flask import Flask, request, url_for
 
 app = Flask(__name__)
-app.logger.setLevel(logging.INFO)
+app.logger.setLevel(logging.DEBUG)
 
 fn_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 UPLOAD_FOLDER = './uploads'
 
 
 def save_file(request, field):
-    extention = request.form.get('extention')
+    extention = request.form.get(f'{field}_ext')
 
     file_ = request.files.get(field)
     text = request.form.get(field)
@@ -49,9 +49,15 @@ def run_test():
         if test_set:
             tests[t] = test_set
 
-    sol_fn_new, comp_sol_fn_new, err = build_solution(sol_fn, comp_sol_fn)
+    sol_fn_new, err = build_solution(sol_fn)
     if sol_fn != sol_fn_new:
         os.remove(sol_fn)
+    if err:
+        err['stage'] = 'build'
+        return {'error': err}
+
+    comp_sol_fn_new, err = build_solution(comp_sol_fn)
+    if comp_sol_fn != comp_sol_fn_new:
         os.remove(comp_sol_fn)
     if err:
         err['stage'] = 'build'

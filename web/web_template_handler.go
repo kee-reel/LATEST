@@ -14,7 +14,7 @@ func GetTemplate(r *http.Request, resp *map[string]interface{}) error {
 		return fmt.Errorf("Token not specified")
 	}
 	ip := GetIP(r)
-	_, err := GetTokenData(params[0], ip)
+	_, err := GetTokenData(params[0], ip, true)
 	if err != nil {
 		return err
 	}

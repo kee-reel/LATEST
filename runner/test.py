@@ -10,6 +10,10 @@ LANG_TO_EXEC = {
 }
 
 
+def get_ext(f):
+    return f[f.rindex('.')+1:]
+
+
 def prepare_str(s):
     if not s:
         return s
@@ -30,18 +34,18 @@ def execute(cmd, params):
         return e.stdout, e.stderr
 
 
-def run(exec_cmd, sol, comp_sol, is_verbose, params=None):
+def run(sol, comp_sol, is_verbose, params=None):
     exit_code = 0
     error = None
 
-    expected, err = execute(exec_cmd(comp_sol), params)
+    expected, err = execute(comp_sol, params)
     if err:
         return None, {
             'error': err,
             'result': expected
         }
 
-    result, err = execute(exec_cmd(sol), params)
+    result, err = execute(sol, params)
     if err:
         return None, {
             'error': err,
@@ -62,9 +66,9 @@ def run(exec_cmd, sol, comp_sol, is_verbose, params=None):
     return None, None
 
 def test_solution(solution, complete_solution, test_sets, is_verbose):
-    extention = complete_solution[complete_solution.rindex('.')+1:]
-    assert extention in LANG_TO_EXEC, 'Language not supported'
-    exec_cmd = LANG_TO_EXEC[extention]
+    sol_ext = get_ext(solution)
+    comp_sol_ext = get_ext(complete_solution)
+    assert sol_ext in LANG_TO_EXEC and comp_sol_ext in LANG_TO_EXEC, 'Language not supported'
 
     if not os.path.exists(solution) or not os.path.exists(complete_solution):
         return {
@@ -74,12 +78,14 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
     is_tested = False
     results = []
     error = None
+    sol_exec = LANG_TO_EXEC[sol_ext](solution)
+    comp_sol_exec = LANG_TO_EXEC[comp_sol_ext](complete_solution)
     for tests in test_sets.values():
         for test in tests.split('\n'):
             if not test:
                 continue
             cmd_line = test.replace(';', '\n')
-            result, error = run(exec_cmd, solution, complete_solution, is_verbose, cmd_line)
+            result, error = run(sol_exec, comp_sol_exec, is_verbose, cmd_line)
 
             is_tested = True
             if result:
@@ -93,7 +99,7 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
 
     # No test cases
     if not is_tested and not error:
-        result, error = run(exec_cmd, solution, complete_solution, is_verbose)
+        result, error = run(sol_exec, comp_sol_exec, is_verbose)
         if result:
             results.append(result)
 

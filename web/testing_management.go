@@ -95,13 +95,14 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool
 		verbose_text = "true"
 	}
 	response, err := http.PostForm(runner_url, url.Values{
-		"solution":          {solution.Source},
-		"complete_solution": {*complete_solution_source},
-		"user_tests":        {solution.TestCases},
-		"fixed_tests":       {*fixed_tests},
-		"random_tests":      {*random_tests},
-		"extention":         {task.Extention},
-		"verbose":           {verbose_text},
+		"solution":              {solution.Source},
+		"complete_solution":     {*complete_solution_source},
+		"user_tests":            {solution.TestCases},
+		"fixed_tests":           {*fixed_tests},
+		"random_tests":          {*random_tests},
+		"solution_ext":          {solution.Extention},
+		"complete_solution_ext": {task.Extention},
+		"verbose":               {verbose_text},
 	})
 	Err(err)
 	defer response.Body.Close()

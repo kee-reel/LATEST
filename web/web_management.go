@@ -23,6 +23,19 @@ func ProcessSolution(w http.ResponseWriter, r *http.Request) {
 	HandleResponse(w, &resp, err)
 }
 
+func ProcessVerify(w http.ResponseWriter, r *http.Request) {
+	var err error
+	resp := map[string]interface{}{}
+	defer RecoverRequest(w)
+	switch r.Method {
+	case "GET":
+		err = GetVerify(r, &resp)
+	default:
+		err = fmt.Errorf("Unsupported method")
+	}
+	HandleResponse(w, &resp, err)
+}
+
 func ProcessLogin(w http.ResponseWriter, r *http.Request) {
 	var err error
 	resp := map[string]interface{}{}

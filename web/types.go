@@ -18,7 +18,7 @@ type Project struct {
 
 type Unit struct {
 	Id         int
-	ProjectId int
+	ProjectId  int
 	Name       string
 	FolderName string
 }
@@ -39,14 +39,18 @@ type Task struct {
 }
 
 type Token struct {
-	Id     int
-	UserId int
+	Id         int
+	UserId     int
+	IsVerified bool
+	Token      string
+	IP         string
 }
 
 type Solution struct {
 	Task                 *Task
 	Source               string
 	Path                 string
+	Extention            string
 	ExecFilename         string
 	CompleteExecFilename string
 	TestCases            string

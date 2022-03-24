@@ -3,8 +3,10 @@ import sys
 import subprocess
 
 
-COMPILED_LANGS = ['c', 'cpp', 'go', 'cs']
-SUPPORTED_COMPILED_LANGS = ['c']
+LANGS = ['c', 'py']
+LANG_CMD = {
+        'c': lambda source, target: ['/usr/bin/gcc', source, '-o', target, '-lm'],
+}
 
 
 def execute(cmd):
@@ -15,20 +17,14 @@ def execute(cmd):
         return e.stdout, {'msg': e.stderr}
 
 
-def build_solution(solution, complete_solution):
-    extention = complete_solution[complete_solution.rindex('.')+1:]
-    if extention not in COMPILED_LANGS:
-        return solution, complete_solution, None
+def build_solution(solution):
+    extention = solution[solution.rindex('.')+1:]
+    assert extention in LANGS, 'Language not supported'
+    if extention not in LANG_CMD:
+        return solution, None
 
-    assert extention in SUPPORTED_COMPILED_LANGS, 'Language not supported'
-    sol_wo_ext = solution[:solution.rindex('.')]
-    comp_sol_wo_ext = complete_solution[:complete_solution.rindex('.')]
-
-    _, err = execute(['/usr/bin/gcc', '-o', f'{comp_sol_wo_ext}.exe', complete_solution, '-lm'])
-    if err:
-        return None, None, err
-    _, err = execute(['/usr/bin/gcc', '-o', f'{sol_wo_ext}.exe', solution, '-lm'])
-    if err:
-        return None, None, err
-    return f'{sol_wo_ext}.exe', f'{comp_sol_wo_ext}.exe', None
+    compiled_solution = solution[:solution.rindex('.')] + '.exe'
+    cmd = LANG_CMD[extention](solution, compiled_solution)
+    _, err = execute(cmd)
+    return compiled_solution, err
 

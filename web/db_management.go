@@ -25,14 +25,14 @@ func OpenDB() *sql.DB {
 	return db
 }
 
-func GetTasks(tasks_id []int) *[]Task {
+func GetTasks(task_ids []int) *[]Task {
 	db := OpenDB()
 	defer db.Close()
 
-	tasks := make([]Task, len(tasks_id))
+	tasks := make([]Task, len(task_ids))
 	units := map[int]*Unit{}
 	projects := map[int]*Project{}
-	for task_index, task_id := range tasks_id {
+	for task_index, task_id := range task_ids {
 		query, err := db.Prepare(`SELECT t.project_id, t.unit_id, t.position, t.extention, t.folder_name,
 			t.name, t.description, t.input, t.output
 			FROM tasks AS t
@@ -50,16 +50,14 @@ func GetTasks(tasks_id []int) *[]Task {
 
 		project, ok := projects[project_id]
 		if !ok {
-			project, err = GetProject(project_id)
-			Err(err)
+			project = GetProject(project_id)
 			projects[project_id] = project
 		}
 		task.Project = project
 
 		unit, ok := units[unit_id]
 		if !ok {
-			unit, err = GetUnit(unit_id)
-			Err(err)
+			unit = GetUnit(unit_id)
 			units[unit_id] = unit
 		}
 		task.Unit = unit
@@ -106,7 +104,7 @@ func GetTasks(tasks_id []int) *[]Task {
 				int_range[1], _ = strconv.Atoi(param_range[1])
 				input.IntRange = &int_range
 			default:
-				Err(fmt.Errorf("Param type \"%s\" mot supported", param_type))
+				Err(fmt.Errorf("Param type \"%s\" not supported", param_type))
 			}
 		}
 
@@ -117,7 +115,7 @@ func GetTasks(tasks_id []int) *[]Task {
 	return &tasks
 }
 
-func GetTaskTestData(task_id int) (*string, *string, error) {
+func GetTaskTestData(task_id int) (*string, *string) {
 	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT t.source_code, t.fixed_tests FROM tasks AS t WHERE t.id = $1`)
@@ -128,25 +126,83 @@ func GetTaskTestData(task_id int) (*string, *string, error) {
 	err = query.QueryRow(task_id).Scan(&source_code, &fixed_tests)
 	Err(err)
 
-	return &source_code, &fixed_tests, nil
+	return &source_code, &fixed_tests
 }
 
-func GetTaskTemplate(task_id int) (*string, error) {
+func GetTaskTemplate(lang string) *string {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`SELECT t.template_source_code FROM tasks AS t WHERE t.id = $1`)
+	query, err := db.Prepare(`SELECT t.source_code FROM solution_templates AS t WHERE t.extention = $1`)
 	Err(err)
 
 	var source_code string
-	err = query.QueryRow(task_id).Scan(&source_code)
-	if err != nil {
-		return nil, fmt.Errorf("Template for this task is not found")
-	}
+	err = query.QueryRow(lang).Scan(&source_code)
+	Err(err)
 
-	return &source_code, nil
+	return &source_code
 }
 
-func GetTaskIds(task_str_ids *[]string) (*[]int, error) {
+func GetTaskIdsByFolder(folder_names *[]string) (*[]int, WebError) {
+	db := OpenDB()
+	defer db.Close()
+	var sb strings.Builder
+	sb.WriteString("SELECT t.id FROM tasks AS t")
+
+	var err error
+	var project_id int
+	var unit_id int
+	folders_count := len(*folder_names)
+	if folders_count >= 1 {
+		query, err := db.Prepare("SELECT p.id FROM projects AS p WHERE p.folder_name = $1")
+		Err(err)
+		err = query.QueryRow((*folder_names)[0]).Scan(&project_id)
+		if err != nil {
+			return nil, SolutionProjectFolderNotFound
+		}
+		if folders_count != 3 {
+			sb.WriteString(" WHERE t.project_id = ")
+			sb.WriteString(strconv.Itoa(project_id))
+		}
+	}
+	if folders_count >= 2 {
+		query, err := db.Prepare("SELECT u.id FROM units AS u WHERE u.project_id = $1 AND u.folder_name = $2")
+		Err(err)
+		err = query.QueryRow(project_id, (*folder_names)[1]).Scan(&unit_id)
+		if err != nil {
+			return nil, SolutionUnitFolderNotFound
+		}
+		if folders_count != 3 {
+			sb.WriteString(" AND t.unit_id = ")
+			sb.WriteString(strconv.Itoa(unit_id))
+		}
+	}
+	if folders_count == 3 {
+		query, err := db.Prepare("SELECT t.id FROM tasks AS t WHERE t.project_id = $1 AND t.unit_id = $2 AND t.folder_name = $3")
+		Err(err)
+		var task_id int
+		err = query.QueryRow(project_id, unit_id, (*folder_names)[2]).Scan(&task_id)
+		if err != nil {
+			return nil, SolutionTaskFolderNotFound
+		}
+		task_ids := []int{task_id}
+		return &task_ids, NoError
+	}
+
+	rows, err := db.Query(sb.String())
+	Err(err)
+
+	defer rows.Close()
+	task_ids := []int{}
+	for rows.Next() {
+		var task_id int
+		err := rows.Scan(&task_id)
+		Err(err)
+		task_ids = append(task_ids, task_id)
+	}
+	return &task_ids, NoError
+}
+
+func GetTaskIdsById(task_str_ids *[]string) (*[]int, WebError) {
 	db := OpenDB()
 	defer db.Close()
 	var sb strings.Builder
@@ -157,7 +213,7 @@ func GetTaskIds(task_str_ids *[]string) (*[]int, error) {
 		for i, task_str_id := range *task_str_ids {
 			_, err := strconv.Atoi(task_str_id)
 			if err != nil {
-				return nil, fmt.Errorf("Task id must be a number")
+				return nil, TaskIdInvalid
 			}
 			sb.WriteString("t.id=")
 			sb.WriteString(task_str_id)
@@ -178,10 +234,14 @@ func GetTaskIds(task_str_ids *[]string) (*[]int, error) {
 		Err(err)
 		task_ids = append(task_ids, task_id)
 	}
-	return &task_ids, nil
+	if len(*task_str_ids) != 0 && len(*task_str_ids) != len(task_ids) {
+		log.Print("Requested:", task_str_ids, "Got:", task_ids)
+		return nil, TaskNotFound
+	}
+	return &task_ids, NoError
 }
 
-func GetProject(project_id int) (*Project, error) {
+func GetProject(project_id int) *Project {
 	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT s.name, s.folder_name FROM projects AS s WHERE s.id = $1`)
@@ -191,10 +251,10 @@ func GetProject(project_id int) (*Project, error) {
 	err = query.QueryRow(project_id).Scan(&project.Name, &project.FolderName)
 	Err(err)
 	project.Id = project_id
-	return &project, nil
+	return &project
 }
 
-func GetUnit(unit_id int) (*Unit, error) {
+func GetUnit(unit_id int) *Unit {
 	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT u.name, u.project_id, u.folder_name FROM units AS u WHERE u.id = $1`)
@@ -204,10 +264,10 @@ func GetUnit(unit_id int) (*Unit, error) {
 	err = query.QueryRow(unit_id).Scan(&unit.Name, &unit.ProjectId, &unit.FolderName)
 	Err(err)
 	unit.Id = unit_id
-	return &unit, nil
+	return &unit
 }
 
-func SaveSolution(solution *Solution, is_passed bool) error {
+func SaveSolution(solution *Solution, is_passed bool) {
 	db := OpenDB()
 	defer db.Close()
 
@@ -222,7 +282,6 @@ func SaveSolution(solution *Solution, is_passed bool) error {
 	Err(err)
 	_, err = query.Exec(solution.Token.Id, solution.Task.Id, solution.Source)
 	Err(err)
-	return nil
 }
 
 func GetFailedSolutions(solution *Solution) int {
@@ -239,7 +298,7 @@ func GetFailedSolutions(solution *Solution) int {
 	return count
 }
 
-func GetTokenForConnection(email string, pass string, ip string) (*Token, error) {
+func GetTokenForConnection(email string, pass string, ip string) (*Token, WebError) {
 	db := OpenDB()
 	defer db.Close()
 	var token Token
@@ -253,7 +312,7 @@ func GetTokenForConnection(email string, pass string, ip string) (*Token, error)
 	if err == nil {
 		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 		if err != nil {
-			return nil, fmt.Errorf("Wrong password")
+			return nil, PasswordWrong
 		}
 	} else {
 		query, err = db.Prepare("INSERT INTO users(email, pass) VALUES($1, $2) RETURNING id")
@@ -269,7 +328,7 @@ func GetTokenForConnection(email string, pass string, ip string) (*Token, error)
 
 	err = query.QueryRow(token.UserId, token.IP).Scan(&token.Id, &token.Token, &token.IsVerified)
 	if err == nil {
-		return &token, nil
+		return &token, NoError
 	}
 
 	// If token not found, then generate new one
@@ -279,43 +338,40 @@ func GetTokenForConnection(email string, pass string, ip string) (*Token, error)
 	err = query.QueryRow(token.Token, token.UserId, token.IP).Scan(&token.Id)
 	Err(err)
 
-	return &token, nil
+	return &token, NoError
 }
 
-func GetTokenData(token_str string, ip string, verified_only bool) (*Token, error) {
+func GetTokenData(token_str string, ip string, verified_only bool) (*Token, WebError) {
 	if len(token_str) == 0 {
 		log.Print("No token received")
-		return nil, fmt.Errorf("Token not specified")
+		return nil, TokenNotProvided
 	}
 	if len(token_str) != token_len {
 		log.Print("Received malformed token")
-		return nil, fmt.Errorf("Unknown token")
+		return nil, TokenInvalid
 	}
 	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip, t.is_verified 
 		FROM tokens as t WHERE t.token = $1`)
-	if err != nil {
-		log.Printf("db error on prepare: %s", err)
-		return nil, fmt.Errorf("Unknown token")
-	}
+	Err(err)
 	var token Token
 	token.Token = token_str
 	err = query.QueryRow(token.Token).Scan(&token.Id, &token.UserId, &token.IP, &token.IsVerified)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
-		return nil, fmt.Errorf("Unknown token")
+		return nil, TokenUnknown
 	}
 	if verified_only && !token.IsVerified {
 		log.Printf("passed non verified token")
-		return nil, fmt.Errorf("Email for this IP is not verified, please open link that was sent to your email")
+		return nil, TokenNotVerified
 	}
 	if ip != token.IP {
 		log.Print("IP for token does not match")
-		return nil, fmt.Errorf("Given token is bound to other IP")
+		return nil, TokenBoundToOtherIP
 	}
-	return &token, nil
+	return &token, NoError
 }
 
 func VerifyToken(token *Token) {

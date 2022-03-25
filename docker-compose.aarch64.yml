@@ -1,12 +1,14 @@
 version: '3'
 
 services:
-        db:
-                image: postgres:latest
-        web:
-                build: ./web
-        runner:
-                build:
-                        context: runner
-                        args:
-                                IMAGE: arm64v8/python
+  db:
+    image: postgres:latest
+
+  web:
+    build: ./web
+
+  runner:
+    build:
+      context: runner
+      args:
+        IMAGE: arm64v8/python

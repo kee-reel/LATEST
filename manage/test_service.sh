@@ -3,6 +3,7 @@
 if [[ -z "$(ls tests)" ]]; then
 	cd tests # Go inside
 	git clone $GIT_REPO $GIT_REPO_FOLDER # Clone sample project
+	git clone $TEMPLATES_GIT_REPO templates # Clone templates
 	cd ..
 	python3 fill_db.py
 fi
@@ -15,10 +16,10 @@ TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=$TEST_PASS | grep -Po '[\w
 echo "Token: $TOKEN
 ===
 Existing tasks:"
-TASKS=$(curl -X GET $DOMAIN?token=$TOKEN)
+TASKS=$(curl -X GET $DOMAIN?token=$TOKEN\&folders=true\&task_folders=sample_tests,unit-2,task-1)
 echo $TASKS
 
-TASK_ID=$(echo $TASKS | jq '.tasks | keys[2]' | tr -d '"')
+TASK_ID=$(echo $TASKS | jq '.sample_tests["units"]["unit-2"]["tasks"]["task-1"]["id"]')
 echo "Test task $TASK_ID"
 
 echo '
@@ -83,3 +84,8 @@ curl -X POST $DOMAIN?token=$TOKEN \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 	-F verbose=true
+
+echo '
+===
+Get template for C:'
+curl ${DOMAIN}template?token=$TOKEN\&lang='c'

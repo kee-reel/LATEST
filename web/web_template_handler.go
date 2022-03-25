@@ -1,37 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 )
 
-func GetTemplate(r *http.Request, resp *map[string]interface{}) error {
+func GetTemplate(r *http.Request, resp *map[string]interface{}) WebError {
 	query := r.URL.Query()
 
 	params, ok := query["token"]
 	if !ok || len(params[0]) < 1 {
-		return fmt.Errorf("Token not specified")
+		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	_, err := GetTokenData(params[0], ip, true)
-	if err != nil {
-		return err
+	_, web_err := GetTokenData(params[0], ip, true)
+	if web_err != NoError {
+		return web_err
 	}
 
-	params, ok = query["task_id"]
+	params, ok = query["lang"]
 	if !ok || len(params[0]) < 1 {
-		return fmt.Errorf("task_id is not specified")
-	}
-	task_id, err := strconv.Atoi(params[0])
-	if err != nil {
-		return fmt.Errorf("Task id must be a number")
+		return LanguageNotProvided
 	}
 
-	template, err := GetTaskTemplate(task_id)
-	if err != nil {
-		return err
+	lang := params[0]
+	if !IsLanguageSupported(lang) {
+		return LanguageNotSupported
 	}
+
+	template := GetTaskTemplate(lang)
 	(*resp)["template"] = *template
-	return nil
+	return NoError
 }

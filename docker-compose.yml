@@ -1,44 +1,54 @@
 version: '3'
 
 services:
-        db:
-                restart: always
-                volumes:
-                        - ./manage/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-                ports:
-                        - 5432:5432
-                networks:
-                        - internet
-        web:
-                ports: 
-                        - 1234:1234
-                links:
-                        - db
-                        - runner
-                depends_on:
-                        - db
-                        - runner
-                networks:
-                        - internet
-                        - no-internet
-        runner:
-                ports:
-                        - 1337:1337
-                networks:
-                        - no-internet
-        manage:
-                build: ./manage
-                links:
-                        - web
-                        - db
-                networks:
-                        - internet
-                stdin_open: true
-                tty: true
+  db:
+    restart: always
+    volumes:
+      - ./manage/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - 5432:5432
+    networks:
+      - internet
+    env_file: .env
+
+  web:
+    ports: 
+      - 1234:1234
+    links:
+      - db
+      - runner
+    depends_on:
+      - db
+      - runner
+    networks:
+      - internet
+      - no-internet
+    environment:
+      - RUNNER_HOST=runner
+      - RUNNER_PORT=1337
+    env_file: .env
+
+  runner:
+    ports:
+      - 1337:1337
+    networks:
+      - no-internet
+    env_file: .env
+
+  manage:
+    build: ./manage
+    links:
+      - web
+      - db
+    networks:
+      - internet
+    stdin_open: true
+    tty: true
+    env_file: .env
 
 networks:
-        no-internet:
-                driver: bridge
-                internal: true
-        internet:
-                driver: bridge
+  no-internet:
+    driver: bridge
+    internal: true
+  internet:
+    driver: bridge

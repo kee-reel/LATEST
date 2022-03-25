@@ -1,49 +1,8 @@
 version: '3'
 
 services:
-        db:
-                environment:
-                        - POSTGRES_DB=tasks
-                        - POSTGRES_USER=root
-                        - POSTGRES_PASSWORD=pass
-                        - APP_DB_USER=docker
-                        - APP_DB_PASS=docker
-                        - APP_DB_NAME=docker
-
-        web:
-                environment:
-                        - DB_HOST=db
-                        - DB_PORT=5432
-                        - DB_USER=root
-                        - DB_PASS=pass
-                        - DB_NAME=tasks
-                        - WEB_ENTRY=/
-                        - WEB_HOST=0.0.0.0
-                        - WEB_PORT=1234
-                        - WEB_HTTP=true
-                        - RUNNER_HOST=runner
-                        - RUNNER_PORT=1337
-                        - RUNNER_VERBOSE=true
-                        - LOG_VERBOSE=true
-                        - MAIL_ENABLE=true
-                        - MAIL_EMAIL=YOUR_EMAIL
-                        - MAIL_PASS=SMTP_SERVER_PASS
-                        - MAIL_SUBJECT=Регистрация на kee-reel.com
-                        - >
-                          MAIL_MSG=Привет! Тут на сайте https://kee-reel.com пришла заявочка на регистрацию с IP адреса: %s\n\nЕсли она твоя, то перейди по ссылке, чтобы завершить регистрацию: %s\n\nА если нет, то кто-то там пытается зарегистрироваться по твоей почте, прими меры!
-        manage:
-                environment:
-                        - WEB_ENTRY=/
-                        - WEB_HOST=web
-                        - WEB_PORT=1234
-                        - WEB_HTTP=true
-                        - DB_HOST=db
-                        - DB_PORT=5432
-                        - DB_USER=root
-                        - DB_PASS=pass
-                        - DB_NAME=tasks
-                        - GIT_REPO=https://github.com/kee-reel/late-sample-project
-                        - GIT_REPO_FOLDER=sample_tests
-                        - TEST_MAIL=
-                        - TEST_PASS=
-
+  web:
+    environment:
+      - RUNNER_VERBOSE=true
+      - LOG_VERBOSE=true
+      - MAIL_ENABLE=false

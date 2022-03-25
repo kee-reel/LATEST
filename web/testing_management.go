@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 )
@@ -85,8 +86,7 @@ func GenerateTests(task *Task) *string {
 }
 
 func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool) {
-	complete_solution_source, fixed_tests, err := GetTaskTestData(task.Id)
-	Err(err)
+	complete_solution_source, fixed_tests := GetTaskTestData(task.Id)
 	random_tests := GenerateTests(task)
 
 	runner_url := fmt.Sprintf("http://%s:%s", Env("RUNNER_HOST"), Env("RUNNER_PORT"))
@@ -113,5 +113,27 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool
 	err = json.Unmarshal([]byte(body), &test_result)
 	Err(err)
 
-	return &test_result, test_result["error"] == nil
+	is_ok := test_result["error"] == nil
+	if is_ok {
+		test_result["error"] = NoError
+	}
+	return &test_result, is_ok
+}
+
+func IsLanguageSupported(lang string) bool {
+	runner_url := fmt.Sprintf("http://%s:%s", Env("RUNNER_HOST"), Env("RUNNER_PORT"))
+	response, err := http.Get(runner_url)
+	Err(err)
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	Err(err)
+
+	var result map[string][]string
+	err = json.Unmarshal([]byte(body), &result)
+	Err(err)
+
+	langs := result["langs"]
+	sort.Strings(langs)
+	idx := sort.SearchStrings(langs, lang)
+	return idx < len(langs) && langs[idx] == lang
 }

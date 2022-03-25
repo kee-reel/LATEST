@@ -25,8 +25,11 @@ CREATE TABLE IF NOT EXISTS tasks (
 	output VARCHAR(128) NOT NULL,
 	source_code TEXT NOT NULL,
 	fixed_tests TEXT NOT NULL,
-	template_source_code TEXT NOT NULL,
 	UNIQUE(folder_name, project_id, unit_id));
+
+CREATE TABLE IF NOT EXISTS solution_templates (
+	extention VARCHAR(10) PRIMARY KEY,
+	source_code TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS solutions(
 	token_id INTEGER NOT NULL,
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS tokens (
 	id SERIAL PRIMARY KEY,
 	token VARCHAR(256) NOT NULL,
 	user_id INTEGER NOT NULL,
-	ip VARCHAR(15) NOT NULL
+	ip VARCHAR(15) NOT NULL,
 	is_verified BOOLEAN NOT NULL DEFAULT FALSE,
 	UNIQUE(token),
 	UNIQUE(user_id, ip));

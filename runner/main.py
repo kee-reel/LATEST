@@ -4,7 +4,7 @@ import sys
 import time
 import random
 import logging
-from build import build_solution
+from build import build_solution, LANGS
 from test import test_solution
 from flask import Flask, request, url_for
 
@@ -35,8 +35,10 @@ def save_file(request, field):
     return fn
 
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET', 'POST'])
 def run_test():
+    if request.method == 'GET':
+        return {'langs': LANGS}
     is_verbose = request.form.get('verbose') == 'true'
     sol_fn = save_file(request, 'solution')
     comp_sol_fn = save_file(request, 'complete_solution')

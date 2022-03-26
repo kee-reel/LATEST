@@ -41,12 +41,12 @@ func ErrMsg(err error, msg string) {
 	}
 }
 
-func GetIP(r *http.Request) string {
+func GetIP(r *http.Request) *string {
 	//Get IP from the X-REAL-IP header
 	ip := r.Header.Get("X-REAL-IP")
 	netIP := net.ParseIP(ip)
 	if netIP != nil {
-		return ip
+		return &ip
 	}
 
 	//Get IP from X-FORWARDED-FOR header
@@ -55,7 +55,7 @@ func GetIP(r *http.Request) string {
 	for _, ip := range splitIps {
 		netIP := net.ParseIP(ip)
 		if netIP != nil {
-			return ip
+			return &ip
 		}
 	}
 
@@ -64,7 +64,7 @@ func GetIP(r *http.Request) string {
 	Err(err)
 	netIP = net.ParseIP(ip)
 	if netIP != nil {
-		return ip
+		return &ip
 	}
 	panic("Can't resolve client's ip")
 }

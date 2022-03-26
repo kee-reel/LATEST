@@ -52,6 +52,10 @@ CREATE TABLE IF NOT EXISTS tokens (
 	UNIQUE(token),
 	UNIQUE(user_id, ip));
 
+CREATE TABLE IF NOT EXISTS verification_tokens (
+	verification_token VARCHAR(256) PRIMARY KEY,
+	token VARCHAR(256) NOT NULL);
+
 CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,
 	email VARCHAR(128) NOT NULL,

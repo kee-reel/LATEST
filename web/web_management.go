@@ -58,6 +58,19 @@ func ProcessTemplate(w http.ResponseWriter, r *http.Request) {
 	HandleResponse(w, &resp, err)
 }
 
+func ProcessLanguages(w http.ResponseWriter, r *http.Request) {
+	var err WebError
+	err = MethodNotSupported
+	resp := map[string]interface{}{}
+	defer RecoverRequest(w)
+	switch r.Method {
+	case "GET":
+		langs := GetSupportedLanguages()
+		resp["langs"] = *langs
+	}
+	HandleResponse(w, &resp, err)
+}
+
 func HandleResponse(w http.ResponseWriter, resp *map[string]interface{}, web_err WebError) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")

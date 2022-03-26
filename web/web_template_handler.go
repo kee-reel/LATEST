@@ -12,7 +12,7 @@ func GetTemplate(r *http.Request, resp *map[string]interface{}) WebError {
 		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	_, web_err := GetTokenData(params[0], ip, true)
+	_, web_err := GetTokenData(&params[0], ip, true)
 	if web_err != NoError {
 		return web_err
 	}

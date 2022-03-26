@@ -109,7 +109,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) WebError {
 		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	_, web_err := GetTokenData(params[0], ip, true)
+	token, web_err := GetTokenData(&params[0], ip, true)
 	if web_err != NoError {
 		return web_err
 	}
@@ -140,7 +140,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) WebError {
 		return web_err
 	}
 
-	tasks := GetTasks(*task_ids)
+	tasks := GetTasks(token, *task_ids)
 	if is_folder_structure {
 		FillResponseFolders(tasks, resp)
 	} else {
@@ -156,7 +156,7 @@ func ParseSolution(r *http.Request) (*Solution, WebError) {
 		return nil, TokenNotProvided
 	}
 	ip := GetIP(r)
-	token, web_err := GetTokenData(params[0], ip, true)
+	token, web_err := GetTokenData(&params[0], ip, true)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -179,7 +179,7 @@ func ParseSolution(r *http.Request) (*Solution, WebError) {
 	}
 	task_ids := make([]int, 1)
 	task_ids[0] = task_id
-	tasks := GetTasks(task_ids)
+	tasks := GetTasks(token, task_ids)
 	if len(*tasks) == 0 {
 		return nil, TaskNotFound
 	}

@@ -32,34 +32,34 @@ func GetLogin(r *http.Request, resp *map[string]interface{}) WebError {
 	}
 
 	ip := GetIP(r)
-	token, web_err := GetTokenForConnection(email, pass, ip)
+	token, web_err := GetTokenForConnection(&email, &pass, ip, EnvB("MAIL_ENABLE"))
 	if web_err != NoError {
 		return web_err
 	}
 
 	if !token.IsVerified {
-		if EnvB("MAIL_ENABLE") {
-			web_err := SendMail(email, token)
-			if web_err != NoError {
-				return web_err
-			}
-			return TokenNotVerified
+		verification_token := CreateVerificationToken(token)
+		web_err = SendMail(ip, &email, verification_token)
+		if web_err != NoError {
+			return web_err
 		}
-		VerifyToken(token)
+		return TokenNotVerified
 	}
 
 	(*resp)["token"] = token.Token
 	return NoError
 }
 
-func SendMail(email string, token *Token) WebError {
+func SendMail(ip *string, email *string, verification_token *string) WebError {
 	m := gomail.NewMessage()
 	m.SetHeader("From", Env("MAIL_EMAIL"))
-	m.SetHeader("To", email)
+	m.SetHeader("To", *email)
 	m.SetHeader("Subject", Env("MAIL_SUBJECT"))
-	verify_link := fmt.Sprintf("https://%s%sverify?token=%s", Env("WEB_HOST"), Env("WEB_ENTRY"), token.Token)
+
+	verify_link := fmt.Sprintf("https://%s%sverify?token=%s",
+		Env("WEB_HOST"), Env("WEB_ENTRY"), *verification_token)
 	m.SetBody("text/plain", fmt.Sprintf(strings.Replace(Env("MAIL_MSG"), "\\n", "\n", -1),
-		token.IP, verify_link))
+		*ip, verify_link))
 	port, err := strconv.Atoi(Env("MAIL_SERVER_PORT"))
 	Err(err)
 	d := gomail.NewDialer(Env("MAIL_SERVER"), port, Env("MAIL_EMAIL"), Env("MAIL_PASS"))
@@ -76,9 +76,5 @@ func GetVerify(r *http.Request, resp *map[string]interface{}) WebError {
 		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	token, err := GetTokenData(params[0], ip, false)
-	if err == NoError && !token.IsVerified {
-		VerifyToken(token)
-	}
-	return err
+	return VerifyToken(ip, &params[0])
 }

@@ -120,7 +120,7 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool
 	return &test_result, is_ok
 }
 
-func IsLanguageSupported(lang string) bool {
+func GetSupportedLanguages() *[]string {
 	runner_url := fmt.Sprintf("http://%s:%s", Env("RUNNER_HOST"), Env("RUNNER_PORT"))
 	response, err := http.Get(runner_url)
 	Err(err)
@@ -134,6 +134,11 @@ func IsLanguageSupported(lang string) bool {
 
 	langs := result["langs"]
 	sort.Strings(langs)
-	idx := sort.SearchStrings(langs, lang)
-	return idx < len(langs) && langs[idx] == lang
+	return &langs
+}
+
+func IsLanguageSupported(lang string) bool {
+	langs := GetSupportedLanguages()
+	idx := sort.SearchStrings(*langs, lang)
+	return idx < len(*langs) && (*langs)[idx] == lang
 }

@@ -32,7 +32,9 @@ const (
 	SolutionProjectFolderNotFound = 505 // Project specified in "task_folders" not found, when
 	SolutionUnitFolderNotFound    = 506 // Unit specified in "task_folders" not found
 	SolutionTaskFolderNotFound    = 507 // Task specified in "task_folders" not found
+	SolutionBuildFail             = 508 // Fail during solution building, error message could be found in "error_data"
+	SolutionTestFail              = 509 // Fail during solution testing, error message could be found in "error_data"
 
-	LanguageNotProvided  = 600 // "token" field not provided
-	LanguageNotSupported = 601 // "token" field not provided
+	LanguageNotProvided  = 600 // "lang" field not provided
+	LanguageNotSupported = 601 // Provided "lang" is not supported
 )

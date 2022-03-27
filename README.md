@@ -17,6 +17,7 @@ Web service that allows to run tests for programms written in these languages:
   * [Get token](#get-token)
   * [Get available tasks](#get-available-tasks)
   * [Send solution to testing](#send-solution-to-testing)
+- [Error handling](#error-handling)
 
 # How it works
 
@@ -334,7 +335,7 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 ### Result example - no errors:
 
 ```json
-{"error":null}
+{"error":0}
 ```
 
 ### Result example - build error:

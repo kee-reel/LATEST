@@ -85,7 +85,7 @@ func GenerateTests(task *Task) *string {
 	return &result
 }
 
-func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool) {
+func BuildAndTest(task *Task, solution *Solution) (WebError, *map[string]interface{}) {
 	complete_solution_source, fixed_tests := GetTaskTestData(task.Id)
 	random_tests := GenerateTests(task)
 
@@ -113,11 +113,21 @@ func BuildAndTest(task *Task, solution *Solution) (*map[string]interface{}, bool
 	err = json.Unmarshal([]byte(body), &test_result)
 	Err(err)
 
-	is_ok := test_result["error"] == nil
-	if is_ok {
-		test_result["error"] = NoError
+	web_err := NoError
+	var err_data *map[string]interface{}
+	if test_result["error"] != nil {
+		test_error := test_result["error"].(map[string]interface{})
+		switch string(test_error["stage"].(string)) {
+		case "build":
+			web_err = SolutionBuildFail
+		case "test":
+			web_err = SolutionTestFail
+		}
+		delete(test_error, "stage")
+		err_data = &test_error
 	}
-	return &test_result, is_ok
+
+	return web_err, err_data
 }
 
 func GetSupportedLanguages() *[]string {

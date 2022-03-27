@@ -232,12 +232,11 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) WebError {
 	if err != NoError {
 		return err
 	}
-	test_result, is_passed := BuildAndTest(solution.Task, solution)
-	if is_passed {
-		fail_count := GetFailedSolutions(solution)
-		(*test_result)["fail_count"] = fail_count
+	web_err, err_data := BuildAndTest(solution.Task, solution)
+	if web_err != NoError {
+		(*resp)["error_data"] = *err_data
+		(*resp)["fail_count"] = GetFailedSolutions(solution)
 	}
-	SaveSolution(solution, is_passed)
-	*resp = *test_result
-	return NoError
+	SaveSolution(solution, web_err == NoError)
+	return web_err
 }

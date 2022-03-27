@@ -1,8 +1,20 @@
 version: '3'
 
 services:
+  db:
+    ports:
+      - 54321:5432
+
   web:
+    ports: 
+      - 12345:12345
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
     environment:
       - RUNNER_VERBOSE=true
       - LOG_VERBOSE=true
-      - MAIL_ENABLE=false
+      - MAIL_ENABLE=true
+
+  runner:
+    ports:
+      - 13378:13378

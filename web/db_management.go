@@ -331,7 +331,7 @@ func GetTokenForConnection(email *string, pass *string, ip *string, needs_verifi
 	}
 
 	// If token not found, then generate new one
-	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip, is_verified) VALUES($1, $2, $3) RETURNING id`)
+	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip, is_verified) VALUES($1, $2, $3, $4) RETURNING id`)
 	Err(err)
 	token.Token = string(GenerateToken())
 	err = query.QueryRow(token.Token, token.UserId, token.IP, !needs_verification).Scan(&token.Id)
@@ -376,7 +376,7 @@ func GetTokenData(token_str *string, ip *string, verified_only bool) (*Token, We
 func CreateVerificationToken(token *Token) *string {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`INSERT INTO verification_tokens(veification_token, token) VALUES($1, $2) RETURNING id`)
+	query, err := db.Prepare(`INSERT INTO verification_tokens(verification_token, token) VALUES($1, $2)`)
 	Err(err)
 	verification_token := string(GenerateToken())
 	_, err = query.Exec(verification_token, token.Token)
@@ -392,6 +392,7 @@ func VerifyToken(ip *string, verification_token *string) WebError {
 	Err(err)
 
 	var token_str string
+    log.Print(*verification_token)
 	err = query.QueryRow(*verification_token).Scan(&token_str)
 	if err != nil {
 		return TokenUnknown

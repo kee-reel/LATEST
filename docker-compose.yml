@@ -5,15 +5,11 @@ services:
     restart: always
     volumes:
       - ./manage/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-    ports:
-      - 5432:5432
     networks:
       - internet
     env_file: .env
 
   web:
-    ports: 
-      - 1234:1234
     links:
       - db
       - runner
@@ -25,12 +21,9 @@ services:
       - no-internet
     environment:
       - RUNNER_HOST=runner
-      - RUNNER_PORT=1337
     env_file: .env
 
   runner:
-    ports:
-      - 1337:1337
     networks:
       - no-internet
     env_file: .env

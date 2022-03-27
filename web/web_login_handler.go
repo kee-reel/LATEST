@@ -56,8 +56,7 @@ func SendMail(ip *string, email *string, verification_token *string) WebError {
 	m.SetHeader("To", *email)
 	m.SetHeader("Subject", Env("MAIL_SUBJECT"))
 
-	verify_link := fmt.Sprintf("https://%s%sverify?token=%s",
-		Env("WEB_HOST"), Env("WEB_ENTRY"), *verification_token)
+    verify_link := fmt.Sprintf("https://%s/verify?token=%s", Env("WEB_DOMAIN"), *verification_token)
 	m.SetBody("text/plain", fmt.Sprintf(strings.Replace(Env("MAIL_MSG"), "\\n", "\n", -1),
 		*ip, verify_link))
 	port, err := strconv.Atoi(Env("MAIL_SERVER_PORT"))

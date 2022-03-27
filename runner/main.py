@@ -75,5 +75,5 @@ def run_test():
         data['result'] = results
     return data
 
-app.run(host='0.0.0.0', port=1337)
+app.run(host='0.0.0.0', port=os.getenv('RUNNER_PORT'))
 

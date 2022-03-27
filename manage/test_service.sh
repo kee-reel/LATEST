@@ -8,7 +8,11 @@ if [[ -z "$(ls tests)" ]]; then
 	python3 fill_db.py
 fi
 
-DOMAIN=http$(if [[ "$WEB_HTTP" == 'false' ]]; then echo s; fi)://$WEB_HOST:$WEB_PORT$WEB_ENTRY
+if $WEB_HTTP; then
+    DOMAIN=http://$WEB_HOST:$WEB_PORT$WEB_ENTRY
+else
+    DOMAIN=https://$WEB_DOMAIN$WEB_ENTRY
+fi
 echo "Testing $DOMAIN"
 
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=$TEST_PASS | grep -Po '[\w\d]{256}')

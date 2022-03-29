@@ -8,67 +8,52 @@ import (
 	"runtime/debug"
 )
 
-func ProcessSolution(w http.ResponseWriter, r *http.Request) {
-	var err WebError
-	err = MethodNotSupported
+func SolutionHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetSolution, PostSolution)
+}
+
+func RegistrationHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetRegistration, PostRegistration)
+}
+
+func VerifyHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetVerify, nil)
+}
+
+func LoginHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetLogin, nil)
+}
+
+func TemplateHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetTemplate, nil)
+}
+
+func LanguagesHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetLanguages, nil)
+}
+
+type WebMethodFunc func(r *http.Request, resp *map[string]interface{}) WebError
+
+func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
+	var web_err WebError
+	web_err = MethodNotSupported
 	resp := map[string]interface{}{}
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
-		err = GetSolution(r, &resp)
+		if get == nil {
+			web_err = MethodNotSupported
+		} else {
+			web_err = get(r, &resp)
+		}
 	case "POST":
-		err = PostSolution(r, &resp)
+		if post == nil {
+			web_err = MethodNotSupported
+		} else {
+			web_err = post(r, &resp)
+		}
 	}
-	HandleResponse(w, &resp, err)
-}
-
-func ProcessVerify(w http.ResponseWriter, r *http.Request) {
-	var err WebError
-	err = MethodNotSupported
-	resp := map[string]interface{}{}
-	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		err = GetVerify(r, &resp)
-	}
-	HandleResponse(w, &resp, err)
-}
-
-func ProcessLogin(w http.ResponseWriter, r *http.Request) {
-	var err WebError
-	err = MethodNotSupported
-	resp := map[string]interface{}{}
-	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		err = GetLogin(r, &resp)
-	}
-	HandleResponse(w, &resp, err)
-}
-
-func ProcessTemplate(w http.ResponseWriter, r *http.Request) {
-	var err WebError
-	err = MethodNotSupported
-	resp := map[string]interface{}{}
-	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		err = GetTemplate(r, &resp)
-	}
-	HandleResponse(w, &resp, err)
-}
-
-func ProcessLanguages(w http.ResponseWriter, r *http.Request) {
-	var err WebError
-	err = MethodNotSupported
-	resp := map[string]interface{}{}
-	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		langs := GetSupportedLanguages()
-		resp["langs"] = *langs
-	}
-	HandleResponse(w, &resp, err)
+	HandleResponse(w, &resp, web_err)
 }
 
 func HandleResponse(w http.ResponseWriter, resp *map[string]interface{}, web_err WebError) {

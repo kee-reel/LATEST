@@ -39,11 +39,10 @@ type Task struct {
 }
 
 type Token struct {
-	Id         int
-	UserId     int
-	IsVerified bool
-	Token      string
-	IP         string
+	Id     int
+	UserId int
+	Token  string
+	IP     string
 }
 
 type Solution struct {

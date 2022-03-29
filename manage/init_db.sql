@@ -48,17 +48,27 @@ CREATE TABLE IF NOT EXISTS tokens (
 	token VARCHAR(256) NOT NULL,
 	user_id INTEGER NOT NULL,
 	ip VARCHAR(15) NOT NULL,
-	is_verified BOOLEAN NOT NULL DEFAULT FALSE,
 	UNIQUE(token),
 	UNIQUE(user_id, ip));
 
+CREATE TABLE IF NOT EXISTS registration_tokens (
+	token VARCHAR(256) PRIMARY KEY,
+	email VARCHAR(128) NOT NULL,
+	ip VARCHAR(15) NOT NULL,
+	pass VARCHAR(256) NOT NULL,
+	name VARCHAR(50) NOT NULL,
+    UNIQUE(email, ip));
+
 CREATE TABLE IF NOT EXISTS verification_tokens (
-	verification_token VARCHAR(256) PRIMARY KEY,
-	token VARCHAR(256) NOT NULL);
+	token VARCHAR(256) PRIMARY KEY,
+	ip VARCHAR(15) NOT NULL,
+	user_id INTEGER NOT NULL,
+    UNIQUE(ip, user_id));
 
 CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,
 	email VARCHAR(128) NOT NULL,
 	pass VARCHAR(256) NOT NULL,
+	name VARCHAR(64) NOT NULL,
 	UNIQUE(email));
 

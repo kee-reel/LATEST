@@ -297,50 +297,35 @@ func GetFailedSolutions(solution *Solution) int {
 	return count
 }
 
-func GetTokenForConnection(email *string, pass *string, ip *string, needs_verification bool) (*Token, WebError) {
+func GetTokenForConnection(email *string, pass *string, ip *string) (*Token, WebError) {
 	db := OpenDB()
 	defer db.Close()
 	var token Token
 	token.IP = *ip
-
 	query, err := db.Prepare(`SELECT u.id, u.pass FROM users as u WHERE u.email = $1`)
 	Err(err)
 
 	var hash string
 	err = query.QueryRow(*email).Scan(&token.UserId, &hash)
-	if err == nil {
-		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(*pass))
-		if err != nil {
-			return nil, PasswordWrong
-		}
-	} else {
-		query, err = db.Prepare("INSERT INTO users(email, pass) VALUES($1, $2) RETURNING id")
-		Err(err)
-		hash_raw, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
-		Err(err)
-		err = query.QueryRow(*email, string(hash_raw)).Scan(&token.UserId)
-		Err(err)
+	if err != nil {
+		return nil, EmailUnknown
 	}
 
-	query, err = db.Prepare(`SELECT id, token, is_verified FROM tokens WHERE user_id = $1 AND ip = $2`)
-	Err(err)
-
-	err = query.QueryRow(token.UserId, token.IP).Scan(&token.Id, &token.Token, &token.IsVerified)
-	if err == nil {
-		return &token, NoError
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(*pass))
+	if err != nil {
+		return nil, PasswordWrong
 	}
 
-	// If token not found, then generate new one
-	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip, is_verified) VALUES($1, $2, $3, $4) RETURNING id`)
+	query, err = db.Prepare(`SELECT id, token FROM tokens WHERE user_id = $1 AND ip = $2`)
 	Err(err)
-	token.Token = string(GenerateToken())
-	err = query.QueryRow(token.Token, token.UserId, token.IP, !needs_verification).Scan(&token.Id)
-	Err(err)
-
+	err = query.QueryRow(token.UserId, token.IP).Scan(&token.Id, &token.Token)
+	if err != nil {
+		return nil, TokenNotVerified
+	}
 	return &token, NoError
 }
 
-func GetTokenData(token_str *string, ip *string, verified_only bool) (*Token, WebError) {
+func GetTokenData(token_str *string, ip *string) (*Token, WebError) {
 	if len(*token_str) == 0 {
 		log.Print("No token received")
 		return nil, TokenNotProvided
@@ -352,19 +337,15 @@ func GetTokenData(token_str *string, ip *string, verified_only bool) (*Token, We
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip, t.is_verified 
+	query, err := db.Prepare(`SELECT t.id, t.user_id, t.ip 
 		FROM tokens as t WHERE t.token = $1`)
 	Err(err)
 	var token Token
 	token.Token = *token_str
-	err = query.QueryRow(token.Token).Scan(&token.Id, &token.UserId, &token.IP, &token.IsVerified)
+	err = query.QueryRow(token.Token).Scan(&token.Id, &token.UserId, &token.IP)
 	if err != nil {
 		log.Printf("db error on scan: %s", err)
 		return nil, TokenUnknown
-	}
-	if verified_only && !token.IsVerified {
-		log.Printf("passed non verified token")
-		return nil, TokenNotVerified
 	}
 	if *ip != token.IP {
 		log.Print("IP for token does not match")
@@ -373,36 +354,115 @@ func GetTokenData(token_str *string, ip *string, verified_only bool) (*Token, We
 	return &token, NoError
 }
 
-func CreateVerificationToken(token *Token) *string {
+func CreateRegistrationToken(email *string, pass *string, name *string, ip *string) (*string, WebError) {
 	db := OpenDB()
 	defer db.Close()
-	query, err := db.Prepare(`INSERT INTO verification_tokens(verification_token, token) VALUES($1, $2)`)
+
+	query, err := db.Prepare(`SELECT u.id FROM users as u WHERE u.email = $1`)
 	Err(err)
-	verification_token := string(GenerateToken())
-	_, err = query.Exec(verification_token, token.Token)
+	var user_id int
+	err = query.QueryRow(*email).Scan(&user_id)
+	if err == nil {
+		return nil, EmailTaken
+	}
+
+	var token string
+	query, err = db.Prepare(`SELECT r.token FROM registration_tokens AS r WHERE r.email = $1 AND r.ip = $2`)
 	Err(err)
-	return &verification_token
+	err = query.QueryRow(*email, *ip).Scan(&token)
+	if err != nil {
+		query, err := db.Prepare(`INSERT INTO registration_tokens(token, email, ip, pass, name) VALUES($1, $2, $3, $4, $5)`)
+		Err(err)
+		hash_raw, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
+		Err(err)
+		token = string(GenerateToken())
+		_, err = query.Exec(token, *email, *ip, hash_raw, *name)
+		Err(err)
+	}
+	return &token, NoError
 }
 
-func VerifyToken(ip *string, verification_token *string) WebError {
+func RegisterToken(ip *string, token_str *string) WebError {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT v.token FROM verification_tokens as v WHERE v.verification_token = $1`)
+	query, err := db.Prepare(`SELECT r.email, r.pass, r.name, r.ip FROM registration_tokens as r WHERE r.token = $1`)
 	Err(err)
 
-	var token_str string
-    log.Print(*verification_token)
-	err = query.QueryRow(*verification_token).Scan(&token_str)
+	var email string
+	var pass string
+	var name string
+	var ip_from_db string
+	err = query.QueryRow(*token_str).Scan(&email, &pass, &name, &ip_from_db)
 	if err != nil {
 		return TokenUnknown
 	}
-	token, web_err := GetTokenData(&token_str, ip, false)
-	if web_err == NoError && !token.IsVerified {
-		query, err := db.Prepare(`UPDATE tokens SET is_verified = TRUE WHERE id = $1`)
-		Err(err)
-		_, err = query.Exec(token.Id)
-		Err(err)
+
+	if *ip != ip_from_db {
+		return TokenBoundToOtherIP
 	}
-	return web_err
+
+	var token Token
+	token.IP = *ip
+	query, err = db.Prepare(`INSERT INTO users(email, pass, name) VALUES($1, $2, $3) RETURNING id`)
+	Err(err)
+	err = query.QueryRow(email, pass, name).Scan(&token.UserId)
+	Err(err)
+
+	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip) VALUES($1, $2, $3) RETURNING id`)
+	Err(err)
+	token.Token = string(GenerateToken())
+	err = query.QueryRow(token.Token, token.UserId, token.IP).Scan(&token.Id)
+	Err(err)
+
+	query, err = db.Prepare(`DELETE FROM registration_tokens AS r WHERE r.email = $1`)
+	Err(err)
+	_, err = query.Exec(email)
+	Err(err)
+
+	return NoError
+}
+
+func CreateVerificationToken(user_id int, ip *string) *string {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`INSERT INTO 
+		verification_tokens(token, ip, user_id) VALUES($1, $2, $3)
+		ON CONFLICT (ip, user_id) DO UPDATE SET token = $1`)
+	Err(err)
+	token := string(GenerateToken())
+	_, err = query.Exec(token, *ip, user_id)
+	Err(err)
+	return &token
+}
+
+func VerifyToken(ip *string, token_str *string) WebError {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT v.user_id, v.ip FROM verification_tokens as v WHERE v.token = $1`)
+	Err(err)
+
+	var token Token
+	err = query.QueryRow(*token_str).Scan(&token.UserId, &token.IP)
+	if err != nil {
+		return TokenUnknown
+	}
+	if *ip != token.IP {
+		return TokenBoundToOtherIP
+	}
+
+	query, err = db.Prepare(`INSERT INTO tokens(token, user_id, ip) VALUES($1, $2, $3) RETURNING id`)
+	Err(err)
+	token.Token = string(GenerateToken())
+	err = query.QueryRow(token.Token, token.UserId, token.IP).Scan(&token.Id)
+	Err(err)
+
+	query, err = db.Prepare(`DELETE FROM verification_tokens AS v WHERE r.user_id = $1 AND r.ip = $2`)
+	Err(err)
+	_, err = query.Exec(token.UserId, token.IP)
+	Err(err)
+
+	return NoError
 }

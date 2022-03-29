@@ -13,7 +13,6 @@ services:
     environment:
       - RUNNER_VERBOSE=true
       - LOG_VERBOSE=true
-      - MAIL_ENABLE=true
 
   runner:
     ports:

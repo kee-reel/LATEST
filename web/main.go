@@ -24,11 +24,12 @@ func EnvB(key string) bool {
 func main() {
 	var err error
 	entry := Env("WEB_ENTRY")
-	http.HandleFunc(entry, ProcessSolution)
-	http.HandleFunc(fmt.Sprintf("%slogin", entry), ProcessLogin)
-	http.HandleFunc(fmt.Sprintf("%sverify", entry), ProcessVerify)
-	http.HandleFunc(fmt.Sprintf("%stemplate", entry), ProcessTemplate)
-	http.HandleFunc(fmt.Sprintf("%slanguages", entry), ProcessLanguages)
+	http.HandleFunc(entry, SolutionHandle)
+	http.HandleFunc(fmt.Sprintf("%slogin", entry), LoginHandle)
+	http.HandleFunc(fmt.Sprintf("%sverify", entry), VerifyHandle)
+	http.HandleFunc(fmt.Sprintf("%stemplate", entry), TemplateHandle)
+	http.HandleFunc(fmt.Sprintf("%slanguages", entry), LanguagesHandle)
+	http.HandleFunc(fmt.Sprintf("%sregister", entry), RegistrationHandle)
 	addr := fmt.Sprintf("0.0.0.0:%s", Env("WEB_PORT"))
 	is_http := EnvB("WEB_HTTP")
 	log.Printf("Started listening on %s%s HTTPS(%t)", addr, entry, !is_http)

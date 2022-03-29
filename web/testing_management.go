@@ -85,7 +85,7 @@ func GenerateTests(task *Task) *string {
 	return &result
 }
 
-func BuildAndTest(task *Task, solution *Solution) (WebError, *map[string]interface{}) {
+func BuildAndTest(task *Task, solution *Solution) (WebError, *interface{}, *interface{}) {
 	complete_solution_source, fixed_tests := GetTaskTestData(task.Id)
 	random_tests := GenerateTests(task)
 
@@ -114,20 +114,25 @@ func BuildAndTest(task *Task, solution *Solution) (WebError, *map[string]interfa
 	Err(err)
 
 	web_err := NoError
-	var err_data *map[string]interface{}
+	var err_data *interface{}
 	if test_result["error"] != nil {
-		test_error := test_result["error"].(map[string]interface{})
-		switch string(test_error["stage"].(string)) {
+		error_result := test_result["error"].(map[string]interface{})
+		switch string(error_result["stage"].(string)) {
 		case "build":
 			web_err = SolutionBuildFail
 		case "test":
 			web_err = SolutionTestFail
 		}
-		delete(test_error, "stage")
-		err_data = &test_error
+		delete(error_result, "stage")
+		temp_err_data := test_result["error"]
+		err_data = &temp_err_data
 	}
-
-	return web_err, err_data
+	var verbose_data *interface{}
+	if test_result["result"] != nil {
+		temp_verbose_data := test_result["result"]
+		verbose_data = &temp_verbose_data
+	}
+	return web_err, err_data, verbose_data
 }
 
 func GetSupportedLanguages() *[]string {
@@ -149,6 +154,9 @@ func GetSupportedLanguages() *[]string {
 
 func IsLanguageSupported(lang string) bool {
 	langs := GetSupportedLanguages()
+	if len(*langs) == 0 {
+		return false
+	}
 	idx := sort.SearchStrings(*langs, lang)
 	return idx < len(*langs) && (*langs)[idx] == lang
 }

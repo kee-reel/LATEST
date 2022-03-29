@@ -9,6 +9,8 @@ const (
 
 	EmailNotProvided = 100 // "email" field not provided
 	EmailInvalid     = 101 // "email" field is invalid, incorrect email address format
+	EmailUnknown     = 102 // Provided "email" is not registered
+	EmailTaken       = 103 // Provided "email" is not registered
 
 	PasswordNotProvided = 200 // "pass" field not provided
 	PasswordInvalid     = 201 // "pass" field is invalid, must be at least 6 symbols
@@ -37,4 +39,7 @@ const (
 
 	LanguageNotProvided  = 600 // "lang" field not provided
 	LanguageNotSupported = 601 // Provided "lang" is not supported
+
+	NameNotProvided = 700 // "name" field not provided
+	NameInvalid     = 701 // "name" field is invalid, must be less than 50 symbols
 )

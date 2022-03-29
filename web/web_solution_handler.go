@@ -109,7 +109,7 @@ func GetSolution(r *http.Request, resp *map[string]interface{}) WebError {
 		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	token, web_err := GetTokenData(&params[0], ip, true)
+	token, web_err := GetTokenData(&params[0], ip)
 	if web_err != NoError {
 		return web_err
 	}
@@ -156,7 +156,7 @@ func ParseSolution(r *http.Request) (*Solution, WebError) {
 		return nil, TokenNotProvided
 	}
 	ip := GetIP(r)
-	token, web_err := GetTokenData(&params[0], ip, true)
+	token, web_err := GetTokenData(&params[0], ip)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -232,10 +232,12 @@ func PostSolution(r *http.Request, resp *map[string]interface{}) WebError {
 	if err != NoError {
 		return err
 	}
-	web_err, err_data := BuildAndTest(solution.Task, solution)
+	web_err, err_data, verbose_result := BuildAndTest(solution.Task, solution)
 	if web_err != NoError {
 		(*resp)["error_data"] = *err_data
 		(*resp)["fail_count"] = GetFailedSolutions(solution)
+	} else if verbose_result != nil {
+		(*resp)["result"] = *verbose_result
 	}
 	SaveSolution(solution, web_err == NoError)
 	return web_err

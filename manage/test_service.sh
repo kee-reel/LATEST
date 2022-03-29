@@ -15,6 +15,8 @@ else
 fi
 echo "Testing $DOMAIN"
 
+curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register
+
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=$TEST_PASS | grep -Po '[\w\d]{256}')
 
 echo "Token: $TOKEN

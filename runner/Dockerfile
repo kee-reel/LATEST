@@ -1,6 +1,5 @@
 ARG IMAGE
 FROM $IMAGE
-EXPOSE 1337
 
 USER root
 # Some images doesn't create docker user
@@ -13,10 +12,19 @@ RUN chmod -R 777 $DIRPATH/uploads
 
 COPY requirements.txt .
 
+ENV TZ=Europe/Moscow
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt update
+RUN apt install -y fpc python3
+RUN apt install -y pip
+
 USER docker
 ENV PATH $PATH:/home/docker/.local/bin
 RUN python3 -m pip install --upgrade pip
 RUN pip3 install -r requirements.txt
+
+USER root
+USER docker
 
 COPY . .
 CMD ["python3", "main.py"]

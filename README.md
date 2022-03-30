@@ -14,6 +14,8 @@ Web service that allows to run tests for programms written in these languages:
 - [Tests structure](#tests-structure)
 - [Service start](#service-start)
 - [Requests](#requests)
+  * [Register](#register)
+  * [Restore password](#restore-password)
   * [Get token](#get-token)
   * [Get available tasks](#get-available-tasks)
   * [Send solution to testing](#send-solution-to-testing)
@@ -355,3 +357,11 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 ```json
 {"error":null,"fail_count":0,"result":[{"params":"1;1;","result":"2"},{"params":"0;0;","result":"0"},{"params":"-1;1;","result":"0"},{"params":"10;10;","result":"20"},{"params":"20;-20;","result":"0"},{"params":"-100;-100;","result":"-200"},{"params":"347;-379;","result":"-32"},{"params":"-313;137;","result":"-176"},{"params":"-319;491;","result":"172"},{"params":"268;-819;","result":"-551"},{"params":"-296;-546;","result":"-842"},{"params":"435;-123;","result":"312"},{"params":"878;-621;","result":"257"},{"params":"110;79;","result":"189"},{"params":"546;330;","result":"876"},{"params":"533;786;","result":"1319"},{"params":"-45;535;","result":"490"},{"params":"439;973;","result":"1412"},{"params":"-615;561;","result":"-54"},{"params":"-958;-703;","result":"-1661"},{"params":"855;-408;","result":"447"},{"params":"767;-154;","result":"613"},{"params":"-413;278;","result":"-135"},{"params":"-461;23;","result":"-438"},{"params":"-425;913;","result":"488"},{"params":"142;656;","result":"798"},{"params":"-53;-950;","result":"-1003"},{"params":"-539;814;","result":"275"},{"params":"-229;-918;","result":"-1147"},{"params":"-619;56;","result":"-563"},{"params":"-736;151;","result":"-585"},{"params":"407;102;","result":"509"},{"params":"-789;544;","result":"-245"},{"params":"-238;668;","result":"430"},{"params":"742;-848;","result":"-106"},{"params":"129;-207;","result":"-78"}]}
 ```
+
+# Error handling
+
+If error occurs during request processing error code will be returned.
+
+If it's server related issue, `1 (Internal)` error code will be returned.
+
+

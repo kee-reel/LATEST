@@ -11,4 +11,4 @@ services:
     build:
       context: runner
       args:
-        IMAGE: python:latest
+        IMAGE: ubuntu:latest

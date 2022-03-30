@@ -30,6 +30,7 @@ func main() {
 	http.HandleFunc(fmt.Sprintf("%stemplate", entry), TemplateHandle)
 	http.HandleFunc(fmt.Sprintf("%slanguages", entry), LanguagesHandle)
 	http.HandleFunc(fmt.Sprintf("%sregister", entry), RegistrationHandle)
+	http.HandleFunc(fmt.Sprintf("%srestore", entry), RestoreHandle)
 	addr := fmt.Sprintf("0.0.0.0:%s", Env("WEB_PORT"))
 	is_http := EnvB("WEB_HTTP")
 	log.Printf("Started listening on %s%s HTTPS(%t)", addr, entry, !is_http)

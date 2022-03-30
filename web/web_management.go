@@ -32,6 +32,10 @@ func LanguagesHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLanguages, nil)
 }
 
+func RestoreHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetRestore, PostRestore)
+}
+
 type WebMethodFunc func(r *http.Request, resp *map[string]interface{}) WebError
 
 func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
@@ -53,17 +57,14 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 			web_err = post(r, &resp)
 		}
 	}
-	HandleResponse(w, &resp, web_err)
-}
 
-func HandleResponse(w http.ResponseWriter, resp *map[string]interface{}, web_err WebError) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	if web_err != NoError {
 		log.Printf("Failed user request, error code: %d", web_err)
-		(*resp)["error"] = web_err
+		resp["error"] = web_err
 	}
-	jsonResp, err := json.Marshal(*resp)
+	jsonResp, err := json.Marshal(resp)
 	Err(err)
 	w.Write(jsonResp)
 }

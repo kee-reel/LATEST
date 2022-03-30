@@ -3,9 +3,10 @@ import sys
 import subprocess
 
 
-LANGS = ['c', 'py']
+LANGS = ['c', 'py', 'pas']
 LANG_CMD = {
         'c': lambda source, target: ['/usr/bin/gcc', source, '-o', target, '-lm'],
+        'pas': lambda source, target: ['/usr/bin/fpc', '-ve', '-Fe/dev/stderr', source, f'-o{target}'],
 }
 
 

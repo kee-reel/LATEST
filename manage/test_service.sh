@@ -15,14 +15,21 @@ else
 fi
 echo "Testing $DOMAIN"
 
-curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register
+echo "Register: $TEST_MAIL
+$(curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register)
+"
 
-TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=$TEST_PASS | grep -Po '[\w\d]{256}')
+echo "Restore: $TEST_MAIL
+$(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
+"
+
+TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | grep -Po '[\w\d]{256}')
+echo "Token: $TOKEN"
 
 echo "Token: $TOKEN
 ===
 Existing tasks:"
-TASKS=$(curl -X GET $DOMAIN?token=$TOKEN\&folders=true\&task_folders=sample_tests,unit-2,task-1)
+TASKS=$(curl -s -X GET $DOMAIN?token=$TOKEN\&folders=true\&task_folders=sample_tests,unit-2,task-1)
 echo $TASKS
 
 TASK_ID=$(echo $TASKS | jq '.sample_tests["units"]["unit-2"]["tasks"]["task-1"]["id"]')
@@ -47,12 +54,42 @@ curl -X POST $DOMAIN?token=$TOKEN \
 
 echo '
 ===
+Post solution in Pascal:'
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='pas' \
+	--form-string source_text='
+var
+    A, B: Integer;
+begin
+    Read(A);
+    Read(B);
+    writeln(A+B);
+end.'
+
+echo '
+===
 Post wrong solution in C:'
 curl -X POST $DOMAIN?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+1+b);}'
+
+echo '
+===
+Post wrong solution in Pascal:'
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='pas' \
+	--form-string source_text='
+var
+    A, B: Integer;
+begin
+    Read(A);
+    Read(B);
+    writeln(A+B-10);
+end.'
 
 echo '
 ===
@@ -80,6 +117,21 @@ curl -X POST $DOMAIN?token=$TOKEN \
     -F lang='py' \
     --form-string source_text='res = int(input()))+int(input)
 print(res)'
+
+echo '
+===
+Post malformed solution in Pascal:'
+curl -X POST $DOMAIN?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='pas' \
+	--form-string source_text='
+var
+    A, B: Integer;
+beg
+    Rad(A);
+    Read(B);
+    writeln(AB-10);
+end.'
 
 echo '
 ===

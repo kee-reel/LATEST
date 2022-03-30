@@ -2,12 +2,16 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"math/big"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
+
+	gomail "gopkg.in/mail.v2"
 )
 
 func Abs(x int) int {
@@ -67,4 +71,20 @@ func GetIP(r *http.Request) *string {
 		return &ip
 	}
 	panic("Can't resolve client's ip")
+}
+
+func SendMail(ip *string, email *string, subject *string, message *string) {
+	m := gomail.NewMessage()
+	m.SetHeader("From", Env("MAIL_EMAIL"))
+	m.SetHeader("To", *email)
+	m.SetHeader("Subject", *subject)
+
+	m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
+	port, err := strconv.Atoi(Env("MAIL_SERVER_PORT"))
+	Err(err)
+	d := gomail.NewDialer(Env("MAIL_SERVER"), port, Env("MAIL_EMAIL"), Env("MAIL_PASS"))
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	err = d.DialAndSend(m)
+	Err(err)
 }

@@ -466,3 +466,63 @@ func VerifyToken(ip *string, token_str *string) WebError {
 
 	return NoError
 }
+
+func CreateRestoreToken(email *string, ip *string, pass *string) (*string, WebError) {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT u.id FROM users as u WHERE u.email = $1`)
+	Err(err)
+	var user_id int
+	log.Printf("email: %s", *email)
+	err = query.QueryRow(*email).Scan(&user_id)
+	if err != nil {
+		return nil, EmailUnknown
+	}
+
+	var token string
+	query, err = db.Prepare(`SELECT r.token FROM restore_tokens AS r WHERE r.user_id = $1 AND r.ip = $2`)
+	Err(err)
+	err = query.QueryRow(user_id, *ip).Scan(&token)
+	query, err = db.Prepare(`INSERT INTO 
+		restore_tokens(token, ip, user_id, pass) VALUES($1, $2, $3, $4)
+		ON CONFLICT (ip, user_id) DO UPDATE SET token = $1, pass = $4`)
+	Err(err)
+	hash_raw, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
+	Err(err)
+	token = string(GenerateToken())
+	_, err = query.Exec(token, *ip, user_id, hash_raw)
+	Err(err)
+	return &token, NoError
+}
+
+func RestoreToken(ip *string, token_str *string) WebError {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT r.user_id, r.ip, r.pass FROM restore_tokens as r WHERE r.token = $1`)
+	Err(err)
+
+	var user_id int
+	var ip_from_db string
+	var pass string
+	err = query.QueryRow(*token_str).Scan(&user_id, &ip_from_db, &pass)
+	if err != nil {
+		return TokenUnknown
+	}
+	if *ip != ip_from_db {
+		return TokenBoundToOtherIP
+	}
+
+	query, err = db.Prepare(`UPDATE users SET pass = $1 WHERE id = $2`)
+	Err(err)
+	_, err = query.Exec(pass, user_id)
+	Err(err)
+
+	query, err = db.Prepare(`DELETE FROM restore_tokens WHERE user_id = $1`)
+	Err(err)
+	_, err = query.Exec(user_id)
+	Err(err)
+
+	return NoError
+}

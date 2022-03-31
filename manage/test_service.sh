@@ -23,6 +23,7 @@ echo "Restore: $TEST_MAIL
 $(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
 "
 
+curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | grep -Po '[\w\d]{256}')
 echo "Token: $TOKEN"
 

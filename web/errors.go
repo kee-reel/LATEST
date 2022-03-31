@@ -4,13 +4,13 @@ type WebError int
 
 const (
 	NoError            WebError = 0 // Everything is OK
-	Internal                    = 1 // Internal server error, must be bug
+	Internal                    = 1 // Internal server error, must be a bug
 	MethodNotSupported          = 2 // Called unsupported web method
 
 	EmailNotProvided = 100 // "email" field not provided
 	EmailInvalid     = 101 // "email" field is invalid, incorrect email address format
 	EmailUnknown     = 102 // Provided "email" is not registered
-	EmailTaken       = 103 // Provided "email" is not registered
+	EmailTaken       = 103 // Provided "email" is already taken
 
 	PasswordNotProvided = 200 // "pass" field not provided
 	PasswordInvalid     = 201 // "pass" field is invalid, must be at least 6 symbols

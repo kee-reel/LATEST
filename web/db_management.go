@@ -526,3 +526,16 @@ func RestoreToken(ip *string, token_str *string) WebError {
 
 	return NoError
 }
+
+func GetUserName(user_id int) string {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT u.name FROM users as u WHERE u.id = $1`)
+	Err(err)
+
+	var name string
+	err = query.QueryRow(user_id).Scan(&name)
+    Err(err)
+	return name
+}

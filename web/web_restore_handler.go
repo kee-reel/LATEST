@@ -12,7 +12,7 @@ func GetRestore(r *http.Request, resp *map[string]interface{}) WebError {
 		return TokenNotProvided
 	}
 	ip := GetIP(r)
-	return RegisterToken(ip, &params[0])
+	return RestoreToken(ip, &params[0])
 }
 
 func PostRestore(r *http.Request, resp *map[string]interface{}) WebError {

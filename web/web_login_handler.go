@@ -39,6 +39,7 @@ func GetLogin(r *http.Request, resp *map[string]interface{}) WebError {
 			web_err = VerifyToken(ip, verification_token)
 		}
 	} else if web_err == NoError {
+        (*resp)["name"] = GetUserName(token.UserId)
 		(*resp)["token"] = token.Token
 	}
 	return web_err

@@ -35,7 +35,7 @@ func PostRegistration(r *http.Request, resp *map[string]interface{}) WebError {
 	if len(name) == 0 {
 		return NameNotProvided
 	}
-	if len(name) > 50 {
+	if len(name) > 128 {
 		return NameInvalid
 	}
 

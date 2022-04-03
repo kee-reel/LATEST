@@ -29,7 +29,10 @@ func GetLogin(r *http.Request, resp *map[string]interface{}) WebError {
 	ip := GetIP(r)
 	token, web_err := GetTokenForConnection(&email, &pass, ip)
 	if web_err == TokenNotVerified {
-		verification_token := CreateVerificationToken(token.UserId, ip)
+		verification_token, web_err := CreateVerificationToken(&email, ip)
+        if web_err != NoError {
+            return web_err
+        }
 		if EnvB("MAIL_ENABLED") {
 			verify_link := fmt.Sprintf("https://%s/verification?token=%s", Env("WEB_DOMAIN"), *verification_token)
 			msg := fmt.Sprintf(Env("MAIL_VER_MSG"), *ip, verify_link)

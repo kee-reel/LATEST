@@ -423,18 +423,26 @@ func RegisterToken(ip *string, token_str *string) WebError {
 	return NoError
 }
 
-func CreateVerificationToken(user_id int, ip *string) *string {
+func CreateVerificationToken(email *string, ip *string) (*string, WebError) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`INSERT INTO 
+	query, err := db.Prepare(`SELECT u.id FROM users as u WHERE u.email = $1`)
+	Err(err)
+	var user_id int
+	err = query.QueryRow(*email).Scan(&user_id)
+	if err == nil {
+		return nil, EmailUnknown
+	}
+
+	query, err = db.Prepare(`INSERT INTO 
 		verification_tokens(token, ip, user_id) VALUES($1, $2, $3)
 		ON CONFLICT (ip, user_id) DO UPDATE SET token = $1`)
 	Err(err)
 	token := string(GenerateToken())
 	_, err = query.Exec(token, *ip, user_id)
 	Err(err)
-	return &token
+	return &token, NoError
 }
 
 func VerifyToken(ip *string, token_str *string) WebError {

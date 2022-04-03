@@ -12,7 +12,8 @@ RUN chmod -R 777 $DIRPATH/uploads
 
 COPY requirements.txt .
 
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
+ENV TZ=Etc/UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt update && apt upgrade -y
 RUN apt install -y fpc python3
 RUN apt install -y pip

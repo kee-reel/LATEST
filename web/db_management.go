@@ -34,7 +34,7 @@ func GetTasks(token *Token, task_ids []int) *[]Task {
 	projects := map[int]*Project{}
 	for task_index, task_id := range task_ids {
 		query, err := db.Prepare(`SELECT t.project_id, t.unit_id, t.position, t.extention, t.folder_name,
-			t.name, t.description, t.input, t.output
+			t.name, t.description, t.input, t.output, t.score
 			FROM tasks AS t
 			WHERE t.id = $1`)
 		Err(err)
@@ -45,7 +45,7 @@ func GetTasks(token *Token, task_ids []int) *[]Task {
 		var unit_id int
 		err = query.QueryRow(task_id).Scan(
 			&project_id, &unit_id, &task.Position, &task.Extention, &task.FolderName,
-			&task.Name, &task.Desc, &in_params_str, &task.Output)
+			&task.Name, &task.Desc, &in_params_str, &task.Output, &task.Score)
 		ErrMsg(err, "Task not found")
 
 		project, ok := projects[project_id]
@@ -270,16 +270,31 @@ func SaveSolution(solution *Solution, is_passed bool) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`INSERT INTO solutions(token_id, task_id, is_passed) VALUES($1, $2, $3)`)
+	query, err := db.Prepare(`SELECT s.is_passed FROM solutions AS s
+		WHERE s.user_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
 	Err(err)
-	_, err = query.Exec(solution.Token.Id, solution.Task.Id, is_passed)
+	is_passed_before := false
+	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&is_passed_before)
+
+	query, err = db.Prepare(`INSERT INTO solutions(user_id, task_id, is_passed) VALUES($1, $2, $3)`)
+	Err(err)
+	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, is_passed)
 	Err(err)
 
+	if !is_passed_before && is_passed {
+		query, err := db.Prepare(`INSERT INTO 
+			leaderboard(project_id, user_id, score) VALUES($1, $2, $3)
+			ON CONFLICT (ip, user_id) DO UPDATE leaderboard SET score = score + $3`)
+		Err(err)
+		_, err = query.Exec(solution.Task.Project.Id, solution.Token.UserId, solution.Task.Score)
+		Err(err)
+	}
+
 	query, err = db.Prepare(`INSERT INTO 
-		solutions_sources(token_id, task_id, source_code) VALUES($1, $2, $3)
-		ON CONFLICT (token_id, task_id) DO UPDATE SET source_code = $3`)
+		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
+		ON CONFLICT (user_id, task_id) DO UPDATE SET source_code = $3`)
 	Err(err)
-	_, err = query.Exec(solution.Token.Id, solution.Task.Id, solution.Source)
+	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, solution.Source)
 	Err(err)
 }
 

@@ -35,6 +35,7 @@ type Task struct {
 	Input      []TaskParamData
 	Output     string
 	Path       string
+	Score      int
 	IsPassed   bool
 }
 

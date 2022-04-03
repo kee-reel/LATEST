@@ -58,11 +58,13 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		}
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	if web_err != NoError {
 		log.Printf("Failed user request, error code: %d", web_err)
 		resp["error"] = web_err
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusOK)
 	}
 	jsonResp, err := json.Marshal(resp)
 	Err(err)
@@ -73,7 +75,7 @@ func RecoverRequest(w http.ResponseWriter) {
 	r := recover()
 	if r != nil {
 		debug.PrintStack()
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
 		log.Printf("[INTERNAL ERROR]: %s", r)
 		response := fmt.Sprintf("{\"error\": \"%d\"}", Internal)

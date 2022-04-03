@@ -42,4 +42,7 @@ const (
 
 	NameNotProvided = 700 // "name" field not provided
 	NameInvalid     = 701 // "name" field is invalid, must be less than 50 symbols
+
+	LeaderboardProjectIdNotProvided     = 800
+	LeaderboardProjectFolderNotProvided = 801
 )

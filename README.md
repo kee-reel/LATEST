@@ -328,6 +328,98 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
 }
 ```
 
+Folders structure:
+```
+{
+  "sample_tests": {
+    "id": 1,
+    "name": "Competition",
+    "units": {
+      "unit-1": {
+        "id": 1,
+        "name": "Intro",
+        "tasks": {
+          "task-1": {
+            "desc": "Вывести строку \"Hello world!\"",
+            "id": 1,
+            "input": [],
+            "is_passed": false,
+            "name": "Hello world",
+            "number": 0,
+            "output": "Строка \"Hello world!\""
+          }
+        }
+      },
+      "unit-2": {
+        "id": 2,
+        "name": "Intro",
+        "tasks": {
+          "task-1": {
+            "desc": "Сложить два числа и вывести результат",
+            "id": 2,
+            "input": [
+              {
+                "dimensions": [
+                  1
+                ],
+                "name": "A",
+                "range": [
+                  "-1000",
+                  "1000"
+                ],
+                "type": "int"
+              },
+              {
+                "dimensions": [
+                  1
+                ],
+                "name": "B",
+                "range": [
+                  "-1000",
+                  "1000"
+                ],
+                "type": "int"
+              }
+            ],
+            "is_passed": false,
+            "name": "Сложение",
+            "number": 0,
+            "output": "Результат сложения A и B"
+          }
+        }
+      },
+      "unit-3": {
+        "id": 3,
+        "name": "Intro",
+        "tasks": {
+          "task-1": {
+            "desc": "На вход даётся N чисел. Сложить между собой нечётные, вычесть из них чётные и вывести результат. Сначала на вход подаётся количество чисел, а затем сами числа.",
+            "id": 3,
+            "input": [
+              {
+                "dimensions": [
+                  50
+                ],
+                "name": "A",
+                "range": [
+                  "-1000",
+                  "1000"
+                ],
+                "type": "int"
+              }
+            ],
+            "is_passed": false,
+            "name": "Сложить нечётные, вычесть чётные",
+            "number": 0,
+            "output": "Результат сложения и вычитания чисел"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ## Send solution to testing
 
 Sends solution for specified task.

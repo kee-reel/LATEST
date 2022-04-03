@@ -329,7 +329,7 @@ curl -X GET https://DOMAIN?token=MzWNRaVruqAMbq60g0TqkFVFeFLnW9ECgThSSIo5XoFBUlC
 ```
 
 Folders structure:
-```
+```json
 {
   "sample_tests": {
     "id": 1,

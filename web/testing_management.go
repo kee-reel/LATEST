@@ -59,7 +59,7 @@ func GenerateTests(task *Task) *string {
 	if len(task.Input) == 0 {
 		return &result
 	}
-	random_tests_count := 30
+	random_tests_count := 10
 	test_case_size := 1 // To add '\n' after every test case
 	for _, input := range task.Input {
 		test_case_size += input.TotalCount

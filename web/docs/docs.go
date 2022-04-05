@@ -633,7 +633,7 @@ const docTemplate = `{
             "properties": {
                 "params": {
                     "type": "string",
-                    "example": "2;1;7'"
+                    "example": "2;1;7;'"
                 },
                 "result": {
                     "type": "string",

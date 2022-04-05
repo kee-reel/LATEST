@@ -66,11 +66,11 @@ func GetTasks(token *Token, task_ids []int) *[]Task {
 		Err(err)
 
 		query, err = db.Prepare(`SELECT s.is_passed FROM solutions AS s
-			WHERE s.token_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
+			WHERE s.user_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
 		Err(err)
 
 		var passed_count int
-		err = query.QueryRow(token.Id, task_id).Scan(&passed_count)
+		err = query.QueryRow(token.UserId, task_id).Scan(&passed_count)
 		task.IsPassed = err == nil
 
 		for i := range task.Input {
@@ -156,7 +156,7 @@ func GetTaskIdsByFolder(folder_names *[]string) (*[]int, WebError) {
 		Err(err)
 		err = query.QueryRow((*folder_names)[0]).Scan(&project_id)
 		if err != nil {
-			return nil, SolutionProjectFolderNotFound
+			return nil, TasksProjectFolderNotFound
 		}
 		if folders_count != 3 {
 			sb.WriteString(" WHERE t.project_id = ")
@@ -168,7 +168,7 @@ func GetTaskIdsByFolder(folder_names *[]string) (*[]int, WebError) {
 		Err(err)
 		err = query.QueryRow(project_id, (*folder_names)[1]).Scan(&unit_id)
 		if err != nil {
-			return nil, SolutionUnitFolderNotFound
+			return nil, TasksUnitFolderNotFound
 		}
 		if folders_count != 3 {
 			sb.WriteString(" AND t.unit_id = ")
@@ -181,7 +181,7 @@ func GetTaskIdsByFolder(folder_names *[]string) (*[]int, WebError) {
 		var task_id int
 		err = query.QueryRow(project_id, unit_id, (*folder_names)[2]).Scan(&task_id)
 		if err != nil {
-			return nil, SolutionTaskFolderNotFound
+			return nil, TasksTaskFolderNotFound
 		}
 		task_ids := []int{task_id}
 		return &task_ids, NoError
@@ -284,7 +284,7 @@ func SaveSolution(solution *Solution, is_passed bool) {
 	if !is_passed_before && is_passed {
 		query, err := db.Prepare(`INSERT INTO 
 			leaderboard(project_id, user_id, score) VALUES($1, $2, $3)
-			ON CONFLICT (ip, user_id) DO UPDATE leaderboard SET score = score + $3`)
+			ON CONFLICT (user_id, project_id) DO UPDATE leaderboard SET score = score + $3`)
 		Err(err)
 		_, err = query.Exec(solution.Task.Project.Id, solution.Token.UserId, solution.Task.Score)
 		Err(err)
@@ -446,7 +446,7 @@ func CreateVerificationToken(email *string, ip *string) (*string, WebError) {
 	Err(err)
 	var user_id int
 	err = query.QueryRow(*email).Scan(&user_id)
-	if err == nil {
+	if err != nil {
 		return nil, EmailUnknown
 	}
 
@@ -559,6 +559,6 @@ func GetUserName(user_id int) string {
 
 	var name string
 	err = query.QueryRow(user_id).Scan(&name)
-    Err(err)
+	Err(err)
 	return name
 }

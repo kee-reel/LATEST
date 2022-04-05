@@ -8,8 +8,16 @@ import (
 	"runtime/debug"
 )
 
+func TasksFlatHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetTasksFlat, nil)
+}
+
+func TasksHierarchyHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetTasksHierarchy, nil)
+}
+
 func SolutionHandle(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, GetSolution, PostSolution)
+	HandleFunc(w, r, nil, PostSolution)
 }
 
 func RegistrationHandle(w http.ResponseWriter, r *http.Request) {

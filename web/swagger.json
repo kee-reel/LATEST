@@ -1,0 +1,145 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "Web service that allows to run tests for programms written in almost any language.\n\nSchemes: [https]",
+    "title": "Language Agnostic TEsting API",
+    "contact": {
+      "url": "https://kee-reel.com/about-ru"
+    },
+    "version": "0.0.1"
+  },
+  "basePath": "/",
+  "paths": {
+    "/languages": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "languages"
+        ],
+        "summary": "Get token for registered user.",
+        "operationId": "getLanguages"
+      }
+    },
+    "/login": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "login"
+        ],
+        "summary": "Get token for registered user.",
+        "operationId": "getLogin",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "User email",
+            "name": "email",
+            "in": "URL",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "password",
+            "description": "User password",
+            "name": "pass",
+            "in": "URL",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/register": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "register"
+        ],
+        "summary": "Get token for registered user.",
+        "operationId": "getRegister",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Registration token, sent to user's email.",
+            "name": "token",
+            "in": "URL",
+            "required": true
+          }
+        ]
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "register"
+        ],
+        "summary": "Register new user. On success user will receive confirmation link on specified email.",
+        "operationId": "postRegister",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "User email.",
+            "name": "email",
+            "in": "postForm",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "password",
+            "description": "User password.",
+            "name": "pass",
+            "in": "postForm",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "User name.",
+            "name": "name",
+            "in": "postForm",
+            "required": true
+          }
+        ]
+      }
+    }
+  },
+  "responses": {
+    "validationError": {
+      "description": "",
+      "schema": {
+        "type": "object",
+        "required": [
+          "Message"
+        ],
+        "properties": {
+          "FieldName": {
+            "description": "An optional field name to which this validation applies",
+            "type": "string"
+          },
+          "Message": {
+            "description": "The validation message",
+            "type": "string",
+            "example": "Expected type int"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

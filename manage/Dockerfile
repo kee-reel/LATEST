@@ -9,6 +9,8 @@ WORKDIR $DIRPATH
 
 COPY requirements.txt .
 
+ENV TZ=Etc/UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt update && apt upgrade -y 
 RUN apt install -y python3 python3-pip
 RUN apt install -y libpq-dev

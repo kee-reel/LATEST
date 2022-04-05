@@ -6,6 +6,21 @@ import (
 	"net/mail"
 )
 
+type APITokenResponse struct {
+    Token string `example:"9rzNUDp8bP6VOnGIqOO011f5EB4jk0eN0osZt0KFZHTtWIpiwqzVj2vof5sOq80QIJbne5dHiH5vEUe7uJ42X5X39tHGpt0LTreFOjMkfdn4sB6gzouUHc4tGubhikoKuK05P06W1x0QK0zJzbPaZYG4mfBpfU1u8xbqSPVo8ZI9zumiJUiHC8MbJxMPYsGJjZMChQBtA0NvKuAReS3v1704QBX5zZCAyyNP47VZ51E9MMqVGoZBxFmJ4mCHRBy7"`
+}
+
+// @Tags login
+// @Summary Get token for registered user
+// @Description Returns token that could be used in other requests.
+// @ID get-login
+// @Produce  json
+// @Param   email   query    string  true    "User email address"
+// @Param   pass    query    string  true    "User password. Must be at least 6 symbols"
+// @Success 200 {object} main.APITokenResponse "Success"
+// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 102, 200, 201, 202, 303"
+// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Router /login [get]
 func GetLogin(r *http.Request, resp *map[string]interface{}) WebError {
 	query := r.URL.Query()
 	params, ok := query["email"]

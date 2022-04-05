@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS solutions_sources(
 	user_id INTEGER NOT NULL,
 	task_id INTEGER NOT NULL,
 	source_code TEXT NOT NULL,
-	PRIMARY KEY(token_id, task_id));
+	PRIMARY KEY(user_id, task_id));
 
 CREATE TABLE IF NOT EXISTS tokens (
 	id SERIAL PRIMARY KEY,
@@ -85,4 +85,11 @@ CREATE TABLE IF NOT EXISTS users (
 	pass VARCHAR(256) NOT NULL,
 	name VARCHAR(128) NOT NULL,
 	UNIQUE(email));
+
+CREATE TABLE IF NOT EXISTS users (
+	id SERIAL PRIMARY KEY,
+	user_id INTEGER NOT NULL,
+	project_id INTEGER NOT NULL,
+	score INTEGER NOT NULL DEFAULT 0,
+	UNIQUE(user_id, project_id));
 

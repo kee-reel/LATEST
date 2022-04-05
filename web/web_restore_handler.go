@@ -6,15 +6,39 @@ import (
 	"net/mail"
 )
 
+// @Tags restore
+// @Summary Confirm user password restore
+// @Description Usually user makes this request when opening link sent on email.
+// @ID get-restore
+// @Produce  json
+// @Param   token   query    string  true    "Verification token, sent by POST /verify"
+// @Success 200 {object} main.APINoError "Success"
+// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304"
+// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Router /restore [get]
 func GetRestore(r *http.Request, resp *map[string]interface{}) WebError {
 	params, ok := r.URL.Query()["token"]
 	if !ok || len(params[0]) < 1 {
 		return TokenNotProvided
 	}
+	if len(params[0]) != token_len {
+		return TokenInvalid
+	}
 	ip := GetIP(r)
 	return RestoreToken(ip, &params[0])
 }
 
+// @Tags restore
+// @Summary Restore user password
+// @Description On success user will receive confirmation link on specified email.
+// @ID post-restore
+// @Produce  json
+// @Param   email   formData    string  true    "User email"
+// @Param   pass   formData    string  true    "New user password"
+// @Success 200 {object} main.APINoError "Success"
+// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 102, 200, 201"
+// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Router /restore [post]
 func PostRestore(r *http.Request, resp *map[string]interface{}) WebError {
 	email := r.FormValue("email")
 	if len(email) == 0 {

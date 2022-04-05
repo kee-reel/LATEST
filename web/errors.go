@@ -2,6 +2,20 @@ package main
 
 type WebError int
 
+// @Description Empty success response
+type APINoError struct {
+}
+
+// @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
+type APIError struct {
+	Error WebError `example:"300"`
+}
+
+// @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
+type APIInternalError struct {
+	Error WebError `example:"1"`
+}
+
 const (
 	NoError            WebError = 0 // Everything is OK
 	Internal                    = 1 // Internal server error, must be a bug
@@ -26,23 +40,24 @@ const (
 	TaskIdInvalid     = 401 // "task_id" field is invalid, must be a number
 	TaskNotFound      = 402 // "task_id" doesn't match to any task
 
-	SolutionTextNotProvided       = 500 // Neither "source_text" nor "source_file" fields provided
-	SolutionTextTooLong           = 501 // Solution text is too long, more than 50000 symbols
-	SolutionTestsTooLong          = 502 // Tests text is too long, more than 50000 symbols
-	SolutionTestsInvalid          = 503 // Tests doesn't match required format
-	SolutionTaskFoldersInvalid    = 504 // "task_folders" contains more than 3 items
-	SolutionProjectFolderNotFound = 505 // Project specified in "task_folders" not found, when
-	SolutionUnitFolderNotFound    = 506 // Unit specified in "task_folders" not found
-	SolutionTaskFolderNotFound    = 507 // Task specified in "task_folders" not found
-	SolutionBuildFail             = 508 // Fail during solution building, error message could be found in "error_data"
-	SolutionTestFail              = 509 // Fail during solution testing, error message could be found in "error_data"
+	SolutionTextNotProvided = 500 // Neither "source_text" nor "source_file" fields provided
+	SolutionTextTooLong     = 501 // Solution text is too long, more than 50000 symbols
+	SolutionTestsTooLong    = 502 // Tests text is too long, more than 50000 symbols
+	SolutionTestsInvalid    = 503 // Tests doesn't match required format
+	SolutionBuildFail       = 504 // Fail during solution building, error message could be found in "error_data"
+	SolutionTestFail        = 505 // Fail during solution testing, error message could be found in "error_data"
 
 	LanguageNotProvided  = 600 // "lang" field not provided
 	LanguageNotSupported = 601 // Provided "lang" is not supported
 
 	NameNotProvided = 700 // "name" field not provided
-	NameInvalid     = 701 // "name" field is invalid, must be less than 50 symbols
+	NameInvalid     = 701 // "name" field is invalid, must be less than 128 symbols
 
-	LeaderboardProjectIdNotProvided     = 800
-	LeaderboardProjectFolderNotProvided = 801
+	TasksFoldersInvalid        = 800 // "task_folders" contains more than 3 items
+	TasksProjectFolderNotFound = 801 // Project specified in "task_folders" not found, when
+	TasksUnitFolderNotFound    = 802 // Unit specified in "task_folders" not found
+	TasksTaskFolderNotFound    = 803 // Task specified in "task_folders" not found
+
+	LeaderboardProjectIdNotProvided     = 900
+	LeaderboardProjectFolderNotProvided = 901
 )

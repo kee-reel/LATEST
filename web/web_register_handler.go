@@ -6,15 +6,40 @@ import (
 	"net/mail"
 )
 
+// @Tags register
+// @Summary Confirm new user registration
+// @Description Usually user makes this request when opening link sent on email.
+// @ID get-register
+// @Produce  json
+// @Param   token   query    string  true    "Registration token, sent by POST /register"
+// @Success 200 {object} main.APINoError "Success"
+// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304"
+// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Router /register [get]
 func GetRegistration(r *http.Request, resp *map[string]interface{}) WebError {
 	params, ok := r.URL.Query()["token"]
 	if !ok || len(params[0]) < 1 {
 		return TokenNotProvided
 	}
+	if len(params[0]) != token_len {
+		return TokenInvalid
+	}
 	ip := GetIP(r)
 	return RegisterToken(ip, &params[0])
 }
 
+// @Tags register
+// @Summary Register new user
+// @Description On success user will receive confirmation link on specified email.
+// @ID post-register
+// @Produce  json
+// @Param   email   formData    string  true    "User email"
+// @Param   pass   formData    string  true    "User password"
+// @Param   name   formData    string  true    "User name"
+// @Success 200 {object} main.APINoError "Success"
+// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 103, 200, 201, 700, 701"
+// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Router /register [post]
 func PostRegistration(r *http.Request, resp *map[string]interface{}) WebError {
 	email := r.FormValue("email")
 	if len(email) == 0 {

@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+from errors import ERROR
 
 
 LANG_TO_EXEC = {
@@ -34,50 +35,44 @@ def execute(cmd, params):
         return e.stdout, e.stderr
 
 
-def run(sol, comp_sol, is_verbose, params=None):
-    exit_code = 0
-    error = None
-
-    expected, err = execute(comp_sol, params)
-    if err:
-        return None, {
-            'error': err,
-            'result': expected
-        }
-
-    result, err = execute(sol, params)
-    if err:
-        return None, {
-            'error': err,
+def run(sol, comp_sol, params=None):
+    try:
+        result, err = execute(sol, params)
+    except subprocess.TimeoutExpired:
+        return {
+            'error': ERROR.TIMEOUT,
             'result': result
         }
+    if err:
+        return {
+            'error': ERROR.RUNTIME,
+            'msg': err
+        }
+
+    try:
+        expected, err = execute(comp_sol, params)
+    except subprocess.TimeoutExpired:
+        assert False, 'Timeout on execution of complete solution'
+    assert not err, f'Error on execution of complete solution: {err}'
 
     expected = prepare_str(expected)
     result = prepare_str(result)
     if expected != result:
-        return None, {
+        return {
+            'error': ERROR.TEST,
             'expected': expected,
             'result': result
         }
-    elif is_verbose:
-        return {
-            'result': result
-        }, None
-    return None, None
+    return {'result': result}
 
 def test_solution(solution, complete_solution, test_sets, is_verbose):
     sol_ext = get_ext(solution)
     comp_sol_ext = get_ext(complete_solution)
     assert sol_ext in LANG_TO_EXEC and comp_sol_ext in LANG_TO_EXEC, 'Language not supported'
-
-    if not os.path.exists(solution) or not os.path.exists(complete_solution):
-        return {
-            'err': f'Required files not found'
-        }
+    assert os.path.exists(solution) and os.path.exists(complete_solution), 'Not found solution files'
 
     is_tested = False
     results = []
-    error = None
     sol_exec = LANG_TO_EXEC[sol_ext](solution)
     comp_sol_exec = LANG_TO_EXEC[comp_sol_ext](complete_solution)
     for tests in test_sets.values():
@@ -85,23 +80,22 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
             if not test:
                 continue
             cmd_line = test.replace(';', '\n')
-            result, error = run(sol_exec, comp_sol_exec, is_verbose, cmd_line)
+            result = run(sol_exec, comp_sol_exec, cmd_line)
 
             is_tested = True
-            if result:
-                result['params'] = test
+            result['params'] = test
+            if 'error' in result:
+                return result
+            if is_verbose:
                 results.append(result)
-            if error:
-                error['params'] = test
-                break
-        if error:
-            break
 
     # No test cases
-    if not is_tested and not error:
-        result, error = run(sol_exec, comp_sol_exec, is_verbose)
-        if result:
+    if not is_tested:
+        result = run(sol_exec, comp_sol_exec, is_verbose)
+        if 'error' in result:
+            return result
+        if is_verbose:
             results.append(result)
 
-    return results, error
+    return {'result': results} if results else {}
 

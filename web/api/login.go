@@ -2,14 +2,15 @@ package api
 
 import (
 	"fmt"
+	"late/models"
 	"late/storage"
 	"late/utils"
 	"net/http"
 )
 
 type ResponseToken struct {
-	Name  string `example:"User name"`
-	Token string `example:"9rzNUDp8bP6VOnGIqOO011f5EB4jk0eN0osZt0KFZHTtWIpiwqzVj2vof5sOq80QIJbne5dHiH5vEUe7uJ42X5X39tHGpt0LTreFOjMkfdn4sB6gzouUHc4tGubhikoKuK05P06W1x0QK0zJzbPaZYG4mfBpfU1u8xbqSPVo8ZI9zumiJUiHC8MbJxMPYsGJjZMChQBtA0NvKuAReS3v1704QBX5zZCAyyNP47VZ51E9MMqVGoZBxFmJ4mCHRBy7"`
+	*models.Token
+	*models.User
 }
 
 // @Tags login
@@ -29,7 +30,7 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
-	pass, web_err := getUrlParam(r, "email")
+	pass, web_err := getUrlParam(r, "pass")
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -63,9 +64,6 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			}
 		}
 	}
-	resp := ResponseToken{
-		Token: token.Token,
-		Name:  user.Name,
-	}
+	resp := ResponseToken{token, user}
 	return &resp, web_err
 }

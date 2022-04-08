@@ -32,7 +32,7 @@ type Task struct {
 	Desc        string          `json:"desc" example:"Sample description"`
 	FolderName  string          `json:"folder_name" example:"task-1"`
 	Input       []TaskParamData `json:"input"`
-	Output      string          `json:"output" example:"Program must output sum of two integers on a newline"`
+	Output      string          `json:"output,omitempty" example:"Program must output sum of two integers on a newline"`
 	Score       int             `json:"score" json:"15"`
 	IsCompleted bool            `json:"is_passed" example:"true"`
 	Project     *Project        `json:"-"`
@@ -42,7 +42,7 @@ type Task struct {
 }
 
 type Token struct {
-	Token  string `json:"token"`
+	Token  string `json:"token" example:"9rzNUDp8bP6VOnGIqOO011f5EB4jk0eN0osZt0KFZHTtWIpiwqzVj2vof5sOq80QIJbne5dHiH5vEUe7uJ42X5X39tHGpt0LTreFOjMkfdn4sB6gzouUHc4tGubhikoKuK05P06W1x0QK0zJzbPaZYG4mfBpfU1u8xbqSPVo8ZI9zumiJUiHC8MbJxMPYsGJjZMChQBtA0NvKuAReS3v1704QBX5zZCAyyNP47VZ51E9MMqVGoZBxFmJ4mCHRBy7"`
 	Id     int    `json:"-"`
 	UserId int    `json:"-"`
 	IP     string `json:"-"`

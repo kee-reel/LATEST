@@ -27,6 +27,6 @@ func Abs(x int) int {
 
 func Err(err error) {
 	if err != nil {
-		panic(fmt.Errorf("[ERROR]: %s", err))
+		panic(err)
 	}
 }

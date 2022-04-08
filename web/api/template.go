@@ -1,11 +1,12 @@
 package api
 
 import (
+	"late/storage"
 	"net/http"
 )
 
 type APITemplate struct {
-	Template string `example:"#include <stdio.h>\nint main() {\n\t\n}"`
+	Template string `json:"template" example:"#include <stdio.h>\nint main() {\n\t\n}"`
 }
 
 // @Tags template
@@ -20,29 +21,21 @@ type APITemplate struct {
 // @Failure 500 {object} main.APIInternalError "Server internal bug"
 // @Router /template [get]
 func GetTemplate(r *http.Request) (interface{}, WebError) {
-	query := r.URL.Query()
-
-	params, ok := query["token"]
-	if !ok || len(params[0]) < 1 {
-		return nil, TokenNotProvided
+	token, web_err := getUrlParam(r, "token")
+	if web_err != NoError {
+		return nil, web_err
 	}
-	ip := GetIP(r)
-	_, web_err := GetTokenData(&params[0], ip)
+	_, web_err = getToken(r, token)
+	if web_err != NoError {
+		return nil, web_err
+	}
+	lang, web_err := getUrlParam(r, "lang")
 	if web_err != NoError {
 		return nil, web_err
 	}
 
-	params, ok = query["lang"]
-	if !ok || len(params[0]) < 1 {
-		return nil, LanguageNotProvided
+	resp := APITemplate{
+		Template: *storage.GetTaskTemplate(lang),
 	}
-
-	lang := params[0]
-	if !IsLanguageSupported(lang) {
-		return nil, LanguageNotSupported
-	}
-
-	template := GetTaskTemplate(lang)
-	(*resp)["template"] = *template
-	return nil, NoError
+	return &resp, NoError
 }

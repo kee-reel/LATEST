@@ -1,6 +1,7 @@
 package api
 
 import (
+	"late/storage"
 	"net/http"
 )
 
@@ -15,12 +16,12 @@ import (
 // @Failure 500 {object} main.APIInternalError "Server internal bug"
 // @Router /template [get]
 func GetVerify(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam("token")
+	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	ip := GetIP(r)
-	user_id, is_token_exists := VerifyToken(ip, &params[0])
+	ip := getIP(r)
+	user_id, is_token_exists := storage.VerifyToken(ip, token)
 	if !is_token_exists {
 		return nil, TokenUnknown
 	}

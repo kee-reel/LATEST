@@ -7,6 +7,7 @@ import (
 	"late/models"
 	"late/storage"
 	"late/utils"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -24,16 +25,23 @@ type APISolutionVerboseResult struct {
 	Result string `example:"8"`
 }
 type APISolutionErrorData struct {
-	Stage    string `example:"-"`
-	Msg      string `example:"Build fail message"`
-	Params   string `example:"2;1;7'"`
-	Expected string `example:"8"`
-	Result   string `example:"1"`
+	Msg      string `json:"msg,omitempty" example:"Build fail message"`
+	Params   string `json:"params,omitempty" example:"2;1;7'"`
+	Expected string `json:"expected,omitempty" example:"8"`
+	Result   string `json:"result,omitempty" example:"1"`
 }
-
+type SolutionErrorData struct {
+	APISolutionErrorData
+	Error *string `json:"error,omitempty"`
+}
 type APITestResult struct {
 	Error     WebError                    `json:"error,omitempty" example:"508"`
 	ErrorData *APISolutionErrorData       `json:"error_data,omitempty"`
+	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
+}
+type TestResult struct {
+	Error     WebError                    `json:"error,omitempty" example:"508"`
+	ErrorData *SolutionErrorData          `json:"error_data,omitempty"`
 	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
 }
 
@@ -140,7 +148,7 @@ func ParseSolution(r *http.Request) (*models.Solution, WebError) {
 	return &solution, NoError
 }
 
-func BuildAndTest(task *models.Task, solution *models.Solution) *APITestResult {
+func BuildAndTest(task *models.Task, solution *models.Solution) *TestResult {
 	complete_solution_source, fixed_tests := storage.GetTaskTestData(task.Id)
 	random_tests := GenerateTests(task)
 
@@ -164,17 +172,26 @@ func BuildAndTest(task *models.Task, solution *models.Solution) *APITestResult {
 	body, err := ioutil.ReadAll(response.Body)
 	utils.Err(err)
 
-	var test_result APITestResult
-	err = json.Unmarshal([]byte(body), &test_result)
+	var test_result TestResult
+	log.Print(string(body))
+	err = json.Unmarshal(body, &test_result)
 	utils.Err(err)
 
 	if test_result.ErrorData != nil {
-		switch string(test_result.ErrorData.Stage) {
+		log.Print(test_result.ErrorData)
+		switch *test_result.ErrorData.Error {
 		case "build":
 			test_result.Error = SolutionBuildFail
+		case "timeout":
+			test_result.Error = SolutionTimeoutFail
+		case "runtime":
+			test_result.Error = SolutionRuntimeFail
 		case "test":
 			test_result.Error = SolutionTestFail
+		default:
+			panic("Unknown runner error")
 		}
+		test_result.ErrorData.Error = nil
 	}
 	return &test_result
 }

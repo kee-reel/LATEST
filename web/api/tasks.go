@@ -55,14 +55,13 @@ func GetTasksFlat(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 
-	var task_ids *[]int
-	var task_str_ids []string
-	params, ok := r.URL.Query()["ids"]
-	if ok && len(params[0]) > 1 {
-		task_str_ids = strings.Split(string(params[0]), ",")
+	task_ids_str, ok := r.URL.Query()["ids"]
+	var task_ids_str_arr []string
+	if ok && len(task_ids_str) > 1 {
+		task_ids_str_arr = strings.Split(task_ids_str[0], ",")
 	}
-	task_ids, is_valid := storage.GetTaskIdsById(&task_str_ids)
-	if is_valid {
+	task_ids, is_valid := storage.GetTaskIdsById(&task_ids_str_arr)
+	if !is_valid {
 		return nil, TaskIdInvalid
 	}
 	if task_ids == nil {
@@ -80,7 +79,7 @@ type APIProjectHierarchy struct {
 }
 type APIUnitHierarchy struct {
 	models.Unit
-	Tasks map[string]*models.Task
+	Tasks map[string]*models.Task `json:"tasks"`
 }
 
 type APITasksHierarchy map[string]APIProjectHierarchy
@@ -90,19 +89,13 @@ func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
 	for _, task := range *tasks {
 		project, ok := resp[task.Project.FolderName]
 		if !ok {
-			project = APIProjectHierarchy{
-				*task.Project,
-				map[string]APIUnitHierarchy{},
-			}
+			project = APIProjectHierarchy{*task.Project, map[string]APIUnitHierarchy{}}
 			resp[task.Project.FolderName] = project
 		}
 
 		unit, ok := project.Units[task.Unit.FolderName]
 		if !ok {
-			unit = APIUnitHierarchy{
-				*task.Unit,
-				map[string]*models.Task{},
-			}
+			unit = APIUnitHierarchy{*task.Unit, map[string]*models.Task{}}
 			project.Units[task.Unit.FolderName] = unit
 		}
 
@@ -142,9 +135,17 @@ func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 			return nil, TasksFoldersInvalid
 		}
 	}
-	task_ids, web_err = storage.GetTaskIdsByFolder(&task_folders)
-	if web_err != NoError {
-		return nil, web_err
+	task_ids, not_found_index := storage.GetTaskIdsByFolder(&task_folders)
+	switch not_found_index {
+	case 0:
+		return nil, TasksProjectFolderNotFound
+	case 1:
+		return nil, TasksUnitFolderNotFound
+	case 2:
+		return nil, TasksTaskFolderNotFound
+	}
+	if len(*task_ids) == 0 {
+		return nil, TaskNotFound
 	}
 	tasks := storage.GetTasks(token, *task_ids)
 	resp := MakeHierarchyResponse(tasks)

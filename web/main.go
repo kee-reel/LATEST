@@ -22,14 +22,12 @@ func main() {
 	var err error
 	entry := utils.Env("WEB_ENTRY")
 	addr := fmt.Sprintf("0.0.0.0:%s", utils.Env("WEB_PORT"))
-	/*
-		http.HandleFunc(fmt.Sprintf("%sverify", entry), VerifyHandle)
-		http.HandleFunc(fmt.Sprintf("%stemplate", entry), TemplateHandle)
-		http.HandleFunc(fmt.Sprintf("%slanguages", entry), LanguagesHandle)
-		http.HandleFunc(fmt.Sprintf("%srestore", entry), RestoreHandle)
-		http.HandleFunc(fmt.Sprintf("%stasks/hierarchy", entry), TasksHierarchyHandle)
-		http.HandleFunc(fmt.Sprintf("%ssolution", entry), SolutionHandle)
-	*/
+	http.HandleFunc(fmt.Sprintf("%sverify", entry), api.VerifyHandle)
+	http.HandleFunc(fmt.Sprintf("%stemplate", entry), api.TemplateHandle)
+	http.HandleFunc(fmt.Sprintf("%slanguages", entry), api.LanguagesHandle)
+	http.HandleFunc(fmt.Sprintf("%srestore", entry), api.RestoreHandle)
+	http.HandleFunc(fmt.Sprintf("%stasks/hierarchy", entry), api.TasksHierarchyHandle)
+	http.HandleFunc(fmt.Sprintf("%ssolution", entry), api.SolutionHandle)
 	http.HandleFunc(fmt.Sprintf("%slogin", entry), api.LoginHandle)
 	http.HandleFunc(fmt.Sprintf("%sregister", entry), api.RegistrationHandle)
 	http.HandleFunc(fmt.Sprintf("%stasks/flat", entry), api.TasksFlatHandle)

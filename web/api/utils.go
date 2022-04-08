@@ -1,13 +1,13 @@
 package api
 
 import (
-	"crypto/tls"
 	"late/models"
+	"late/security"
+	"late/storage"
 	"late/utils"
 	"net"
 	"net/http"
 	"net/mail"
-	"strconv"
 	"strings"
 )
 
@@ -17,28 +17,28 @@ func getUrlParam(r *http.Request, name string) (*string, WebError) {
 	if ok && len(params[0]) > 0 {
 		value = &params[0]
 	}
-	return validateParam(name, value)
+	return validateParam(&name, value)
 }
 
 func getFormParam(r *http.Request, name string) (*string, WebError) {
 	value := r.FormValue(name)
 	if len(value) == 0 {
-		return validateParam(name, nil)
+		return validateParam(&name, nil)
 	}
-	return validateParam(name, &value)
+	return validateParam(&name, &value)
 }
 
 func validateParam(name *string, value *string) (*string, WebError) {
-	switch name {
+	switch *name {
 	case "token":
 		if value == nil {
 			return nil, TokenNotProvided
 		}
-		if IsTokenInvalid(token) {
+		if security.IsTokenInvalid(value) {
 			return nil, TokenInvalid
 		}
 	case "email":
-		if value == 0 {
+		if value == nil {
 			return nil, EmailNotProvided
 		}
 		_, err := mail.ParseAddress(*value)
@@ -63,7 +63,7 @@ func validateParam(name *string, value *string) (*string, WebError) {
 		if value == nil {
 			return nil, LanguageNotProvided
 		}
-		if !isLanguageSupported(&lang) {
+		if !isLanguageSupported(value) {
 			return nil, LanguageNotSupported
 		}
 	case "task_id":
@@ -73,14 +73,15 @@ func validateParam(name *string, value *string) (*string, WebError) {
 	default:
 		panic("Unsupported parameter")
 	}
+	return value, NoError
 }
 
 func getToken(r *http.Request, token_str *string) (*models.Token, WebError) {
-	token := GetTokenData(token_str)
+	token := storage.GetTokenData(token_str)
 	if token == nil {
 		return nil, TokenUnknown
 	}
-	ip := GetIP(r)
+	ip := getIP(r)
 	if *ip != token.IP {
 		return nil, TokenBoundToOtherIP
 	}
@@ -116,17 +117,19 @@ func getIP(r *http.Request) *string {
 }
 
 func sendMail(ip *string, email *string, subject *string, message *string) {
-	m := gomail.NewMessage()
-	m.SetHeader("From", Env("MAIL_EMAIL"))
-	m.SetHeader("To", *email)
-	m.SetHeader("Subject", *subject)
+	/*
+		m := gomail.NewMessage()
+		m.SetHeader("From", utils.Env("MAIL_EMAIL"))
+		m.SetHeader("To", *email)
+		m.SetHeader("Subject", *subject)
 
-	m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
-	port, err := strconv.Atoi(Env("MAIL_SERVER_PORT"))
-	Err(err)
-	d := gomail.NewDialer(Env("MAIL_SERVER"), port, Env("MAIL_EMAIL"), Env("MAIL_PASS"))
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+		m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
+		port, err := strconv.Atoi(utils.Env("MAIL_SERVER_PORT"))
+		utils.Err(err)
+		d := gomail.NewDialer(utils.Env("MAIL_SERVER"), port, utils.Env("MAIL_EMAIL"), utils.Env("MAIL_PASS"))
+		d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
-	err = d.DialAndSend(m)
-	Err(err)
+		err = d.DialAndSend(m)
+		utils.Err(err)
+	*/
 }

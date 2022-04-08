@@ -44,8 +44,10 @@ const (
 	SolutionTextTooLong     = 501 // Solution text is too long, more than 50000 symbols
 	SolutionTestsTooLong    = 502 // Tests text is too long, more than 50000 symbols
 	SolutionTestsInvalid    = 503 // Tests doesn't match required format
-	SolutionBuildFail       = 504 // Fail during solution building, error message could be found in "error_data"
-	SolutionTestFail        = 505 // Fail during solution testing, error message could be found in "error_data"
+	SolutionBuildFail       = 504 // Solution compiltion failed, error_data field will be like `{"msg":"Compilation error"}`
+	SolutionTestFail        = 505 // Test failed - expected result doesn't match with actual result, error_data field will be like `{"params":"2;1;3;", "expected":"4", "result":"3"}`
+	SolutionTimeoutFail     = 506 // Reached timeout while executing solution, error_data field will be like `{"params":"2;1;3;", result:"Last outputed string"}`
+	SolutionRuntimeFail     = 507 // Runtime error while solution execution, error_data field will be like `{"params":"2;1;3;", "msg:"Runtime error"}`
 
 	LanguageNotProvided  = 600 // "lang" field not provided
 	LanguageNotSupported = 601 // Provided "lang" is not supported

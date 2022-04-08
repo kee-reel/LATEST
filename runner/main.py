@@ -14,7 +14,6 @@ app.logger.setLevel(logging.DEBUG)
 fn_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 UPLOAD_FOLDER = './uploads'
 
-
 def save_file(request, field):
     extention = request.form.get(f'{field}_ext')
 
@@ -35,6 +34,24 @@ def save_file(request, field):
     return fn
 
 
+def run_tests(sol_fn, comp_sol_fn, tests,  is_verbose):
+    sol_fn_new, err = build_solution(sol_fn)
+    if sol_fn != sol_fn_new:
+        os.remove(sol_fn)
+    if err:
+        return err
+
+    comp_sol_fn_new, err = build_solution(comp_sol_fn)
+    if comp_sol_fn != comp_sol_fn_new:
+        os.remove(comp_sol_fn)
+    assert not err, f'Complete solution build error: {err}'
+
+    result = test_solution(sol_fn_new, comp_sol_fn_new, tests, is_verbose)
+    os.remove(sol_fn_new)
+    os.remove(comp_sol_fn_new)
+    return result
+
+
 @app.route('/', methods=['GET', 'POST'])
 def run_test():
     if request.method == 'GET':
@@ -42,8 +59,7 @@ def run_test():
     is_verbose = request.form.get('verbose') == 'true'
     sol_fn = save_file(request, 'solution')
     comp_sol_fn = save_file(request, 'complete_solution')
-    if not sol_fn or not comp_sol_fn:
-        return {'error': 'Internal error: malformed runner data'}
+    assert sol_fn and comp_sol_fn, 'Internal error: malformed runner data'
 
     tests = {}
     for t in ('user', 'fixed', 'random'):
@@ -51,29 +67,10 @@ def run_test():
         if test_set:
             tests[t] = test_set
 
-    sol_fn_new, err = build_solution(sol_fn)
-    if sol_fn != sol_fn_new:
-        os.remove(sol_fn)
-    if err:
-        err['stage'] = 'build'
-        return {'error': err}
-
-    comp_sol_fn_new, err = build_solution(comp_sol_fn)
-    if comp_sol_fn != comp_sol_fn_new:
-        os.remove(comp_sol_fn)
-    if err:
-        err['stage'] = 'build'
-        return {'error': err}
-
-    results, err = test_solution(sol_fn_new, comp_sol_fn_new, tests, is_verbose)
-    os.remove(sol_fn_new)
-    os.remove(comp_sol_fn_new)
-    data = {'error': err}
-    if err:
-        err['stage'] = 'test'
-    if results:
-        data['result'] = results
-    return data
+    result = run_tests(sol_fn, comp_sol_fn, tests, is_verbose)
+    if 'error' in result:
+        return {'error_data': result}
+    return result
 
 app.run(host='0.0.0.0', port=os.getenv('RUNNER_PORT'))
 

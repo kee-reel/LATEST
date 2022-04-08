@@ -1,8 +1,9 @@
-package main
+package api
 
 import (
 	"encoding/json"
 	"fmt"
+	"late/utils"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -44,44 +45,46 @@ func RestoreHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetRestore, PostRestore)
 }
 
-type WebMethodFunc func(r *http.Request, resp *map[string]interface{}) WebError
+type WebMethodFunc func(r *http.Request) (interface{}, WebError)
 
 func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
 	var web_err WebError
 	web_err = MethodNotSupported
-	resp := map[string]interface{}{}
+	var resp interface{}
 	defer RecoverRequest(w)
 	switch r.Method {
 	case "GET":
 		if get == nil {
 			web_err = MethodNotSupported
 		} else {
-			web_err = get(r, &resp)
+			resp, web_err = get(r)
 		}
 	case "POST":
 		if post == nil {
 			web_err = MethodNotSupported
 		} else {
-			web_err = post(r, &resp)
+			resp, web_err = post(r)
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if web_err != NoError {
-		log.Printf("Failed user request, error code: %d", web_err)
-		resp["error"] = web_err
-		w.WriteHeader(http.StatusBadRequest)
-	} else {
+	if web_err == NoError {
+		if resp == nil {
+			resp = APINoError{}
+		}
 		w.WriteHeader(http.StatusOK)
+	} else if resp == nil {
+		log.Printf("Failed user request, error code: %d", web_err)
+		resp = APIError{web_err}
+		w.WriteHeader(http.StatusBadRequest)
 	}
 	jsonResp, err := json.Marshal(resp)
-	Err(err)
+	utils.Err(err)
 	w.Write(jsonResp)
 }
 
 func RecoverRequest(w http.ResponseWriter) {
-	r := recover()
-	if r != nil {
+	if r := recover(); r != nil {
 		debug.PrintStack()
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")

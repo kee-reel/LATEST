@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS registration_tokens (
 	email VARCHAR(128) NOT NULL,
 	ip VARCHAR(15) NOT NULL,
 	pass VARCHAR(256) NOT NULL,
-	name VARCHAR(50) NOT NULL,
+	name VARCHAR(128) NOT NULL,
     UNIQUE(email, ip));
 
 CREATE TABLE IF NOT EXISTS verification_tokens (

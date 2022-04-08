@@ -14,6 +14,7 @@ def parse_filename(filename):
 
 
 def upsert(cur, table, keys, data, return_id=True):
+    print(keys, data)
     all_data = keys.copy()
     all_data.update(data)
     query = f''' insert into {table}({ ','.join(all_data.keys()) })

@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"net/http"
@@ -19,30 +19,30 @@ type APITemplate struct {
 // @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304, 600, 601"
 // @Failure 500 {object} main.APIInternalError "Server internal bug"
 // @Router /template [get]
-func GetTemplate(r *http.Request, resp *map[string]interface{}) WebError {
+func GetTemplate(r *http.Request) (interface{}, WebError) {
 	query := r.URL.Query()
 
 	params, ok := query["token"]
 	if !ok || len(params[0]) < 1 {
-		return TokenNotProvided
+		return nil, TokenNotProvided
 	}
 	ip := GetIP(r)
 	_, web_err := GetTokenData(&params[0], ip)
 	if web_err != NoError {
-		return web_err
+		return nil, web_err
 	}
 
 	params, ok = query["lang"]
 	if !ok || len(params[0]) < 1 {
-		return LanguageNotProvided
+		return nil, LanguageNotProvided
 	}
 
 	lang := params[0]
 	if !IsLanguageSupported(lang) {
-		return LanguageNotSupported
+		return nil, LanguageNotSupported
 	}
 
 	template := GetTaskTemplate(lang)
 	(*resp)["template"] = *template
-	return NoError
+	return nil, NoError
 }

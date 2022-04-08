@@ -1,8 +1,6 @@
-package main
+package api
 
-type WebError int
-
-// @Description Empty success response
+// @Description Empty - success response
 type APINoError struct {
 }
 
@@ -15,6 +13,8 @@ type APIError struct {
 type APIInternalError struct {
 	Error WebError `example:"1"`
 }
+
+type WebError int
 
 const (
 	NoError            WebError = 0 // Everything is OK

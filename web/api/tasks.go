@@ -41,9 +41,9 @@ func MakeFlatResponse(tasks *[]models.Task) interface{} {
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   ids   query    string  false    "Comma separated task IDs: \"1,17,104\". If provided - returns data only for specified tasks (including related projects and units). If any of the tasks could not be found - error 402 will be thrown."
-// @Success 200 {object} main.APITasksFlat "Tasks data. additionalProp here stands for integer IDs"
-// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304, 401, 402"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APITasksFlat "Tasks data. additionalProp here stands for integer IDs"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 401, 402"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /tasks/flat [get]
 func GetTasksFlat(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
@@ -112,9 +112,9 @@ func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   folders   query    string  false    "Comma separated folder names: \"sample-project,unit-1,task-1\". If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project->unit->task."
-// @Success 200 {object} main.APITasksHierarchy "Tasks data. additionalProp here stands for integer IDs"
-// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APITasksHierarchy "Tasks data. additionalProp here stands for integer IDs"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /tasks/hierarhy [get]
 func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")

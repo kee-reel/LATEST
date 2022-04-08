@@ -18,8 +18,8 @@ type APILangsResponse struct {
 // @Description Returns list of supported languages.
 // @ID get-languages
 // @Produce  json
-// @Success 200 {object} main.APILangsResponse "Success"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APILangsResponse "Success"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /languages [get]
 func GetLanguages(r *http.Request) (interface{}, WebError) {
 	resp := APILangsResponse{

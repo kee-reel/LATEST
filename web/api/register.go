@@ -13,9 +13,9 @@ import (
 // @ID get-register
 // @Produce  json
 // @Param   token   query    string  true    "Registration token, sent by POST /register"
-// @Success 200 {object} main.APINoError "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APINoError "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [get]
 func GetRegistration(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
@@ -41,9 +41,9 @@ func GetRegistration(r *http.Request) (interface{}, WebError) {
 // @Param   email   formData    string  true    "User email"
 // @Param   pass   formData    string  true    "User password"
 // @Param   name   formData    string  true    "User name"
-// @Success 200 {object} main.APINoError "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 103, 200, 201, 700, 701"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APINoError "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 103, 200, 201, 700, 701"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [post]
 func PostRegistration(r *http.Request) (interface{}, WebError) {
 	email, web_err := getFormParam(r, "email")

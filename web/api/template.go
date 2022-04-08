@@ -16,9 +16,9 @@ type APITemplate struct {
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   lang   formData    string  true    "Language of template"
-// @Success 200 {object} main.APITemplate "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304, 600, 601"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APITemplate "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 600, 601"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /template [get]
 func GetTemplate(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")

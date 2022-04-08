@@ -1,0 +1,803 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Web service that allows to run tests for programms written in almost any language.\nProject page: https://github.com/kee-reel/LATE",
+        "title": "LATE API",
+        "contact": {
+            "name": "Kee Reel",
+            "url": "https://kee-reel.com/about-ru",
+            "email": "c4rb0n_unit@protonmail.com"
+        },
+        "version": "0.1"
+    },
+    "host": "localhost:12345",
+    "basePath": "/",
+    "paths": {
+        "/languages": {
+            "get": {
+                "description": "Returns list of supported languages.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "languages"
+                ],
+                "summary": "Get supported languages",
+                "operationId": "get-languages",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APILangsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "get": {
+                "description": "Returns token that could be used in other requests.\nIf user logs in from new IP, verification link will be sent on email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "login"
+                ],
+                "summary": "Get token for registered user",
+                "operationId": "get-login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User email address",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User password. Must be at least 6 symbols",
+                        "name": "pass",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIToken"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 100, 101, 102, 200, 201, 202, 303",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "get": {
+                "description": "Usually user makes this request when opening link sent on email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "register"
+                ],
+                "summary": "Confirm new user registration",
+                "operationId": "get-register",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registration token, sent by POST /register",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "On success user will receive confirmation link on specified email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "register"
+                ],
+                "summary": "Register new user",
+                "operationId": "post-register",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User email",
+                        "name": "email",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User password",
+                        "name": "pass",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 100, 101, 103, 200, 201, 700, 701",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/restore": {
+            "get": {
+                "description": "Usually user makes this request when opening link sent on email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "restore"
+                ],
+                "summary": "Confirm user password restore",
+                "operationId": "get-restore",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Verification token, sent by POST /verify",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "On success user will receive confirmation link on specified email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "restore"
+                ],
+                "summary": "Restore user password",
+                "operationId": "post-restore",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User email",
+                        "name": "email",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "New user password",
+                        "name": "pass",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 100, 101, 102, 200, 201",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/solution": {
+            "post": {
+                "description": "Receives solution in form of file or plain text.\nBuilds solution and then runs. While running it gives various input parameters (through stdin) and expects specific result (from stdout).\nApart from errors raised due to invalid POST parameters, there are 2 \"normal\" errors:\n508 - Solution build error. If this happens, then result will contain: `{\"error\":508,\"error_data\":{\"msg\":\"multiline compilation error\"}}`\n509 - Solution test error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"expected\":\"expected result\", \"params\":\"semicolon separated input parameters\", \"result\":\"actual result\"}}`\nIf \"verbose\" flag is \"true\" then result will contain (if no error occurs): `{\"result\":[{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\"}]}`",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "solution"
+                ],
+                "summary": "Send solution for specific task",
+                "operationId": "post-solution",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language of passing solution",
+                        "name": "lang",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of task to pass with given solution",
+                        "name": "task_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source text of passing solution",
+                        "name": "source_text",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "File with source text of passing solution",
+                        "name": "source_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User test cases for solution",
+                        "name": "test_cases",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If specified - when solution is passed, all test results will be returned",
+                        "name": "verbose",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITestResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITestResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/flat": {
+            "get": {
+                "description": "Returns complete data about existing tasks.\nResult will be formatted in flat structure with integer ID as a key. Example could be found in responses section.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get tasks data in flat structure",
+                "operationId": "get-tasks-flat",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma separated task IDs: \\",
+                        "name": "ids",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tasks data. additionalProp here stands for integer IDs",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITasksFlat"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304, 401, 402",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/hierarhy": {
+            "get": {
+                "description": "Returns complete data about existing tasks.\nResult will be formatted in hierarchical structure with folder_name as a key. Example could be found in responses section.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get tasks data in hierarhical structure",
+                "operationId": "get-tasks-hierarhy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma separated folder names: \\",
+                        "name": "folders",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tasks data. additionalProp here stands for integer IDs",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITasksHierarchy"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304, 8XX",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/template": {
+            "get": {
+                "description": "Usually user makes this request when opening link sent on email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verify"
+                ],
+                "summary": "Verifies user connection from new IP",
+                "operationId": "get-verify",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITemplate"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.APIError": {
+            "description": "Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "integer",
+                    "example": 300
+                }
+            }
+        },
+        "api.APIInternalError": {
+            "description": "Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "api.APILangsResponse": {
+            "type": "object",
+            "properties": {
+                "langs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "c",
+                        "py",
+                        "pas"
+                    ]
+                }
+            }
+        },
+        "api.APINoError": {
+            "description": "Empty - success response",
+            "type": "object"
+        },
+        "api.APIProjectHierarchy": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "sample_project"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 666
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Sample project"
+                },
+                "units": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/api.APIUnitHierarchy"
+                    }
+                }
+            }
+        },
+        "api.APISolutionErrorData": {
+            "type": "object",
+            "properties": {
+                "expected": {
+                    "type": "string",
+                    "example": "8"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "Build fail message"
+                },
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7'"
+                },
+                "result": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
+        "api.APISolutionVerboseResult": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7;'"
+                },
+                "result": {
+                    "type": "string",
+                    "example": "8"
+                }
+            }
+        },
+        "api.APITasksFlat": {
+            "type": "object",
+            "properties": {
+                "projects": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.Project"
+                    }
+                },
+                "tasks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.Task"
+                    }
+                },
+                "units": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.Unit"
+                    }
+                }
+            }
+        },
+        "api.APITasksHierarchy": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/api.APIProjectHierarchy"
+            }
+        },
+        "api.APITemplate": {
+            "type": "object",
+            "properties": {
+                "template": {
+                    "type": "string",
+                    "example": "#include \u003cstdio.h\u003e\nint main() {\n\t\n}"
+                }
+            }
+        },
+        "api.APITestResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "integer",
+                    "example": 508
+                },
+                "error_data": {
+                    "$ref": "#/definitions/api.APISolutionErrorData"
+                },
+                "result": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.APISolutionVerboseResult"
+                    }
+                }
+            }
+        },
+        "api.APIToken": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "9rzNUDp8bP6VOnGIqOO011f5EB4jk0eN0osZt0KFZHTtWIpiwqzVj2vof5sOq80QIJbne5dHiH5vEUe7uJ42X5X39tHGpt0LTreFOjMkfdn4sB6gzouUHc4tGubhikoKuK05P06W1x0QK0zJzbPaZYG4mfBpfU1u8xbqSPVo8ZI9zumiJUiHC8MbJxMPYsGJjZMChQBtA0NvKuAReS3v1704QBX5zZCAyyNP47VZ51E9MMqVGoZBxFmJ4mCHRBy7"
+                }
+            }
+        },
+        "api.APIUnitHierarchy": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "unit-1"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 666
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Sample unit"
+                },
+                "tasks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/models.Task"
+                    }
+                }
+            }
+        },
+        "models.Project": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "sample_project"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 666
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Sample project"
+                }
+            }
+        },
+        "models.Task": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string",
+                    "example": "Sample description"
+                },
+                "folder_name": {
+                    "type": "string",
+                    "example": "task-1"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 111
+                },
+                "input": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TaskParamData"
+                    }
+                },
+                "is_passed": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Sample task"
+                },
+                "number": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "output": {
+                    "type": "string",
+                    "example": "Program must output sum of two integers on a newline"
+                },
+                "project_id": {
+                    "type": "integer",
+                    "example": 666
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "integer",
+                    "example": 333
+                }
+            }
+        },
+        "models.TaskParamData": {
+            "type": "object",
+            "properties": {
+                "dimensions": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        5,
+                        4
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "example": "task-1"
+                },
+                "range": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "-1000",
+                        "1000"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "example": "int"
+                }
+            }
+        },
+        "models.Unit": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "unit-1"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 666
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Sample unit"
+                }
+            }
+        }
+    }
+}

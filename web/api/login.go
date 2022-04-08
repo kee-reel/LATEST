@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-type ResponseToken struct {
+type APIToken struct {
 	*models.Token
 	*models.User
 }
@@ -21,9 +21,9 @@ type ResponseToken struct {
 // @Produce  json
 // @Param   email   query    string  true    "User email address"
 // @Param   pass    query    string  true    "User password. Must be at least 6 symbols"
-// @Success 200 {object} main.APIToken "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 102, 200, 201, 202, 303"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APIToken "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 102, 200, 201, 202, 303"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /login [get]
 func GetLogin(r *http.Request) (interface{}, WebError) {
 	email, web_err := getUrlParam(r, "email")

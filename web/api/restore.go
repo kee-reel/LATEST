@@ -13,9 +13,9 @@ import (
 // @ID get-restore
 // @Produce  json
 // @Param   token   query    string  true    "Verification token, sent by POST /verify"
-// @Success 200 {object} main.APINoError "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 300, 301, 302, 304"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APINoError "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /restore [get]
 func GetRestore(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
@@ -40,9 +40,9 @@ func GetRestore(r *http.Request) (interface{}, WebError) {
 // @Produce  json
 // @Param   email   formData    string  true    "User email"
 // @Param   pass   formData    string  true    "New user password"
-// @Success 200 {object} main.APINoError "Success"
-// @Failure 400 {object} main.APIError "Possible error codes: 100, 101, 102, 200, 201"
-// @Failure 500 {object} main.APIInternalError "Server internal bug"
+// @Success 200 {object} api.APINoError "Success"
+// @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 102, 200, 201"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /restore [post]
 func PostRestore(r *http.Request) (interface{}, WebError) {
 	email, web_err := getFormParam(r, "email")

@@ -336,13 +336,13 @@
                     "200": {
                         "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/api.APITestResult"
+                            "$ref": "#/definitions/api.APITestSuccessResult"
                         }
                     },
                     "400": {
                         "description": "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX",
                         "schema": {
-                            "$ref": "#/definitions/api.APITestResult"
+                            "$ref": "#/definitions/api.APITestFailResult"
                         }
                     },
                     "500": {
@@ -629,7 +629,7 @@
                 }
             }
         },
-        "api.APITestResult": {
+        "api.APITestFailResult": {
             "type": "object",
             "properties": {
                 "error": {
@@ -638,7 +638,12 @@
                 },
                 "error_data": {
                     "$ref": "#/definitions/api.APISolutionErrorData"
-                },
+                }
+            }
+        },
+        "api.APITestSuccessResult": {
+            "type": "object",
+            "properties": {
                 "result": {
                     "type": "array",
                     "items": {

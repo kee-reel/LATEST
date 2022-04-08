@@ -34,10 +34,12 @@ type SolutionErrorData struct {
 	APISolutionErrorData
 	Error *string `json:"error,omitempty"`
 }
-type APITestResult struct {
-	Error     WebError                    `json:"error,omitempty" example:"508"`
-	ErrorData *APISolutionErrorData       `json:"error_data,omitempty"`
-	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
+type APITestSuccessResult struct {
+	Result *[]APISolutionVerboseResult `json:"result,omitempty"`
+}
+type APITestFailResult struct {
+	Error     WebError              `json:"error,omitempty" example:"508"`
+	ErrorData *APISolutionErrorData `json:"error_data,omitempty"`
 }
 type TestResult struct {
 	Error     WebError                    `json:"error,omitempty" example:"508"`
@@ -62,8 +64,8 @@ type TestResult struct {
 // @Param   source_file   formData    file  false    "File with source text of passing solution"
 // @Param   test_cases   formData    string  false    "User test cases for solution"
 // @Param   verbose   formData    bool  false    "If specified - when solution is passed, all test results will be returned"
-// @Success 200 {object} api.APITestResult "Success"
-// @Failure 400 {object} api.APITestResult "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX"
+// @Success 200 {object} api.APITestSuccessResult "Success"
+// @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /solution [post]
 func PostSolution(r *http.Request) (interface{}, WebError) {

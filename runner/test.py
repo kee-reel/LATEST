@@ -4,7 +4,7 @@ import sys
 import subprocess
 from errors import ERROR
 
-
+RUN_TIMEOUT = 0.5
 LANG_TO_EXEC = {
     'exe': lambda filename: [f'./{filename}'],
     'py': lambda filename: ['python3', f'{filename}']
@@ -29,7 +29,7 @@ def prepare_str(s):
 
 def execute(cmd, params):
     try:
-        p = subprocess.run(cmd, input=params, capture_output=True, text=True, timeout=3, check=True)
+        p = subprocess.run(cmd, input=params, capture_output=True, text=True, timeout=RUN_TIMEOUT, check=True)
         return p.stdout, None
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr

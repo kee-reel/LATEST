@@ -78,7 +78,7 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 
 	if utils.EnvB("MAIL_ENABLED") {
 		verify_link := fmt.Sprintf("https://%s/register?token=%s", utils.Env("WEB_DOMAIN"), *token)
-		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), name, *ip, verify_link)
+		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), *name, *ip, verify_link)
 		subj := utils.Env("MAIL_REG_SUBJ")
 		sendMail(ip, email, &subj, &msg)
 	} else {

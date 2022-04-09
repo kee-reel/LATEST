@@ -23,14 +23,23 @@ func GetVerify(r *http.Request) (interface{}, WebError) {
 	}
 	ip := getIP(r)
 	user_id, is_token_exists := storage.VerifyToken(ip, token)
+	var resp string
 	if !is_token_exists {
-		return nil, TokenUnknown
+		resp = genHtmlResp([]string{
+			`Эта ссылка более не действительна.`,
+			`Если вы ещё не подтвердили вход с этого IP, то попробуйте вновь войти в свой профиль, чтобы получить новое письмо.`,
+		})
+	} else if user_id == nil {
+		resp = genHtmlResp([]string{
+			`Эта ссылка была отправлена для другого IP адреса!`,
+			`Если вы хотите подтвердить вход с этого IP, то попробуйте вновь войти в свой профиль, чтобы получить новое письмо.`,
+		})
+	} else {
+		user := storage.GetUserById(*user_id)
+		resp = genHtmlResp([]string{
+			`Теперь вам доступен вход с этого IP адреса!`,
+			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
+		})
 	}
-	if user_id == nil {
-		return nil, TokenBoundToOtherIP
-	}
-
-	user := storage.GetUserById(*user_id)
-	resp := fmt.Sprintf("<p>Заход с IP адреса %s успешно подтверждён!</p><p>%s, теперь вы можете зайти в свой профиль.</p>", *ip, user.Name)
 	return &resp, NoError
 }

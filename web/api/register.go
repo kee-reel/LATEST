@@ -24,13 +24,23 @@ func GetRegistration(r *http.Request) (interface{}, WebError) {
 	}
 	ip := getIP(r)
 	user, is_token_exists := storage.RegisterToken(ip, token)
+	var resp string
 	if !is_token_exists {
-		return nil, TokenUnknown
+		resp = genHtmlResp([]string{
+			`Эта ссылка более не действительна.`,
+			`Если вы ещё не зарегистрировались, то отправьте новый запрос на регистрацию.`,
+		})
+	} else if user == nil {
+		resp = genHtmlResp([]string{
+			`Эта ссылка была отправлена для другого IP адреса!`,
+			`Если вы хотите пройти регистрацию с этого IP, то отправьте новый запрос на регистрацию.`,
+		})
+	} else {
+		resp = genHtmlResp([]string{
+			"Регистрация успешно завершена!",
+			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
+		})
 	}
-	if user == nil {
-		return nil, TokenBoundToOtherIP
-	}
-	resp := fmt.Sprintf("<p>Регистрация успешно завершена!</p><p>%s, теперь вы можете зайти в свой профиль.</p>", *ip)
 	return &resp, web_err
 }
 

@@ -24,14 +24,24 @@ func GetRestore(r *http.Request) (interface{}, WebError) {
 	}
 	ip := getIP(r)
 	user_id, is_token_exists := storage.RestoreToken(ip, token_str)
+	var resp string
 	if !is_token_exists {
-		return nil, TokenUnknown
+		resp = genHtmlResp([]string{
+			`Эта ссылка более не действительна.`,
+			`Если вы ещё не завершили восстановление пароля, то попробуйте вновь отправить запрос на изменение пароля, чтобы получить новое письмо.`,
+		})
+	} else if user_id == nil {
+		resp = genHtmlResp([]string{
+			`Эта ссылка была отправлена для другого IP адреса!`,
+			`Если вы хотите восстановить пароль с этого IP, то отправьте новый запрос.`,
+		})
+	} else {
+		user := storage.GetUserById(*user_id)
+		resp = genHtmlResp([]string{
+			`Ваш пароль успешно изменён!`,
+			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
+		})
 	}
-	if user_id == nil {
-		return nil, TokenBoundToOtherIP
-	}
-	user := storage.GetUserById(*user_id)
-	resp := fmt.Sprintf("<p>Пароль для пользователя %s успешно изменён!</p><p>Теперь вы можете зайти в свой профиль.</p>", user.Name)
 	return &resp, NoError
 }
 

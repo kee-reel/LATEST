@@ -67,12 +67,6 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		}
 	}
 
-	switch resp.(type) {
-	case *string:
-		w.Header().Set("Content-Type", "text/html")
-	default:
-		w.Header().Set("Content-Type", "application/json")
-	}
 	if web_err == NoError {
 		if resp == nil {
 			resp = APINoError{}
@@ -83,9 +77,17 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		resp = APIError{web_err}
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	jsonResp, err := json.Marshal(resp)
-	utils.Err(err)
-	w.Write(jsonResp)
+
+	switch resp.(type) {
+	case *string:
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, *resp.(*string))
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		str_json, err := json.Marshal(resp)
+		utils.Err(err)
+		w.Write(str_json)
+	}
 }
 
 func RecoverRequest(w http.ResponseWriter) {

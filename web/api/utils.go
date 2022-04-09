@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/tls"
 	"late/models"
 	"late/security"
 	"late/storage"
@@ -8,7 +9,10 @@ import (
 	"net"
 	"net/http"
 	"net/mail"
+	"strconv"
 	"strings"
+
+	"gopkg.in/gomail.v2"
 )
 
 func getUrlParam(r *http.Request, name string) (*string, WebError) {
@@ -117,19 +121,29 @@ func getIP(r *http.Request) *string {
 }
 
 func sendMail(ip *string, email *string, subject *string, message *string) {
-	/*
-		m := gomail.NewMessage()
-		m.SetHeader("From", utils.Env("MAIL_EMAIL"))
-		m.SetHeader("To", *email)
-		m.SetHeader("Subject", *subject)
+	m := gomail.NewMessage()
+	m.SetHeader("From", utils.Env("MAIL_EMAIL"))
+	m.SetHeader("To", *email)
+	m.SetHeader("Subject", *subject)
 
-		m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
-		port, err := strconv.Atoi(utils.Env("MAIL_SERVER_PORT"))
-		utils.Err(err)
-		d := gomail.NewDialer(utils.Env("MAIL_SERVER"), port, utils.Env("MAIL_EMAIL"), utils.Env("MAIL_PASS"))
-		d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
+	port, err := strconv.Atoi(utils.Env("MAIL_SERVER_PORT"))
+	utils.Err(err)
+	d := gomail.NewDialer(utils.Env("MAIL_SERVER"), port, utils.Env("MAIL_EMAIL"), utils.Env("MAIL_PASS"))
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
-		err = d.DialAndSend(m)
-		utils.Err(err)
-	*/
+	err = d.DialAndSend(m)
+	utils.Err(err)
+}
+
+func genHtmlResp(text []string) string {
+	var sb strings.Builder
+	sb.WriteString(`<body style="text-align: center; color:#02c2d7; background-color:#1b1b1b; text-shadow: rgba(0, 73, 142, 0.5) 0px 0px 5px;">`)
+	for _, s := range text {
+		sb.WriteString("<p>")
+		sb.WriteString(s)
+		sb.WriteString("</p>")
+	}
+	sb.WriteString(`</body>`)
+	return sb.String()
 }

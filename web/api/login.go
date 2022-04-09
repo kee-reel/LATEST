@@ -64,6 +64,6 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			}
 		}
 	}
-	resp := ResponseToken{token, user}
+	resp := APIToken{token, user}
 	return &resp, web_err
 }

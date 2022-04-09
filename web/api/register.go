@@ -30,7 +30,8 @@ func GetRegistration(r *http.Request) (interface{}, WebError) {
 	if user == nil {
 		return nil, TokenBoundToOtherIP
 	}
-	return nil, web_err
+	resp := fmt.Sprintf("<p>Регистрация успешно завершена!</p><p>%s, теперь вы можете зайти в свой профиль.</p>", *ip)
+	return &resp, web_err
 }
 
 // @Tags register

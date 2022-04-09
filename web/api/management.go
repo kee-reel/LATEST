@@ -67,7 +67,12 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	switch resp.(type) {
+	case *string:
+		w.Header().Set("Content-Type", "text/html")
+	default:
+		w.Header().Set("Content-Type", "application/json")
+	}
 	if web_err == NoError {
 		if resp == nil {
 			resp = APINoError{}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"late/storage"
 	"net/http"
 )
@@ -29,5 +30,7 @@ func GetVerify(r *http.Request) (interface{}, WebError) {
 		return nil, TokenBoundToOtherIP
 	}
 
-	return nil, NoError
+	user := storage.GetUserById(*user_id)
+	resp := fmt.Sprintf("<p>Заход с IP адреса %s успешно подтверждён!</p><p>%s, теперь вы можете зайти в свой профиль.</p>", *ip, user.Name)
+	return &resp, NoError
 }

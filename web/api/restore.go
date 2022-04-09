@@ -30,7 +30,9 @@ func GetRestore(r *http.Request) (interface{}, WebError) {
 	if user_id == nil {
 		return nil, TokenBoundToOtherIP
 	}
-	return nil, NoError
+	user := storage.GetUserById(*user_id)
+	resp := fmt.Sprintf("<p>Пароль для пользователя %s успешно изменён!</p><p>Теперь вы можете зайти в свой профиль.</p>", user.Name)
+	return &resp, NoError
 }
 
 // @Tags restore

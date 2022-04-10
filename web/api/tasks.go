@@ -7,32 +7,6 @@ import (
 	"strings"
 )
 
-type APITasksFlat struct {
-	Projects map[int]*models.Project `json:"projects"`
-	Units    map[int]*models.Unit    `json:"units"`
-	Tasks    map[int]*models.Task    `json:"tasks"`
-}
-
-func MakeFlatResponse(tasks *[]models.Task) interface{} {
-	resp := APITasksFlat{
-		Projects: map[int]*models.Project{},
-		Units:    map[int]*models.Unit{},
-		Tasks:    map[int]*models.Task{},
-	}
-	for _, task := range *tasks {
-		_, ok := resp.Units[task.Unit.Id]
-		if !ok {
-			resp.Units[task.Unit.Id] = task.Unit
-		}
-		_, ok = resp.Projects[task.Project.Id]
-		if !ok {
-			resp.Projects[task.Project.Id] = task.Project
-		}
-		resp.Tasks[task.Id] = &task
-	}
-	return &resp
-}
-
 // @Tags tasks
 // @Summary Get tasks data in flat structure
 // @Description Returns complete data about existing tasks.
@@ -73,35 +47,30 @@ func GetTasksFlat(r *http.Request) (interface{}, WebError) {
 	return resp, NoError
 }
 
-type APIProjectHierarchy struct {
-	models.Project
-	Units map[string]APIUnitHierarchy `json:"units"`
-}
-type APIUnitHierarchy struct {
-	models.Unit
-	Tasks map[string]*models.Task `json:"tasks"`
+type APITasksFlat struct {
+	Projects map[int]*models.Project `json:"projects"`
+	Units    map[int]*models.Unit    `json:"units"`
+	Tasks    map[int]*models.Task    `json:"tasks"`
 }
 
-type APITasksHierarchy map[string]APIProjectHierarchy
-
-func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
-	resp := APITasksHierarchy{}
-	for _, task := range *tasks {
-		project, ok := resp[task.Project.FolderName]
-		if !ok {
-			project = APIProjectHierarchy{*task.Project, map[string]APIUnitHierarchy{}}
-			resp[task.Project.FolderName] = project
-		}
-
-		unit, ok := project.Units[task.Unit.FolderName]
-		if !ok {
-			unit = APIUnitHierarchy{*task.Unit, map[string]*models.Task{}}
-			project.Units[task.Unit.FolderName] = unit
-		}
-
-		unit.Tasks[task.FolderName] = &task
+func MakeFlatResponse(tasks *[]models.Task) interface{} {
+	resp := APITasksFlat{
+		Projects: map[int]*models.Project{},
+		Units:    map[int]*models.Unit{},
+		Tasks:    map[int]*models.Task{},
 	}
-	return resp
+	for i, task := range *tasks {
+		_, ok := resp.Units[task.Unit.Id]
+		if !ok {
+			resp.Units[task.Unit.Id] = task.Unit
+		}
+		_, ok = resp.Projects[task.Project.Id]
+		if !ok {
+			resp.Projects[task.Project.Id] = task.Project
+		}
+		resp.Tasks[task.Id] = &(*tasks)[i]
+	}
+	return &resp
 }
 
 // @Tags tasks
@@ -150,4 +119,35 @@ func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 	tasks := storage.GetTasks(token, *task_ids)
 	resp := MakeHierarchyResponse(tasks)
 	return resp, NoError
+}
+
+type APIProjectHierarchy struct {
+	models.Project
+	Units map[string]APIUnitHierarchy `json:"units"`
+}
+type APIUnitHierarchy struct {
+	models.Unit
+	Tasks map[string]*models.Task `json:"tasks"`
+}
+
+type APITasksHierarchy map[string]APIProjectHierarchy
+
+func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
+	resp := APITasksHierarchy{}
+	for i, task := range *tasks {
+		project, ok := resp[task.Project.FolderName]
+		if !ok {
+			project = APIProjectHierarchy{*task.Project, map[string]APIUnitHierarchy{}}
+			resp[task.Project.FolderName] = project
+		}
+
+		unit, ok := project.Units[task.Unit.FolderName]
+		if !ok {
+			unit = APIUnitHierarchy{*task.Unit, map[string]*models.Task{}}
+			project.Units[task.Unit.FolderName] = unit
+		}
+
+		unit.Tasks[task.FolderName] = &(*tasks)[i]
+	}
+	return resp
 }

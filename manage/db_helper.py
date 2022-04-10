@@ -8,5 +8,5 @@ def env(name):
 
 def open_db():
     return psycopg2.connect(database = env('DB_NAME'), user = env('DB_USER'), 
-        password = env('DB_PASS'), host = env('DB_HOST'), port = env('DB_PORT'))
+        password = env('DB_PASS'), host = env('DB_HOST'), port = 5432)
 

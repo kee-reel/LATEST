@@ -280,7 +280,7 @@ func SaveSolution(solution *models.Solution, is_passed bool) {
 	if !is_passed_before && is_passed {
 		query, err := db.Prepare(`INSERT INTO 
 			leaderboard(project_id, user_id, score) VALUES($1, $2, $3)
-			ON CONFLICT (user_id, project_id) DO UPDATE leaderboard SET score = score + $3`)
+			ON CONFLICT (user_id, project_id) DO UPDATE SET score = score + $3`)
 		utils.Err(err)
 		_, err = query.Exec(solution.Task.Project.Id, solution.Token.UserId, solution.Task.Score)
 		utils.Err(err)

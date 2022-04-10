@@ -93,3 +93,8 @@ CREATE TABLE IF NOT EXISTS users (
 	score INTEGER NOT NULL DEFAULT 0,
 	UNIQUE(user_id, project_id));
 
+CREATE TABLE IF NOT EXISTS leaderboard (
+	user_id INTEGER NOT NULL,
+	project_id INTEGER NOT NULL,
+	score INTEGER NOT NULL DEFAULT 0,
+	UNIQUE(user_id, project_id));

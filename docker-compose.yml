@@ -2,6 +2,8 @@ version: '3'
 
 services:
   db:
+    ports:
+      - ${POSTGRESS_EXT_PORT}:5432
     restart: always
     volumes:
       - ./manage/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
@@ -10,6 +12,8 @@ services:
     env_file: .env
 
   web:
+    ports: 
+      - ${WEB_PORT}:${WEB_PORT}
     links:
       - db
       - runner
@@ -22,8 +26,12 @@ services:
     environment:
       - RUNNER_HOST=runner
     env_file: .env
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
 
   runner:
+    ports:
+      - ${RUNNER_PORT}:${RUNNER_PORT}
     networks:
       - no-internet
     env_file: .env

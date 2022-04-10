@@ -112,7 +112,7 @@ func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   folders   query    string  false    "Comma separated folder names, for example: `folders=sample-project,unit-1,task-1`. If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project->unit->task."
-// @Success 200 {object} api.APITasksHierarchy "Tasks data. additionalProp here stands for integer IDs"
+// @Success 200 {object} api.APITasksHierarchy "Tasks data. additionalProp here stands for folder_name of project/unit/task"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /tasks/hierarhy [get]

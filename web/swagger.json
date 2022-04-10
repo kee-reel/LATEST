@@ -490,7 +490,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Tasks data. additionalProp here stands for integer IDs",
+                        "description": "Tasks data. additionalProp here stands for folder_name of project/unit/task",
                         "schema": {
                             "$ref": "#/definitions/api.APITasksHierarchy"
                         }

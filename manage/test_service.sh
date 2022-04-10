@@ -148,3 +148,8 @@ echo '
 ===
 Get template for C:'
 curl ${DOMAIN}template?token=$TOKEN\&lang='c'
+
+echo '
+===
+Logout:'
+curl ${DOMAIN}logout?token=$TOKEN

@@ -33,6 +33,10 @@ func LoginHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLogin, nil)
 }
 
+func LogoutHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetLogout, nil)
+}
+
 func TemplateHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetTemplate, nil)
 }

@@ -89,6 +89,48 @@
                 }
             }
         },
+        "/logout": {
+            "get": {
+                "description": "If user wants to logout on current IP - send this request.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "logout"
+                ],
+                "summary": "Delete existing token on server",
+                "operationId": "get-logout",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token, returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "get": {
                 "description": "Usually user makes this request when opening link sent on email.",

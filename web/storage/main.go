@@ -340,6 +340,16 @@ func GetTokenData(token_str *string) *models.Token {
 	return &token
 }
 
+func RemoveToken(token *models.Token) {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`DELETE FROM tokens WHERE id = $1`)
+	utils.Err(err)
+	_, err = query.Exec(token.Id)
+	utils.Err(err)
+}
+
 func CreateRegistrationToken(email *string, pass *string, name *string, ip *string) *string {
 	db := OpenDB()
 	defer db.Close()
@@ -451,7 +461,7 @@ func VerifyToken(ip *string, token_str *string) (*int, bool) {
 	_, err = query.Exec(new_token_str, user_id, *ip)
 	utils.Err(err)
 
-	query, err = db.Prepare(`DELETE FROM verification_tokens AS v WHERE r.user_id = $1 AND r.ip = $2`)
+	query, err = db.Prepare(`DELETE FROM verification_tokens AS v WHERE v.user_id = $1 AND v.ip = $2`)
 	utils.Err(err)
 	_, err = query.Exec(user_id, *ip)
 	utils.Err(err)

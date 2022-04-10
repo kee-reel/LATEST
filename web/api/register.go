@@ -80,13 +80,13 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 		subj := utils.Env("MAIL_REG_SUBJ")
 		sendMail(ip, email, &subj, &msg)
 	} else {
-		user, is_token_exists := storage.RegisterToken(ip, token)
-		if !is_token_exists {
-			return nil, TokenUnknown
-		}
-		if user == nil {
-			return nil, TokenBoundToOtherIP
-		}
-	}
-	return nil, web_err
+        user, is_token_exists := storage.RegisterToken(ip, token)
+        if !is_token_exists {
+            return nil, TokenUnknown
+        }
+        if user == nil {
+            return nil, TokenBoundToOtherIP
+        }
+    }
+	return nil, NoError
 }

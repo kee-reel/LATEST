@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"late/models"
 	"late/storage"
 	"late/utils"
@@ -54,6 +55,7 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			msg := fmt.Sprintf(utils.Env("MAIL_VER_MSG"), *ip, verify_link)
 			subj := utils.Env("MAIL_VER_SUBJ")
 			sendMail(ip, email, &subj, &msg)
+            return nil, TokenNotVerified
 		} else {
 			user_id, is_token_exists := storage.VerifyToken(ip, verification_token)
 			if !is_token_exists {

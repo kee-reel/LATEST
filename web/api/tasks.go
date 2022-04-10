@@ -74,17 +74,17 @@ func MakeFlatResponse(tasks *[]models.Task) interface{} {
 }
 
 // @Tags tasks
-// @Summary Get tasks data in hierarhical structure
+// @Summary Get tasks data in hierarchical structure
 // @Description Returns complete data about existing tasks.
 // @Description Result will be formatted in hierarchical structure with folder_name as a key. Example could be found in responses section.
-// @ID get-tasks-hierarhy
+// @ID get-tasks-hierarchy
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   folders   query    string  false    "Comma separated folder names, for example: `folders=sample-project,unit-1,task-1`. If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project->unit->task."
 // @Success 200 {object} api.APITasksHierarchy "Tasks data. additionalProp here stands for folder_name of project/unit/task"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
-// @Router /tasks/hierarhy [get]
+// @Router /tasks/hierarchy [get]
 func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {

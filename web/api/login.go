@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"log"
 	"late/models"
 	"late/storage"
 	"late/utils"

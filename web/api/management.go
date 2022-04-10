@@ -56,6 +56,11 @@ func RestoreHandle(w http.ResponseWriter, r *http.Request) {
 type WebMethodFunc func(r *http.Request) (interface{}, WebError)
 
 func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
+    w.WriteHeader(http.StatusOK)
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
+    w.Header().Set("Access-Control-Allow-Headers", "*")
+
 	var web_err WebError
 	web_err = MethodNotSupported
 	var resp interface{}
@@ -79,11 +84,9 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		if resp == nil {
 			resp = APINoError{}
 		}
-		w.WriteHeader(http.StatusOK)
 	} else if resp == nil {
 		log.Printf("Failed user request, error code: %d", web_err)
 		resp = APIError{web_err}
-		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	switch resp.(type) {

@@ -435,7 +435,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Comma separated task IDs: \\",
+                        "description": "Comma separated task IDs, for example: `ids=1,17,104`. If provided - returns data only for specified tasks (including related projects and units). If any of the tasks could not be found - error 402 will be thrown.",
                         "name": "ids",
                         "in": "query"
                     }
@@ -483,7 +483,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Comma separated folder names: \\",
+                        "description": "Comma separated folder names, for example: `folders=sample-project,unit-1,task-1`. If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project-\u003eunit-\u003etask.",
                         "name": "folders",
                         "in": "query"
                     }

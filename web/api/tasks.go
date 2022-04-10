@@ -40,7 +40,7 @@ func MakeFlatResponse(tasks *[]models.Task) interface{} {
 // @ID get-tasks-flat
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
-// @Param   ids   query    string  false    "Comma separated task IDs: \"1,17,104\". If provided - returns data only for specified tasks (including related projects and units). If any of the tasks could not be found - error 402 will be thrown."
+// @Param   ids   query    string  false    "Comma separated task IDs, for example: `ids=1,17,104`. If provided - returns data only for specified tasks (including related projects and units). If any of the tasks could not be found - error 402 will be thrown."
 // @Success 200 {object} api.APITasksFlat "Tasks data. additionalProp here stands for integer IDs"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 401, 402"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
@@ -111,7 +111,7 @@ func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
 // @ID get-tasks-hierarhy
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
-// @Param   folders   query    string  false    "Comma separated folder names: \"sample-project,unit-1,task-1\". If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project->unit->task."
+// @Param   folders   query    string  false    "Comma separated folder names, for example: `folders=sample-project,unit-1,task-1`. If provided - returns data for specified project/unit/task. Folder names must be specified in strict sequence: project->unit->task."
 // @Success 200 {object} api.APITasksHierarchy "Tasks data. additionalProp here stands for integer IDs"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"

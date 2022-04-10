@@ -63,8 +63,9 @@ func GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 			WHERE s.user_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
 		utils.Err(err)
 
-		var passed_count int
-		err = query.QueryRow(token.UserId, task_id).Scan(&passed_count)
+		var is_passed bool
+		err = query.QueryRow(token.UserId, task_id).Scan(&is_passed)
+		log.Print(err)
 		task.IsCompleted = err == nil
 
 		err = json.Unmarshal(in_params_str, &task.Input)

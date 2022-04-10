@@ -124,7 +124,7 @@ func GetTaskTestData(task_id int) (*string, *string) {
 	return &source_code, &fixed_tests
 }
 
-func GetTaskTemplate(lang *string) *string {
+func GetTaskTemplate(lang *string, task_id *int) *string {
 	db := OpenDB()
 	defer db.Close()
 	query, err := db.Prepare(`SELECT t.source_code FROM solution_templates AS t WHERE t.extention = $1`)

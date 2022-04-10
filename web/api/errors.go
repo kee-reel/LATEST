@@ -6,12 +6,12 @@ type APINoError struct {
 
 // @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
 type APIError struct {
-	Error WebError `example:"300"`
+    Error WebError `json:"error" example:"300"`
 }
 
 // @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
 type APIInternalError struct {
-	Error WebError `example:"1"`
+	Error WebError `json:"error" example:"1"`
 }
 
 type WebError int

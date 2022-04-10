@@ -452,6 +452,61 @@
         },
         "/template": {
             "get": {
+                "description": "Returns solution template for supported language.\nAlso it's possible to provide task_id:\n- if there is no specific template for this task - common one will be returned\n- if there is one - specific template will be returned",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "template"
+                ],
+                "summary": "Returns solution template",
+                "operationId": "get-template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language of template",
+                        "name": "lang",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of task",
+                        "name": "task_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITemplate"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304, 600, 601",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/verify": {
+            "get": {
                 "description": "Usually user makes this request when opening link sent on email.",
                 "produces": [
                     "application/json"

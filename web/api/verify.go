@@ -15,7 +15,7 @@ import (
 // @Success 200 {object} api.APITemplate "Success"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
-// @Router /template [get]
+// @Router /verify [get]
 func GetVerify(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {

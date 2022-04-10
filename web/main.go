@@ -30,6 +30,7 @@ func main() {
 	http.HandleFunc(fmt.Sprintf("%ssolution", entry), api.SolutionHandle)
 	http.HandleFunc(fmt.Sprintf("%slogin", entry), api.LoginHandle)
 	http.HandleFunc(fmt.Sprintf("%slogout", entry), api.LogoutHandle)
+	http.HandleFunc(fmt.Sprintf("%sprofile", entry), api.ProfileHandle)
 	http.HandleFunc(fmt.Sprintf("%sregister", entry), api.RegistrationHandle)
 	http.HandleFunc(fmt.Sprintf("%stasks/flat", entry), api.TasksFlatHandle)
 	is_http := utils.EnvB("WEB_HTTP")

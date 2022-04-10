@@ -131,6 +131,48 @@
                 }
             }
         },
+        "/profile": {
+            "get": {
+                "description": "Returns email and name for user by token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Get information about user by token",
+                "operationId": "get-profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token, returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "get": {
                 "description": "Usually user makes this request when opening link sent on email.",
@@ -716,6 +758,9 @@
         "api.APIToken": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -862,6 +907,17 @@
                 "name": {
                     "type": "string",
                     "example": "Sample unit"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         }

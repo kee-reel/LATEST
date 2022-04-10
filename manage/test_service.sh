@@ -25,10 +25,16 @@ $(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
 
 curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | grep -Po '[\w\d]{256}')
-echo "Token: $TOKEN"
-
 echo "Token: $TOKEN
+"
+
+echo '
 ===
+Profile:
+'
+curl ${DOMAIN}profile?token=$TOKEN
+
+echo "
 Existing tasks:"
 TASKS=$(curl -s -X GET ${DOMAIN}tasks/hierarchy?token=$TOKEN\&folders=sample_tests,unit-2,task-1)
 echo $TASKS

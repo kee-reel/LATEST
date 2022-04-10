@@ -50,7 +50,7 @@ type Token struct {
 
 type User struct {
 	Id    int    `json:"-"`
-	Email string `json:"-"`
+	Email string `json:"email"`
 	Name  string `json:"name"`
 }
 

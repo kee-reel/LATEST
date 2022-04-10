@@ -37,6 +37,10 @@ func LogoutHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLogout, nil)
 }
 
+func ProfileHandle(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetProfile, nil)
+}
+
 func TemplateHandle(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetTemplate, nil)
 }

@@ -135,7 +135,7 @@
             "get": {
                 "description": "Usually user makes this request when opening link sent on email.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "register"
@@ -153,21 +153,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Request result described on HTML page",
                         "schema": {
-                            "$ref": "#/definitions/api.APINoError"
-                        }
-                    },
-                    "400": {
-                        "description": "Possible error codes: 300, 301, 302, 304",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIError"
-                        }
-                    },
-                    "500": {
-                        "description": "Server internal bug",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIInternalError"
+                            "type": "string"
                         }
                     }
                 }
@@ -231,7 +219,7 @@
             "get": {
                 "description": "Usually user makes this request when opening link sent on email.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "restore"
@@ -249,21 +237,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Request result described on HTML page",
                         "schema": {
-                            "$ref": "#/definitions/api.APINoError"
-                        }
-                    },
-                    "400": {
-                        "description": "Possible error codes: 300, 301, 302, 304",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIError"
-                        }
-                    },
-                    "500": {
-                        "description": "Server internal bug",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIInternalError"
+                            "type": "string"
                         }
                     }
                 }
@@ -551,7 +527,7 @@
             "get": {
                 "description": "Usually user makes this request when opening link sent on email.",
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
                     "verify"
@@ -569,21 +545,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Request result described on HTML page",
                         "schema": {
-                            "$ref": "#/definitions/api.APITemplate"
-                        }
-                    },
-                    "400": {
-                        "description": "Possible error codes: 300, 301, 302, 304",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIError"
-                        }
-                    },
-                    "500": {
-                        "description": "Server internal bug",
-                        "schema": {
-                            "$ref": "#/definitions/api.APIInternalError"
+                            "type": "string"
                         }
                     }
                 }

@@ -11,11 +11,9 @@ import (
 // @Summary Confirm new user registration
 // @Description Usually user makes this request when opening link sent on email.
 // @ID get-register
-// @Produce  json
+// @Produce  html
 // @Param   token   query    string  true    "Registration token, sent by POST /register"
-// @Success 200 {object} api.APINoError "Success"
-// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
-// @Failure 500 {object} api.APIInternalError "Server internal bug"
+// @Success 200 string strgin "Request result described on HTML page"
 // @Router /register [get]
 func GetRegistration(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")

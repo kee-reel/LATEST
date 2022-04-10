@@ -11,11 +11,9 @@ import (
 // @Summary Confirm user password restore
 // @Description Usually user makes this request when opening link sent on email.
 // @ID get-restore
-// @Produce  json
+// @Produce  html
 // @Param   token   query    string  true    "Verification token, sent by POST /verify"
-// @Success 200 {object} api.APINoError "Success"
-// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
-// @Failure 500 {object} api.APIInternalError "Server internal bug"
+// @Success 200 string strgin "Request result described on HTML page"
 // @Router /restore [get]
 func GetRestore(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")

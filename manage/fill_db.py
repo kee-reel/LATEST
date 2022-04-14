@@ -14,7 +14,6 @@ def parse_filename(filename):
 
 
 def upsert(cur, table, keys, data, return_id=True):
-    print(keys, data)
     all_data = keys.copy()
     all_data.update(data)
     query = f''' insert into {table}({ ','.join(all_data.keys()) })
@@ -64,6 +63,8 @@ def add_task(cur, desc, path, project_id, unit_id, folder):
         'unit_id': unit_id,
         'folder_name': folder
     }
+    fixed_tests = open(f'{folder_path}/fixed_tests.txt', 'r').read()
+    fixed_tests = '\n'.join(filter(lambda s: bool(s), fixed_tests.split('\n')))
     data = {
         'name': desc['name'],
         'position': desc.get('position', 0),
@@ -72,7 +73,7 @@ def add_task(cur, desc, path, project_id, unit_id, folder):
         'input': json.dumps(desc['input'], ensure_ascii=False),
         'output': desc['output'],
         'source_code': open(f'{folder_path}/complete_solution.{extention}', 'r').read(),
-        'fixed_tests': open(f'{folder_path}/fixed_tests.txt', 'r').read(),
+        'fixed_tests': fixed_tests,
         'score': desc['score'],
     }
     return upsert(cur, 'tasks', keys, data)
@@ -113,7 +114,7 @@ for t, paths in type_to_paths.items():
         data = json.loads(open(p, 'r', encoding='utf-8').read())
         id_ = globals().get(f'add_{t}')(cur, data, p, *folders_data)
         folders_to_id[folders] = id_
-        print(f'Add {p}')
+        print(f'Added {p}')
 
 for f in glob('tests/templates/*'):
     add_template(cur, f)

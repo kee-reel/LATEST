@@ -46,6 +46,11 @@ services:
     stdin_open: true
     tty: true
     env_file: .env
+    volumes:
+      - tests:/home/docker/app/tests
+
+volumes:
+  tests:
 
 networks:
   no-internet:

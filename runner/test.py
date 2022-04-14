@@ -75,27 +75,29 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
     results = []
     sol_exec = LANG_TO_EXEC[sol_ext](solution)
     comp_sol_exec = LANG_TO_EXEC[comp_sol_ext](complete_solution)
-    for tests in test_sets.values():
-        for test in tests.split('\n'):
-            if not test:
-                continue
+    tests_count = 0
+    for type_, tests in test_sets.items():
+        for test in tests:
+            assert test, f'Empty test in {type_} tests: {tests}'
             cmd_line = test.replace(';', '\n')
             result = run(sol_exec, comp_sol_exec, cmd_line)
 
             is_tested = True
             result['params'] = test
             if 'error' in result:
-                return result
+                return result, tests_count
             if is_verbose:
                 results.append(result)
+            tests_count += 1
 
     # No test cases
     if not is_tested:
         result = run(sol_exec, comp_sol_exec, is_verbose)
         if 'error' in result:
-            return result
+            return result, tests_count
         if is_verbose:
             results.append(result)
+        tests_count += 1
 
-    return {'result': results} if results else {}
+    return {'result': results} if results else {}, tests_count
 

@@ -7,7 +7,6 @@ import (
 	"late/models"
 	"late/storage"
 	"late/utils"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -25,10 +24,12 @@ type APISolutionVerboseResult struct {
 	Result string `example:"8"`
 }
 type APISolutionErrorData struct {
-	Msg      string `json:"msg,omitempty" example:"Build fail message"`
-	Params   string `json:"params,omitempty" example:"2;1;7'"`
-	Expected string `json:"expected,omitempty" example:"8"`
-	Result   string `json:"result,omitempty" example:"1"`
+	Msg         string `json:"msg,omitempty" example:"Build fail message"`
+	Params      string `json:"params,omitempty" example:"2;1;7'"`
+	Expected    string `json:"expected,omitempty" example:"8"`
+	Result      string `json:"result,omitempty" example:"1"`
+	TestsPassed int    `json:"tests_passed" example:"7"`
+	TestsTotal  int    `json:"tests_total" example:"10"`
 }
 type SolutionErrorData struct {
 	APISolutionErrorData
@@ -74,7 +75,12 @@ func PostSolution(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	test_result := BuildAndTest(solution.Task, solution)
-	storage.SaveSolution(solution, test_result.Error == NoError)
+	completion_percent := float32(1)
+	if test_result.ErrorData != nil {
+		completion_percent = float32(test_result.ErrorData.TestsPassed) /
+			float32(test_result.ErrorData.TestsTotal)
+	}
+	storage.SaveSolution(solution, completion_percent)
 	return test_result, test_result.Error
 }
 
@@ -156,7 +162,7 @@ func BuildAndTest(task *models.Task, solution *models.Solution) *TestResult {
 
 	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
 	verbose_text := "false"
-	if utils.EnvB("RUNNER_VERBOSE") && solution.IsVerbose {
+	if solution.IsVerbose {
 		verbose_text = "true"
 	}
 	response, err := http.PostForm(runner_url, url.Values{
@@ -175,12 +181,10 @@ func BuildAndTest(task *models.Task, solution *models.Solution) *TestResult {
 	utils.Err(err)
 
 	var test_result TestResult
-	log.Print(string(body))
 	err = json.Unmarshal(body, &test_result)
 	utils.Err(err)
 
 	if test_result.ErrorData != nil {
-		log.Print(test_result.ErrorData)
 		switch *test_result.ErrorData.Error {
 		case "build":
 			test_result.Error = SolutionBuildFail
@@ -222,7 +226,9 @@ func GenerateTests(task *models.Task) *string {
 		for _, input := range task.Input {
 			start_index = GenTestParam(test_data, input, start_index)
 		}
-		test_data[start_index] = "\n"
+		if i+1 < random_tests_count {
+			test_data[start_index] = "\n"
+		}
 		start_index++
 	}
 	result = strings.Join(test_data, "")

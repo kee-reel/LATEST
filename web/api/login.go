@@ -36,8 +36,8 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	user, pass_matched := storage.GetUser(email, pass)
-	if user == nil {
+	user, pass_matched, user_exists := storage.GetUser(email, pass)
+	if !user_exists {
 		return nil, EmailUnknown
 	}
 	if !pass_matched {
@@ -54,7 +54,7 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			msg := fmt.Sprintf(utils.Env("MAIL_VER_MSG"), *ip, verify_link)
 			subj := utils.Env("MAIL_VER_SUBJ")
 			sendMail(ip, email, &subj, &msg)
-            return nil, TokenNotVerified
+			return nil, TokenNotVerified
 		} else {
 			user_id, is_token_exists := storage.VerifyToken(ip, verification_token)
 			if !is_token_exists {

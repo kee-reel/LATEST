@@ -24,21 +24,21 @@ type TaskParamData struct {
 }
 
 type Task struct {
-	Id          int             `json:"id" example:"111"`
-	Number      int             `json:"number" example:"0"`
-	UnitId      int             `json:"unit_id" example:"333"`
-	ProjectId   int             `json:"project_id" example:"666"`
-	Name        string          `json:"name" example:"Sample task"`
-	Desc        string          `json:"desc" example:"Sample description"`
-	FolderName  string          `json:"folder_name" example:"task-1"`
-	Input       []TaskParamData `json:"input"`
-	Output      string          `json:"output,omitempty" example:"Program must output sum of two integers on a newline"`
-	Score       int             `json:"score" json:"15"`
-	IsCompleted bool            `json:"is_passed" example:"true"`
-	Project     *Project        `json:"-"`
-	Unit        *Unit           `json:"-"`
-	Extention   string          `json:"-"`
-	Path        string          `json:"-"`
+	Id         int             `json:"id" example:"111"`
+	Number     int             `json:"number" example:"0"`
+	UnitId     int             `json:"unit_id" example:"333"`
+	ProjectId  int             `json:"project_id" example:"666"`
+	Name       string          `json:"name" example:"Sample task"`
+	Desc       string          `json:"desc" example:"Sample description"`
+	FolderName string          `json:"folder_name" example:"task-1"`
+	Input      []TaskParamData `json:"input"`
+	Output     string          `json:"output,omitempty" example:"Program must output sum of two integers on a newline"`
+	Score      int             `json:"score" json:"15"`
+	Completion float32         `json:"completion" example:"0.58"`
+	Project    *Project        `json:"-"`
+	Unit       *Unit           `json:"-"`
+	Extention  string          `json:"-"`
+	Path       string          `json:"-"`
 }
 
 type Token struct {
@@ -49,9 +49,10 @@ type Token struct {
 }
 
 type User struct {
-	Id    int    `json:"-"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Id    int     `json:"-"`
+	Email string  `json:"email"`
+	Name  string  `json:"name"`
+	Score float32 `json:"score"`
 }
 
 type Solution struct {

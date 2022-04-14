@@ -5,8 +5,8 @@ if [[ -z "$(ls tests)" ]]; then
 	git clone $GIT_REPO $GIT_REPO_FOLDER # Clone sample project
 	git clone $TEMPLATES_GIT_REPO templates # Clone templates
 	cd ..
-	python3 fill_db.py
 fi
+python3 fill_db.py
 
 if $WEB_HTTP; then
     DOMAIN=http://$WEB_HOST:$WEB_PORT$WEB_ENTRY
@@ -32,7 +32,7 @@ echo '
 ===
 Profile:
 '
-curl ${DOMAIN}profile?token=$TOKEN
+curl -s ${DOMAIN}profile?token=$TOKEN
 
 echo "
 Existing tasks:"
@@ -45,7 +45,7 @@ echo "Test task $TASK_ID"
 echo '
 ===
 Post solution in C:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
@@ -54,7 +54,7 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}'
 echo '
 ===
 Post solution in Python:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
     --form-string source_text='print(int(input())+int(input()))'
@@ -62,7 +62,7 @@ curl -X POST ${DOMAIN}solution?token=$TOKEN \
 echo '
 ===
 Post solution in Pascal:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='pas' \
 	--form-string source_text='
@@ -77,16 +77,16 @@ end.'
 echo '
 ===
 Post wrong solution in C:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
-int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+1+b);}'
+int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",1+b);}'
 
 echo '
 ===
 Post wrong solution in Pascal:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='pas' \
 	--form-string source_text='
@@ -101,16 +101,16 @@ end.'
 echo '
 ===
 Post wrong solution in Python:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
-    --form-string source_text='res = int(input())+int(input())+1
+    --form-string source_text='res = int(input())+1
 print(res)'
 
 echo '
 ===
 Post malformed solution in C:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
@@ -119,7 +119,7 @@ int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}'
 echo '
 ===
 Post malformed solution in Python:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
     --form-string source_text='res = int(input()))+int(input)
@@ -128,7 +128,7 @@ print(res)'
 echo '
 ===
 Post malformed solution in Pascal:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='pas' \
 	--form-string source_text='
@@ -143,7 +143,7 @@ end.'
 echo '
 ===
 Post solution with verbose flag:'
-curl -X POST ${DOMAIN}solution?token=$TOKEN \
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
@@ -153,9 +153,9 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
 echo '
 ===
 Get template for C:'
-curl ${DOMAIN}template?token=$TOKEN\&lang='c'
+curl -s ${DOMAIN}template?token=$TOKEN\&lang='c'
 
 echo '
 ===
 Logout:'
-curl ${DOMAIN}logout?token=$TOKEN
+curl -s ${DOMAIN}logout?token=$TOKEN

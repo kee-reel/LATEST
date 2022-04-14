@@ -4,9 +4,10 @@ import subprocess
 from errors import ERROR
 
 
-LANGS = ['c', 'py', 'pas']
+LANGS = ['c', 'cpp', 'py', 'pas']
 LANG_CMD = {
         'c': lambda source, target: ['/usr/bin/gcc', source, '-o', target, '-lm'],
+        'cpp': lambda source, target: ['/usr/bin/g++', source, '-o', target, '-lm'],
         'pas': lambda source, target: ['/usr/bin/fpc', '-ve', '-Fe/dev/stderr', source, f'-o{target}'],
 }
 

@@ -59,14 +59,11 @@ func GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 		}
 		task.Unit = unit
 
-		query, err = db.Prepare(`SELECT s.is_passed FROM solutions AS s
-			WHERE s.user_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
+		query, err = db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
+			WHERE s.user_id = $1 AND s.task_id = $2 GROUP BY s.task_id`)
 		utils.Err(err)
 
-		var is_passed bool
-		err = query.QueryRow(token.UserId, task_id).Scan(&is_passed)
-		task.IsCompleted = err == nil
-
+		_ = query.QueryRow(token.UserId, task_id).Scan(&task.Completion)
 		err = json.Unmarshal(in_params_str, &task.Input)
 		utils.Err(err)
 
@@ -262,29 +259,31 @@ func GetUnit(unit_id int) *models.Unit {
 	return &unit
 }
 
-func SaveSolution(solution *models.Solution, is_passed bool) {
+func SaveSolution(solution *models.Solution, percent float32) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT s.is_passed FROM solutions AS s
-		WHERE s.user_id = $1 AND s.task_id = $2 AND s.is_passed = TRUE LIMIT 1`)
+	query, err := db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
+		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
-	is_passed_before := false
-	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&is_passed_before)
+	var solution_id int
+	var best_percent float32
+	err = query.QueryRow(solution.Token.UserId, solution.Task.Id, percent).Scan(&solution_id, &best_percent)
 
-	query, err = db.Prepare(`INSERT INTO solutions(user_id, task_id, is_passed) VALUES($1, $2, $3)`)
-	utils.Err(err)
-	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, is_passed)
-	utils.Err(err)
-
-	if !is_passed_before && is_passed {
-		query, err := db.Prepare(`INSERT INTO 
-			leaderboard(project_id, user_id, score) VALUES($1, $2, $3)
-			ON CONFLICT (user_id, project_id) DO UPDATE SET score = score + $3`)
+	if best_percent < percent {
+		score_diff := float32(solution.Task.Score) * (percent - best_percent)
+		query, err = db.Prepare(`INSERT INTO 
+			leaderboard(user_id, project_id, score) VALUES($1, $2, $3)
+			ON CONFLICT (user_id, project_id) DO UPDATE SET score = (leaderboard.score + $3)`)
 		utils.Err(err)
-		_, err = query.Exec(solution.Task.Project.Id, solution.Token.UserId, solution.Task.Score)
+		_, err = query.Exec(solution.Token.UserId, solution.Task.Project.Id, score_diff)
 		utils.Err(err)
 	}
+
+	query, err = db.Prepare(`INSERT INTO solutions(user_id, task_id, completion) VALUES($1, $2, $3)`)
+	utils.Err(err)
+	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, percent)
+	utils.Err(err)
 
 	query, err = db.Prepare(`INSERT INTO 
 		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
@@ -476,7 +475,6 @@ func CreateRestoreToken(email *string, ip *string, pass *string) *string {
 	query, err := db.Prepare(`SELECT u.id FROM users as u WHERE u.email = $1`)
 	utils.Err(err)
 	var user_id int
-	log.Printf("email: %s", *email)
 	err = query.QueryRow(*email).Scan(&user_id)
 	if err != nil {
 		return nil
@@ -528,36 +526,47 @@ func RestoreToken(ip *string, token_str *string) (*int, bool) {
 	return &user_id, true
 }
 
-func GetUser(email *string, pass *string) (*models.User, bool) {
+func GetUser(email *string, pass *string) (*models.User, bool, bool) {
 	db := OpenDB()
 	defer db.Close()
 
-	query, err := db.Prepare(`SELECT u.id, u.name, u.pass FROM users as u WHERE u.email = $1`)
+	query, err := db.Prepare(`SELECT u.id, u.pass FROM users as u WHERE u.email = $1`)
 	utils.Err(err)
 
-	user := models.User{
-		Email: *email,
-	}
+	var user_id int
 	var hash string
-	err = query.QueryRow(*email).Scan(&user.Id, &user.Name, &hash)
+	err = query.QueryRow(*email).Scan(&user_id, &hash)
 	if err != nil {
-		return nil, false
+		return nil, false, false
 	}
-
-	return &user, security.CheckPassword(&hash, pass)
+	if !security.CheckPassword(&hash, pass) {
+		return nil, false, true
+	}
+	return GetUserById(user_id), true, true
 }
 
 func GetUserById(user_id int) *models.User {
 	db := OpenDB()
 	defer db.Close()
-
 	query, err := db.Prepare(`SELECT u.name, u.email FROM users as u WHERE u.id = $1`)
 	utils.Err(err)
-
 	var user models.User
 	err = query.QueryRow(user_id).Scan(&user.Name, &user.Email)
 	if err != nil {
 		return nil
 	}
+	user.Score = GetLeaderboardScore(user_id)
+	user.Id = user_id
 	return &user
+}
+
+func GetLeaderboardScore(user_id int) float32 {
+	db := OpenDB()
+	defer db.Close()
+	query, err := db.Prepare(`SELECT SUM(l.score) FROM leaderboard as l 
+		WHERE l.user_id = $1 GROUP BY l.project_id`)
+	utils.Err(err)
+	var score float32
+	_ = query.QueryRow(user_id).Scan(&score)
+	return score
 }

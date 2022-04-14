@@ -63,6 +63,10 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			if user_id == nil {
 				return nil, TokenBoundToOtherIP
 			}
+			token := storage.GetTokenForConnection(user, ip)
+			if token == nil {
+				panic("Can't autoverify token")
+			}
 		}
 	}
 	resp := APIToken{token, user}

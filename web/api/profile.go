@@ -8,7 +8,7 @@ import (
 
 // @Tags profile
 // @Summary Get information about user by token
-// @Description Returns email and name for user by token
+// @Description Returns user's score, email and name by token
 // @ID get-profile
 // @Produce  json
 // @Param   token   query    string  true    "Token, returned by GET /login"

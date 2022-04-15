@@ -16,6 +16,8 @@ RUN apt install -y python3 python3-pip
 RUN apt install -y libpq-dev
 RUN apt install -y jq curl git
 
+RUN mkdir tests && chown docker tests
+
 USER docker
 
 ENV PATH $PATH:/home/docker/.local/bin

@@ -11,7 +11,7 @@ import (
 // @ID get-leaderboard
 // @Produce  json
 // @Param   token   query    string  true    "Token, returned by GET /login"
-// @Success 200 {object} api.APILeaderboard "Success"
+// @Success 200 {object} models.Leaderboard "Success"
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /leaderboard [get]

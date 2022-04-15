@@ -73,7 +73,7 @@ func PostRestore(r *http.Request) (interface{}, WebError) {
 		verify_link := fmt.Sprintf("https://%s/restore?token=%s", utils.Env("WEB_DOMAIN"), *token)
 		msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), *ip, verify_link)
 		subj := utils.Env("MAIL_RESTORE_SUBJ")
-		sendMail(ip, email, &subj, &msg)
+		sendMail(email, &subj, &msg)
 	} else {
 		user_id, is_token_exists := storage.RestoreToken(ip, token)
 		if !is_token_exists {

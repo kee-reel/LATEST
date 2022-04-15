@@ -66,6 +66,12 @@ CREATE TABLE IF NOT EXISTS verification_tokens (
 	user_id INTEGER NOT NULL,
     UNIQUE(ip, user_id));
 
+CREATE TABLE IF NOT EXISTS reset_tokens (
+	token VARCHAR(256) PRIMARY KEY,
+	ip VARCHAR(15) NOT NULL,
+	user_id INTEGER NOT NULL,
+    UNIQUE(ip, user_id));
+
 CREATE TABLE IF NOT EXISTS restore_tokens (
 	token VARCHAR(256) PRIMARY KEY,
 	ip VARCHAR(15) NOT NULL,

@@ -241,6 +241,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
                     }
                 }
             },
@@ -286,6 +292,82 @@
                     },
                     "400": {
                         "description": "Possible error codes: 100, 101, 103, 200, 201, 700, 701",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reset": {
+            "get": {
+                "description": "Delete all solutions and reset user's score",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reset"
+                ],
+                "summary": "Resets all user's progress",
+                "operationId": "get-reset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token, returned by POST /reset",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request result described on HTML page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Sends mail to user's email with confirmation to delete all solutions and reset user's score.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reset"
+                ],
+                "summary": "Resets all user's progress",
+                "operationId": "post-reset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token, returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APINoError"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
                         "schema": {
                             "$ref": "#/definitions/api.APIError"
                         }
@@ -413,7 +495,7 @@
                     "400": {
                         "description": "Possible error codes: 300, 301, 302, 304",
                         "schema": {
-                            "$ref": "#/definitions/api.APITestFailResult"
+                            "$ref": "#/definitions/api.APIError"
                         }
                     },
                     "500": {

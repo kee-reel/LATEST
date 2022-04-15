@@ -167,5 +167,10 @@ curl -s ${DOMAIN}leaderboard?token=$TOKEN
 
 echo '
 ===
+Reset:'
+curl -X POST -s ${DOMAIN}reset?token=$TOKEN
+
+echo '
+===
 Logout:'
 curl -s ${DOMAIN}logout?token=$TOKEN

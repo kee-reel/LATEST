@@ -57,6 +57,10 @@ func Leaderboard(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLeaderboard, nil)
 }
 
+func Reset(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetReset, PostReset)
+}
+
 type WebMethodFunc func(r *http.Request) (interface{}, WebError)
 
 func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {

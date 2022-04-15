@@ -486,6 +486,55 @@ func VerifyToken(ip *string, token_str *string) (*int, bool) {
 	return &user_id, true
 }
 
+func CreateResetToken(user_id int, ip *string) *string {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`INSERT INTO 
+		reset_tokens(token, ip, user_id) VALUES($1, $2, $3)
+		ON CONFLICT (ip, user_id) DO UPDATE SET token = $1`)
+	utils.Err(err)
+	token := security.GenerateToken()
+	_, err = query.Exec(token, *ip, user_id)
+	utils.Err(err)
+	return &token
+}
+
+func ResetToken(ip *string, token_str *string) (*int, bool) {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT v.user_id, v.ip FROM reset_tokens as v WHERE v.token = $1`)
+	utils.Err(err)
+
+	var ip_from_db string
+	var user_id int
+	err = query.QueryRow(*token_str).Scan(&user_id, &ip_from_db)
+	if err != nil {
+		return nil, false
+	}
+	if *ip != ip_from_db {
+		return nil, true
+	}
+
+	query, err = db.Prepare(`DELETE FROM solutions AS s WHERE s.user_id = $1`)
+	utils.Err(err)
+	_, err = query.Exec(user_id)
+	utils.Err(err)
+
+	query, err = db.Prepare(`DELETE FROM solutions_sources AS s WHERE s.user_id = $1`)
+	utils.Err(err)
+	_, err = query.Exec(user_id)
+	utils.Err(err)
+
+	query, err = db.Prepare(`DELETE FROM leaderboard AS l WHERE l.user_id = $1`)
+	utils.Err(err)
+	_, err = query.Exec(user_id)
+	utils.Err(err)
+
+	return &user_id, true
+}
+
 func CreateRestoreToken(email *string, ip *string, pass *string) *string {
 	db := OpenDB()
 	defer db.Close()

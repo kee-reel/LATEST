@@ -53,7 +53,7 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			verify_link := fmt.Sprintf("https://%s/verify?token=%s", utils.Env("WEB_DOMAIN"), *verification_token)
 			msg := fmt.Sprintf(utils.Env("MAIL_VER_MSG"), *ip, verify_link)
 			subj := utils.Env("MAIL_VER_SUBJ")
-			sendMail(ip, email, &subj, &msg)
+			sendMail(email, &subj, &msg)
 			return nil, TokenNotVerified
 		} else {
 			user_id, is_token_exists := storage.VerifyToken(ip, verification_token)

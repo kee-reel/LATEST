@@ -13,7 +13,8 @@ import (
 // @ID get-register
 // @Produce  html
 // @Param   token   query    string  true    "Registration token, sent by POST /register"
-// @Success 200 string strgin "Request result described on HTML page"
+// @Success 200 string string "Request result described on HTML page"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [get]
 func GetRegistration(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
@@ -78,15 +79,15 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 		verify_link := fmt.Sprintf("https://%s/register?token=%s", utils.Env("WEB_DOMAIN"), *token)
 		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), *name, *ip, verify_link)
 		subj := utils.Env("MAIL_REG_SUBJ")
-		sendMail(ip, email, &subj, &msg)
+		sendMail(email, &subj, &msg)
 	} else {
-        user, is_token_exists := storage.RegisterToken(ip, token)
-        if !is_token_exists {
-            return nil, TokenUnknown
-        }
-        if user == nil {
-            return nil, TokenBoundToOtherIP
-        }
-    }
+		user, is_token_exists := storage.RegisterToken(ip, token)
+		if !is_token_exists {
+			return nil, TokenUnknown
+		}
+		if user == nil {
+			return nil, TokenBoundToOtherIP
+		}
+	}
 	return nil, NoError
 }

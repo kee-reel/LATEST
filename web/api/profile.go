@@ -16,7 +16,7 @@ import (
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /profile [get]
-func GetLeaderboard(r *http.Request) (interface{}, WebError) {
+func GetProfile(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err

@@ -28,26 +28,27 @@ func GetFunctionName(i interface{}) string {
 
 func main() {
 	var err error
-	entry := utils.Env("WEB_ENTRY")
 	addr := fmt.Sprintf("0.0.0.0:%s", utils.Env("WEB_PORT"))
-	http.HandleFunc("/login", api.Login)
-	http.HandleFunc("/logout", api.Logout)
-	http.HandleFunc("/verify", api.Verify)
-	http.HandleFunc("/restore", api.Restore)
-	http.HandleFunc("/profile", api.Leaderboard)
-	http.HandleFunc("/register", api.Register)
-	http.HandleFunc("/template", api.Template)
-	http.HandleFunc("/solution", api.Solution)
-	http.HandleFunc("/languages", api.Languages)
-	http.HandleFunc("/leaderboard", api.Profile)
-	http.HandleFunc("/tasks/flat", api.TasksFlat)
-	http.HandleFunc("/tasks/hierarchy", api.TasksHierarchy)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/login", api.Login)
+	mux.HandleFunc("/logout", api.Logout)
+	mux.HandleFunc("/verify", api.Verify)
+	mux.HandleFunc("/restore", api.Restore)
+	mux.HandleFunc("/profile", api.Profile)
+	mux.HandleFunc("/register", api.Register)
+	mux.HandleFunc("/template", api.Template)
+	mux.HandleFunc("/solution", api.Solution)
+	mux.HandleFunc("/languages", api.Languages)
+	mux.HandleFunc("/leaderboard", api.Leaderboard)
+	mux.HandleFunc("/tasks/flat", api.TasksFlat)
+	mux.HandleFunc("/tasks/hierarchy", api.TasksHierarchy)
+	mux.HandleFunc("/reset", api.Reset)
 	is_http := utils.EnvB("WEB_HTTP")
-	log.Printf("Started listening on %s%s HTTPS(%t)", addr, entry, !is_http)
+	log.Printf("Started listening on %s HTTPS(%t)", addr, !is_http)
 	if is_http {
-		err = http.ListenAndServe(addr, nil)
+		err = http.ListenAndServe(addr, mux)
 	} else {
-		err = http.ListenAndServeTLS(addr, utils.Env("WEB_CERT_FILE"), utils.Env("WEB_KEY_FILE"), nil)
+		err = http.ListenAndServeTLS(addr, utils.Env("WEB_CERT_FILE"), utils.Env("WEB_KEY_FILE"), mux)
 	}
 	if err != nil {
 		log.Fatal(err)

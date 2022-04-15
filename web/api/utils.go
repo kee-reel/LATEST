@@ -120,7 +120,7 @@ func getIP(r *http.Request) *string {
 	panic("Can't resolve client's ip")
 }
 
-func sendMail(ip *string, email *string, subject *string, message *string) {
+func sendMail(email *string, subject *string, message *string) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", utils.Env("MAIL_EMAIL"))
 	m.SetHeader("To", *email)

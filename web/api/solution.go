@@ -29,7 +29,7 @@ type APISolution struct {
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   task_id   formData    int  true    "ID of task"
 // @Success 200 {object} api.APISolution "Success"
-// @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304"
+// @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /solution [get]
 func GetSolution(r *http.Request) (interface{}, WebError) {

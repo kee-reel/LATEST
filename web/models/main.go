@@ -14,10 +14,10 @@ type Unit struct {
 }
 
 type TaskParamData struct {
-	Name       string     `example:"task-1"`
-	Type       string     `example:"int"`
-	Dimensions []int      `example:"5,4"`
-	Range      []string   `example:"-1000,1000"`
+	Name       string     `json:"name" example:"task-1"`
+	Type       string     `json:"type" example:"int"`
+	Dimensions []int      `json:"dimensions" example:"5,4"`
+	Range      []string   `json:"range" example:"-1000,1000"`
 	IntRange   *[]int     `json:"-"`
 	FloatRange *[]float64 `json:"-"`
 	TotalCount int        `json:"-"`

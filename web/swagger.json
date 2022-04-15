@@ -702,6 +702,15 @@
                 }
             }
         },
+        "api.APISolution": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "example": "a = int(input())\nb = int(input())\nprint(a+b)"
+                }
+            }
+        },
         "api.APISolutionErrorData": {
             "type": "object",
             "properties": {

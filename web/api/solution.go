@@ -22,8 +22,8 @@ type APISolution struct {
 }
 
 // @Tags solution
-// @Summary Get task solution text
-// @Description Returns solution text for specified task. If no solution was posted, nothing will be returned.
+// @Summary Get last solution of specific task
+// @Description Returns last solution text for specified task. If no solution was posted, nothing will be returned.
 // @ID get-solution
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"

@@ -378,14 +378,14 @@
         },
         "/solution": {
             "get": {
-                "description": "Returns solution text for specified task. If no solution was posted, nothing will be returned.",
+                "description": "Returns last solution text for specified task. If no solution was posted, nothing will be returned.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "solution"
                 ],
-                "summary": "Get task solution text",
+                "summary": "Get last solution of specific task",
                 "operationId": "get-solution",
                 "parameters": [
                     {

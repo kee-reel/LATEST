@@ -51,6 +51,7 @@ func GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 			projects[project_id] = project
 		}
 		task.Project = project
+		task.ProjectId = project.Id
 
 		unit, ok := units[unit_id]
 		if !ok {
@@ -58,12 +59,15 @@ func GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 			units[unit_id] = unit
 		}
 		task.Unit = unit
+		task.UnitId = unit.Id
 
 		query, err = db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
 			WHERE s.user_id = $1 AND s.task_id = $2 GROUP BY s.task_id`)
 		utils.Err(err)
 
+		task.Completion = 0
 		_ = query.QueryRow(token.UserId, task_id).Scan(&task.Completion)
+
 		err = json.Unmarshal(in_params_str, &task.Input)
 		utils.Err(err)
 
@@ -269,7 +273,7 @@ func SaveSolution(solution *models.Solution, percent float32) float32 {
 	var best_percent float32
 	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&best_percent)
 
-	var score_diff float32
+	score_diff := float32(0)
 	if best_percent < percent {
 		score_diff = float32(solution.Task.Score) * (percent - best_percent)
 		query, err = db.Prepare(`INSERT INTO 

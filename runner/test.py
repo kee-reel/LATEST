@@ -91,7 +91,7 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
 
     # No test cases
     if not is_tested:
-        result = run(sol_exec, comp_sol_exec, is_verbose)
+        result = run(sol_exec, comp_sol_exec)
         if 'error' in result:
             return result, tests_count
         if is_verbose:

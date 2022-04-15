@@ -70,6 +70,8 @@ def run_test():
             test_set = test_set.split('\n')
             tests[t] = test_set
             tests_total += len(test_set)
+    if not tests:
+        tests_total = 1
 
     result = run_tests(sol_fn, comp_sol_fn, tests, is_verbose)
     result['tests_total'] = tests_total

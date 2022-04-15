@@ -10,7 +10,7 @@ import (
 )
 
 type APILangsResponse struct {
-	Langs *[]string `example:"c,py,pas"'`
+	Langs *[]string `json:"langs" example:"c,py,pas"'`
 }
 
 // @Tags languages

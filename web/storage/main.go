@@ -270,7 +270,7 @@ func SaveSolution(solution *models.Solution, percent float32) float32 {
 	query, err := db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
 		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
-	var best_percent float32
+	best_percent := float32(0)
 	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&best_percent)
 
 	score_diff := float32(0)
@@ -584,7 +584,7 @@ func GetLeaderboardScore(user_id int) float32 {
 	query, err := db.Prepare(`SELECT SUM(l.score) FROM leaderboard as l 
 		WHERE l.user_id = $1 GROUP BY l.project_id`)
 	utils.Err(err)
-	var score float32
+	score := float32(0)
 	_ = query.QueryRow(user_id).Scan(&score)
 	return score
 }
@@ -601,7 +601,7 @@ func GetLeaderboard() *models.Leaderboard {
 	leaderboard := models.Leaderboard{}
 	for rows.Next() {
 		var name string
-		var score float32
+		score := float32(0)
 		err := rows.Scan(&name, &score)
 		utils.Err(err)
 		leaderboard[name] = score

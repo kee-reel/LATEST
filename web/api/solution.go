@@ -36,11 +36,13 @@ type SolutionErrorData struct {
 	Error *string `json:"error,omitempty"`
 }
 type APITestSuccessResult struct {
-	Result *[]APISolutionVerboseResult `json:"result,omitempty"`
+	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
+	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
 }
 type APITestFailResult struct {
 	Error     WebError              `json:"error,omitempty" example:"508"`
 	ErrorData *APISolutionErrorData `json:"error_data,omitempty"`
+	ScoreDiff float32               `json:"score_diff, omitempty" example:"2.5"`
 }
 type TestResult struct {
 	Error     WebError                    `json:"error,omitempty" example:"508"`

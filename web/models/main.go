@@ -66,3 +66,5 @@ type Solution struct {
 	Token                *Token
 	IsVerbose            bool
 }
+
+type Leaderboard map[string]float32

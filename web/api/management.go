@@ -9,57 +9,61 @@ import (
 	"runtime/debug"
 )
 
-func TasksFlatHandle(w http.ResponseWriter, r *http.Request) {
+func TasksFlat(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetTasksFlat, nil)
 }
 
-func TasksHierarchyHandle(w http.ResponseWriter, r *http.Request) {
+func TasksHierarchy(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetTasksHierarchy, nil)
 }
 
-func SolutionHandle(w http.ResponseWriter, r *http.Request) {
+func Solution(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, nil, PostSolution)
 }
 
-func RegistrationHandle(w http.ResponseWriter, r *http.Request) {
+func Register(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetRegistration, PostRegistration)
 }
 
-func VerifyHandle(w http.ResponseWriter, r *http.Request) {
+func Verify(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetVerify, nil)
 }
 
-func LoginHandle(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLogin, nil)
 }
 
-func LogoutHandle(w http.ResponseWriter, r *http.Request) {
+func Logout(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLogout, nil)
 }
 
-func ProfileHandle(w http.ResponseWriter, r *http.Request) {
+func Profile(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetProfile, nil)
 }
 
-func TemplateHandle(w http.ResponseWriter, r *http.Request) {
+func Template(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetTemplate, nil)
 }
 
-func LanguagesHandle(w http.ResponseWriter, r *http.Request) {
+func Languages(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetLanguages, nil)
 }
 
-func RestoreHandle(w http.ResponseWriter, r *http.Request) {
+func Restore(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, GetRestore, PostRestore)
+}
+
+func Leaderboard(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, GetLeaderboard, nil)
 }
 
 type WebMethodFunc func(r *http.Request) (interface{}, WebError)
 
 func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
-    w.WriteHeader(http.StatusOK)
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
-    w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	var web_err WebError
 	web_err = MethodNotSupported

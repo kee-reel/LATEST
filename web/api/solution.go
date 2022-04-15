@@ -46,6 +46,7 @@ type TestResult struct {
 	Error     WebError                    `json:"error,omitempty" example:"508"`
 	ErrorData *SolutionErrorData          `json:"error_data,omitempty"`
 	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
+	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
 }
 
 // @Tags solution
@@ -57,7 +58,7 @@ type TestResult struct {
 // @Description 505 - Solution test error. If this happens, then result will contain: `{"error":509,"error_data":{"expected":"expected result", "params":"semicolon separated input parameters", "result":"actual result", "tests_passed":7, "tests_total":15}}`
 // @Description 506 - Solution timeout error (took more than 0.5 secs). If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "result":"actual result", "tests_passed":0, "tests_total":15}}`
 // @Description 507 - Solution runtime error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "msg":"actual result", "tests_passed":2, "tests_total":15}}`
-// @Description If "verbose" flag is "true" then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result", "tests_passed":15, "tests_total":15}]}`
+// @Description If "verbose" flag is "true" then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result"}]}`
 // @ID post-solution
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
@@ -77,12 +78,12 @@ func PostSolution(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	test_result := BuildAndTest(solution.Task, solution)
-	completion_percent := float32(1)
+	percent := float32(1)
 	if test_result.ErrorData != nil {
-		completion_percent = float32(test_result.ErrorData.TestsPassed) /
+		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	storage.SaveSolution(solution, completion_percent)
+	test_result.ScoreDiff = storage.SaveSolution(solution, percent)
 	return test_result, test_result.Error
 }
 

@@ -259,19 +259,19 @@ func GetUnit(unit_id int) *models.Unit {
 	return &unit
 }
 
-func SaveSolution(solution *models.Solution, percent float32) {
+func SaveSolution(solution *models.Solution, percent float32) float32 {
 	db := OpenDB()
 	defer db.Close()
 
 	query, err := db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
 		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
-	var solution_id int
 	var best_percent float32
-	err = query.QueryRow(solution.Token.UserId, solution.Task.Id, percent).Scan(&solution_id, &best_percent)
+	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&best_percent)
 
+	var score_diff float32
 	if best_percent < percent {
-		score_diff := float32(solution.Task.Score) * (percent - best_percent)
+		score_diff = float32(solution.Task.Score) * (percent - best_percent)
 		query, err = db.Prepare(`INSERT INTO 
 			leaderboard(user_id, project_id, score) VALUES($1, $2, $3)
 			ON CONFLICT (user_id, project_id) DO UPDATE SET score = (leaderboard.score + $3)`)
@@ -291,6 +291,7 @@ func SaveSolution(solution *models.Solution, percent float32) {
 	utils.Err(err)
 	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, solution.Source)
 	utils.Err(err)
+	return score_diff
 }
 
 func GetFailedSolutions(solution *models.Solution) int {
@@ -569,4 +570,24 @@ func GetLeaderboardScore(user_id int) float32 {
 	var score float32
 	_ = query.QueryRow(user_id).Scan(&score)
 	return score
+}
+
+func GetLeaderboard() *models.Leaderboard {
+	db := OpenDB()
+	defer db.Close()
+	query, err := db.Prepare(`SELECT u.name, SUM(l.score) FROM leaderboard AS l
+		JOIN users AS u ON u.id = l.user_id
+		GROUP BY u.name, l.user_id, l.project_id`)
+	utils.Err(err)
+	rows, err := query.Query()
+	defer rows.Close()
+	leaderboard := models.Leaderboard{}
+	for rows.Next() {
+		var name string
+		var score float32
+		err := rows.Scan(&name, &score)
+		utils.Err(err)
+		leaderboard[name] = score
+	}
+	return &leaderboard
 }

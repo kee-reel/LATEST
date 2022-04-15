@@ -157,5 +157,10 @@ curl -s ${DOMAIN}template?token=$TOKEN\&lang='c'
 
 echo '
 ===
+Leaderboard:'
+curl -s ${DOMAIN}leaderboard?token=$TOKEN
+
+echo '
+===
 Logout:'
 curl -s ${DOMAIN}logout?token=$TOKEN

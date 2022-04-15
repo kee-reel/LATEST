@@ -75,7 +75,7 @@ def run_test():
     result['tests_total'] = tests_total
     if 'error' in result:
         return {'error_data': result}
-    else:
+    else if tests:
         assert tests_total == result.get('tests_passed'), \
             f'Tests count does not match: total {tests_total}, passed {result.get("tests_passed")}'
     return result

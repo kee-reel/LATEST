@@ -377,6 +377,53 @@
             }
         },
         "/solution": {
+            "get": {
+                "description": "Returns solution text for specified task. If no solution was posted, nothing will be returned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "solution"
+                ],
+                "summary": "Get task solution text",
+                "operationId": "get-solution",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of task",
+                        "name": "task_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/api.APISolution"
+                        }
+                    },
+                    "400": {
+                        "description": "Possible error codes: 300, 301, 302, 304",
+                        "schema": {
+                            "$ref": "#/definitions/api.APITestFailResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Receives solution in form of file or plain text.\nBuilds solution and then runs. While running it gives various input parameters (through stdin) and expects specific result (from stdout).\nApart from errors raised due to invalid POST parameters, there are 2 \"normal\" errors:\n504 - Solution build error. If this happens, then result will contain: `{\"error\":508,\"error_data\":{\"msg\":\"multiline compilation error\", \"tests_passed\":0, \"tests_total\":15}}`\n505 - Solution test error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"expected\":\"expected result\", \"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"tests_passed\":7, \"tests_total\":15}}`\n506 - Solution timeout error (took more than 0.5 secs). If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"tests_passed\":0, \"tests_total\":15}}`\n507 - Solution runtime error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"msg\":\"actual result\", \"tests_passed\":2, \"tests_total\":15}}`\nIf \"verbose\" flag is \"true\" then result will contain (if no error occurs): `{\"result\":[{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\"}]}`",
                 "produces": [

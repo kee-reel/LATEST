@@ -31,7 +31,7 @@ type APISolution struct {
 // @Success 200 {object} api.APISolution "Success"
 // @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
-// @Router /solution [post]
+// @Router /solution [get]
 func GetSolution(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {

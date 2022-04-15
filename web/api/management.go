@@ -18,7 +18,7 @@ func TasksHierarchy(w http.ResponseWriter, r *http.Request) {
 }
 
 func Solution(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, nil, PostSolution)
+	HandleFunc(w, r, GetSolution, PostSolution)
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {

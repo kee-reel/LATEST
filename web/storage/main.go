@@ -294,6 +294,19 @@ func SaveSolution(solution *models.Solution, percent float32) float32 {
 	return score_diff
 }
 
+func GetSolutionText(user_id int, task_id int) *string {
+	db := OpenDB()
+	defer db.Close()
+
+	query, err := db.Prepare(`SELECT s.source_code FROM solutions_sources as s
+		WHERE s.user_id = $1 AND s.task_id = $2`)
+	utils.Err(err)
+
+	var source_code string
+	err = query.QueryRow(user_id, task_id).Scan(&source_code)
+	return &source_code
+}
+
 func GetFailedSolutions(solution *models.Solution) int {
 	db := OpenDB()
 	defer db.Close()

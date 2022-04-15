@@ -17,6 +17,44 @@ import (
 	"time"
 )
 
+type APISolution struct {
+	Text *string `json:"text,omitempty" example:"a = int(input())\nb = int(input())\nprint(a+b)"`
+}
+
+// @Tags solution
+// @Summary Get task solution text
+// @Description Returns solution text for specified task. If no solution was posted, nothing will be returned.
+// @ID get-solution
+// @Produce  json
+// @Param   token   query    string  true    "Access token returned by GET /login"
+// @Param   task_id   formData    int  true    "ID of task"
+// @Success 200 {object} api.APISolution "Success"
+// @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304"
+// @Failure 500 {object} api.APIInternalError "Server internal bug"
+// @Router /solution [post]
+func GetSolution(r *http.Request) (interface{}, WebError) {
+	token_str, web_err := getUrlParam(r, "token")
+	if web_err != NoError {
+		return nil, web_err
+	}
+	token, web_err := getToken(r, token_str)
+	if web_err != NoError {
+		return nil, web_err
+	}
+	task_id_str, web_err := getUrlParam(r, "task_id")
+	if web_err != NoError {
+		return nil, web_err
+	}
+	task_id, err := strconv.Atoi(*task_id_str)
+	if err != nil {
+		return nil, TaskIdInvalid
+	}
+	resp := APISolution{
+		storage.GetSolutionText(token.UserId, task_id),
+	}
+	return resp, NoError
+}
+
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
 type APISolutionVerboseResult struct {

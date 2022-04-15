@@ -41,7 +41,6 @@ def run(sol, comp_sol, params=None):
     except subprocess.TimeoutExpired:
         return {
             'error': ERROR.TIMEOUT,
-            'result': result
         }
     if err:
         return {

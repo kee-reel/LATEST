@@ -84,13 +84,13 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 		}
 	}
 
-	if web_err == NoError {
-		if resp == nil {
+	if resp == nil {
+		if web_err == NoError {
 			resp = APINoError{}
+		} else {
+			log.Printf("Failed user request, error code: %d", web_err)
+			resp = APIError{web_err}
 		}
-	} else if resp == nil {
-		log.Printf("Failed user request, error code: %d", web_err)
-		resp = APIError{web_err}
 	}
 
 	switch resp.(type) {

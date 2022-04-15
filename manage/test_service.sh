@@ -53,6 +53,11 @@ int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}'
 
 echo '
 ===
+Languages:'
+curl -s ${DOMAIN}languages
+
+echo '
+===
 Post solution in Python:'
 curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \

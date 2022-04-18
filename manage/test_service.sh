@@ -129,7 +129,7 @@ curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
     --form-string source_text='import os
-os.system("cd / && ls")'
+os.system("ls")'
 
 echo '
 ===

@@ -329,7 +329,8 @@ func GetTokenForConnection(user *models.User, ip *string) *models.Token {
 	db := OpenDB()
 	defer db.Close()
 	token := models.Token{
-		IP: *ip,
+		UserId: user.Id,
+		IP:     *ip,
 	}
 
 	query, err := db.Prepare(`SELECT id, token FROM tokens WHERE user_id = $1 AND ip = $2`)
@@ -367,7 +368,7 @@ func RemoveToken(token *models.Token) {
 	utils.Err(err)
 }
 
-func CreateRegistrationToken(email *string, pass *string, name *string, ip *string) *string {
+func CreateRegistrationToken(email *string, pass *string, name *string, ip *string) (*string, bool) {
 	db := OpenDB()
 	defer db.Close()
 
@@ -376,10 +377,11 @@ func CreateRegistrationToken(email *string, pass *string, name *string, ip *stri
 	var user_id int
 	err = query.QueryRow(*email).Scan(&user_id)
 	if err == nil {
-		return nil
+		return nil, false
 	}
 
 	var token string
+	is_new_token := false
 	query, err = db.Prepare(`SELECT r.token FROM registration_tokens AS r WHERE r.email = $1 AND r.ip = $2`)
 	utils.Err(err)
 	err = query.QueryRow(*email, *ip).Scan(&token)
@@ -391,8 +393,9 @@ func CreateRegistrationToken(email *string, pass *string, name *string, ip *stri
 		token = security.GenerateToken()
 		_, err = query.Exec(token, *email, *ip, hash_raw, *name)
 		utils.Err(err)
+		is_new_token = true
 	}
-	return &token
+	return &token, is_new_token
 }
 
 func RegisterToken(ip *string, token_str *string) (*models.User, bool) {
@@ -535,7 +538,7 @@ func ResetToken(ip *string, token_str *string) (*int, bool) {
 	return &user_id, true
 }
 
-func CreateRestoreToken(email *string, ip *string, pass *string) *string {
+func CreateRestoreToken(email *string, ip *string, pass *string) (*string, bool) {
 	db := OpenDB()
 	defer db.Close()
 
@@ -544,22 +547,24 @@ func CreateRestoreToken(email *string, ip *string, pass *string) *string {
 	var user_id int
 	err = query.QueryRow(*email).Scan(&user_id)
 	if err != nil {
-		return nil
+		return nil, false
 	}
 
 	var token string
+	is_new_token := false
 	query, err = db.Prepare(`SELECT r.token FROM restore_tokens AS r WHERE r.user_id = $1 AND r.ip = $2`)
 	utils.Err(err)
 	err = query.QueryRow(user_id, *ip).Scan(&token)
-	query, err = db.Prepare(`INSERT INTO 
-		restore_tokens(token, ip, user_id, pass) VALUES($1, $2, $3, $4)
-		ON CONFLICT (ip, user_id) DO UPDATE SET token = $1, pass = $4`)
-	utils.Err(err)
-	hash_raw := security.HashPassword(pass)
-	token = security.GenerateToken()
-	_, err = query.Exec(token, *ip, user_id, hash_raw)
-	utils.Err(err)
-	return &token
+	if err != nil {
+		query, err = db.Prepare(`INSERT INTO restore_tokens(token, ip, user_id, pass) VALUES($1, $2, $3, $4)`)
+		utils.Err(err)
+		hash_raw := security.HashPassword(pass)
+		token = security.GenerateToken()
+		_, err = query.Exec(token, *ip, user_id, hash_raw)
+		utils.Err(err)
+		is_new_token = true
+	}
+	return &token, is_new_token
 }
 
 func RestoreToken(ip *string, token_str *string) (*int, bool) {

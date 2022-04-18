@@ -104,6 +104,7 @@ for t in ('project', 'unit', 'task'):
 folders_to_id = {}
 for t, paths in type_to_paths.items():
     for p in paths:
+        print(f'Adding {p}')
         folders = parse_filename(p)
 
         folders_data = list(folders)
@@ -111,10 +112,9 @@ for t, paths in type_to_paths.items():
             folders_data[i-1] = folders_to_id[folders[:i]]
             assert folders_data[i-1]
 
-        data = json.loads(open(p, 'r', encoding='utf-8').read())
+        data = json.loads(open(p, 'r', encoding='utf-8').read(), strict=False)
         id_ = globals().get(f'add_{t}')(cur, data, p, *folders_data)
         folders_to_id[folders] = id_
-        print(f'Added {p}')
 
 for f in glob('tests/templates/*'):
     add_template(cur, f)

@@ -10,11 +10,13 @@ LANG_CMD = {
         'cpp': lambda source, target: ['/usr/bin/g++', source, '-o', target, '-lm'],
         'pas': lambda source, target: ['/usr/bin/fpc', '-ve', '-Fe/dev/stderr', source, f'-o{target}'],
 }
+TRIGGER_WORD = 'system'
+TIMEOUT = 5
 
 
 def execute(cmd):
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=3, check=True)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT, check=True)
         return p.stdout, None
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
@@ -33,6 +35,12 @@ def build_solution(solution):
         return None, {
             "error": ERROR.BUILD,
             "msg": err,
+        }
+    out, err = execute(['grep', '-oe', TRIGGER_WORD, compiled_solution])
+    if out or err:
+        return None, {
+            "error": ERROR.BUILD,
+            "msg": 'System calls are no allowed',
         }
     return compiled_solution, err
 

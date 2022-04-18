@@ -65,22 +65,24 @@ func PostRestore(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token := storage.CreateRestoreToken(email, ip, pass)
+	token, is_new_token := storage.CreateRestoreToken(email, ip, pass)
 	if token == nil {
 		return nil, EmailUnknown
 	}
-	if utils.EnvB("MAIL_ENABLED") {
-		verify_link := fmt.Sprintf("https://%s/restore?token=%s", utils.Env("WEB_DOMAIN"), *token)
-		msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), *ip, verify_link)
-		subj := utils.Env("MAIL_RESTORE_SUBJ")
-		sendMail(email, &subj, &msg)
-	} else {
-		user_id, is_token_exists := storage.RestoreToken(ip, token)
-		if !is_token_exists {
-			return nil, TokenUnknown
-		}
-		if user_id == nil {
-			return nil, TokenBoundToOtherIP
+	if is_new_token {
+		if utils.EnvB("MAIL_ENABLED") {
+			verify_link := fmt.Sprintf("https://%s/restore?token=%s", utils.Env("WEB_DOMAIN"), *token)
+			msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), *ip, verify_link)
+			subj := utils.Env("MAIL_RESTORE_SUBJ")
+			sendMail(email, &subj, &msg)
+		} else {
+			user_id, is_token_exists := storage.RestoreToken(ip, token)
+			if !is_token_exists {
+				return nil, TokenUnknown
+			}
+			if user_id == nil {
+				return nil, TokenBoundToOtherIP
+			}
 		}
 	}
 	return nil, NoError

@@ -114,6 +114,43 @@ print(res)'
 
 echo '
 ===
+Post hacky solution in C:'
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='c' \
+	--form-string source_text='#include <stdio.h> 
+#include <stdlib.h>
+int main(){system("ls");}'
+
+echo '
+===
+Post hacky solution in Python:'
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='py' \
+    --form-string source_text='import os
+os.system("cd / && ls")'
+
+echo '
+===
+Post hacky solution in Pascal:'
+curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
+	-F task_id=$TASK_ID \
+    -F lang='pas' \
+	--form-string source_text="
+program project1;
+{$mode objfpc}{$H+}
+uses 
+  Process;
+  var 
+    s : ansistring;
+    begin
+    if RunCommand('/bin/bash',['cd / && ls'],s) then
+           writeln(s); 
+end."
+
+echo '
+===
 Post malformed solution in C:'
 curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
@@ -164,13 +201,3 @@ echo '
 ===
 Leaderboard:'
 curl -s ${DOMAIN}leaderboard?token=$TOKEN
-
-echo '
-===
-Reset:'
-curl -X POST -s ${DOMAIN}reset?token=$TOKEN
-
-echo '
-===
-Logout:'
-curl -s ${DOMAIN}logout?token=$TOKEN

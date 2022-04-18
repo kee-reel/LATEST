@@ -70,23 +70,25 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token := storage.CreateRegistrationToken(email, pass, name, ip)
+	token, is_new_token := storage.CreateRegistrationToken(email, pass, name, ip)
 	if token == nil {
 		return nil, EmailTaken
 	}
 
-	if utils.EnvB("MAIL_ENABLED") {
-		verify_link := fmt.Sprintf("https://%s/register?token=%s", utils.Env("WEB_DOMAIN"), *token)
-		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), *name, *ip, verify_link)
-		subj := utils.Env("MAIL_REG_SUBJ")
-		sendMail(email, &subj, &msg)
-	} else {
-		user, is_token_exists := storage.RegisterToken(ip, token)
-		if !is_token_exists {
-			return nil, TokenUnknown
-		}
-		if user == nil {
-			return nil, TokenBoundToOtherIP
+	if is_new_token {
+		if utils.EnvB("MAIL_ENABLED") {
+			verify_link := fmt.Sprintf("https://%s/register?token=%s", utils.Env("WEB_DOMAIN"), *token)
+			msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), *name, *ip, verify_link)
+			subj := utils.Env("MAIL_REG_SUBJ")
+			sendMail(email, &subj, &msg)
+		} else {
+			user, is_token_exists := storage.RegisterToken(ip, token)
+			if !is_token_exists {
+				return nil, TokenUnknown
+			}
+			if user == nil {
+				return nil, TokenBoundToOtherIP
+			}
 		}
 	}
 	return nil, NoError

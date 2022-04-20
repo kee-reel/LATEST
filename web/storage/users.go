@@ -23,14 +23,25 @@ func (s *Storage) GetUser(email *string, pass *string) (*models.User, bool, bool
 }
 
 func (s *Storage) GetUserById(user_id int) *models.User {
-	query, err := s.db.Prepare(`SELECT u.name, u.email FROM users as u WHERE u.id = $1`)
+	query, err := s.db.Prepare(`SELECT u.name, u.email, l.score FROM users as u 
+		JOIN leaderboard AS l ON l.user_id = u.id WHERE u.id = $1`)
 	utils.Err(err)
 	var user models.User
-	err = query.QueryRow(user_id).Scan(&user.Name, &user.Email)
+	err = query.QueryRow(user_id).Scan(&user.Name, &user.Email, &user.Score)
 	if err != nil {
 		return nil
 	}
-	user.Score = s.GetLeaderboardScore(user_id)
 	user.Id = user_id
 	return &user
+}
+
+func (s *Storage) GetUserIdByEmail(email *string) *int {
+	query, err := s.db.Prepare(`SELECT u.id FROM users AS u WHERE u.email = $1`)
+	utils.Err(err)
+	var user_id int
+	err = query.QueryRow(*email).Scan(&user_id)
+	if err != nil {
+		return nil
+	}
+	return user_id
 }

@@ -42,7 +42,7 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 	if !pass_matched {
 		return nil, PasswordWrong
 	}
-	token := c.storage.GetTokenForConnection(user, ip)
+	token := c.storage.GetTokenForConnection(user.Email, ip)
 	if token == nil {
 		verification_token := c.storage.CreateVerificationToken(email, ip)
 		if verification_token == nil {

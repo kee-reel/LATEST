@@ -77,13 +77,13 @@ func validateParam(name *string, value *string) (*string, WebError) {
 }
 
 func (c *Controller) getToken(r *http.Request, token_str *string) (*models.Token, WebError) {
-	token := c.storage.GetTokenData(token_str)
+	ip := getIP(r)
+	token, ip_matches := c.storage.GetTokenData(token_str, ip)
+	if !ip_matches {
+		return nil, TokenBoundToOtherIP
+	}
 	if token == nil {
 		return nil, TokenUnknown
-	}
-	ip := getIP(r)
-	if *ip != token.IP {
-		return nil, TokenBoundToOtherIP
 	}
 	return token, NoError
 }

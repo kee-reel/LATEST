@@ -21,14 +21,14 @@ type APILangsResponse struct {
 // @Success 200 {object} api.APILangsResponse "Success"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /languages [get]
-func GetLanguages(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetLanguages(r *http.Request) (interface{}, WebError) {
 	resp := APILangsResponse{
-		Langs: getSupportedLanguages(),
+		Langs: c.getSupportedLanguages(),
 	}
 	return resp, NoError
 }
 
-func getSupportedLanguages() *[]string {
+func (c *Controller) getSupportedLanguages() *[]string {
 	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
 	response, err := http.Get(runner_url)
 	utils.Err(err)
@@ -45,8 +45,8 @@ func getSupportedLanguages() *[]string {
 	return &langs
 }
 
-func isLanguageSupported(lang *string) bool {
-	langs := getSupportedLanguages()
+func (c *Controller) isLanguageSupported(lang *string) bool {
+	langs := c.getSupportedLanguages()
 	if len(*langs) == 0 {
 		return false
 	}

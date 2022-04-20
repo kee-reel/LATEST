@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"late/models"
-	"late/storage"
 	"late/utils"
 	"math"
 	"math/rand"
@@ -32,12 +31,12 @@ type APISolution struct {
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /solution [get]
-func GetSolution(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -50,7 +49,7 @@ func GetSolution(r *http.Request) (interface{}, WebError) {
 		return nil, TaskIdInvalid
 	}
 	resp := APISolution{
-		storage.GetSolutionText(token.UserId, task_id),
+		c.storage.GetSolutionText(token.UserId, task_id),
 	}
 	return resp, NoError
 }
@@ -112,34 +111,37 @@ type TestResult struct {
 // @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /solution [post]
-func PostSolution(r *http.Request) (interface{}, WebError) {
-	solution, web_err := ParseSolution(r)
+func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
+	solution, web_err := c.parseSolution(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	test_result := BuildAndTest(solution.Task, solution)
+	test_result := c.buildAndTest(solution.Task, solution)
 	percent := float32(1)
 	if test_result.ErrorData != nil {
 		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	test_result.ScoreDiff = storage.SaveSolution(solution, percent)
+	test_result.ScoreDiff = c.storage.SaveSolution(solution, percent)
 	return test_result, test_result.Error
 }
 
-func ParseSolution(r *http.Request) (*models.Solution, WebError) {
+func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError) {
 	err := r.ParseMultipartForm(32 << 20)
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
 	lang, web_err := getFormParam(r, "lang")
 	if web_err != NoError {
 		return nil, web_err
+	}
+	if !c.isLanguageSupported(lang) {
+		return nil, LanguageNotSupported
 	}
 	task_id_str, web_err := getFormParam(r, "task_id")
 	if web_err != NoError {
@@ -151,7 +153,7 @@ func ParseSolution(r *http.Request) (*models.Solution, WebError) {
 	}
 
 	task_ids := []int{task_id}
-	tasks := storage.GetTasks(token, task_ids)
+	tasks := c.storage.GetTasks(token, task_ids)
 	if len(*tasks) == 0 {
 		return nil, TaskNotFound
 	}
@@ -199,9 +201,9 @@ func ParseSolution(r *http.Request) (*models.Solution, WebError) {
 	return &solution, NoError
 }
 
-func BuildAndTest(task *models.Task, solution *models.Solution) *TestResult {
-	complete_solution_source, fixed_tests := storage.GetTaskTestData(task.Id)
-	random_tests := GenerateTests(task)
+func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *TestResult {
+	complete_solution_source, fixed_tests := c.storage.GetTaskTestData(task.Id)
+	random_tests := generateTests(task)
 
 	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
 	verbose_text := "false"
@@ -245,7 +247,7 @@ func BuildAndTest(task *models.Task, solution *models.Solution) *TestResult {
 	return &test_result
 }
 
-func GenerateTests(task *models.Task) *string {
+func generateTests(task *models.Task) *string {
 	result := ""
 	if len(task.Input) == 0 {
 		return &result
@@ -267,7 +269,7 @@ func GenerateTests(task *models.Task) *string {
 	start_index := 0
 	for i := 0; i < random_tests_count; i++ {
 		for _, input := range task.Input {
-			start_index = GenTestParam(test_data, input, start_index)
+			start_index = genTestParam(test_data, input, start_index)
 		}
 		if i+1 < random_tests_count {
 			test_data[start_index] = "\n"
@@ -278,7 +280,7 @@ func GenerateTests(task *models.Task) *string {
 	return &result
 }
 
-func GenTestParam(test_data []string, param models.TaskParamData, start_index int) int {
+func genTestParam(test_data []string, param models.TaskParamData, start_index int) int {
 	delimiter := ';'
 	values_to_generate := 1
 	cur_d := 0

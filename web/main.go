@@ -16,39 +16,34 @@ import (
 	"late/utils"
 	"log"
 	"net/http"
-	"reflect"
-	"runtime"
 )
 
 type EndpointFunc func(w http.ResponseWriter, r *http.Request)
 
-func GetFunctionName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
-}
-
 func main() {
 	var err error
 	addr := fmt.Sprintf("0.0.0.0:%s", utils.Env("WEB_PORT"))
-	mux := http.NewServeMux()
-	mux.HandleFunc("/login", api.Login)
-	mux.HandleFunc("/logout", api.Logout)
-	mux.HandleFunc("/verify", api.Verify)
-	mux.HandleFunc("/restore", api.Restore)
-	mux.HandleFunc("/profile", api.Profile)
-	mux.HandleFunc("/register", api.Register)
-	mux.HandleFunc("/template", api.Template)
-	mux.HandleFunc("/solution", api.Solution)
-	mux.HandleFunc("/languages", api.Languages)
-	mux.HandleFunc("/leaderboard", api.Leaderboard)
-	mux.HandleFunc("/tasks/flat", api.TasksFlat)
-	mux.HandleFunc("/tasks/hierarchy", api.TasksHierarchy)
-	mux.HandleFunc("/reset", api.Reset)
+	c := api.NewController()
+	http.HandleFunc("/login", c.Login)
+	http.HandleFunc("/logout", c.Logout)
+	http.HandleFunc("/verify", c.Verify)
+	http.HandleFunc("/restore", c.Restore)
+	http.HandleFunc("/profile", c.Profile)
+	http.HandleFunc("/register", c.Register)
+	http.HandleFunc("/template", c.Template)
+	http.HandleFunc("/solution", c.Solution)
+	http.HandleFunc("/languages", c.Languages)
+	http.HandleFunc("/leaderboard", c.Leaderboard)
+	http.HandleFunc("/tasks/flat", c.TasksFlat)
+	http.HandleFunc("/tasks/hierarchy", c.TasksHierarchy)
+	http.HandleFunc("/reset", c.Reset)
+
 	is_http := utils.EnvB("WEB_HTTP")
 	log.Printf("Started listening on %s HTTPS(%t)", addr, !is_http)
 	if is_http {
-		err = http.ListenAndServe(addr, mux)
+		err = http.ListenAndServe(addr, nil)
 	} else {
-		err = http.ListenAndServeTLS(addr, utils.Env("WEB_CERT_FILE"), utils.Env("WEB_KEY_FILE"), mux)
+		err = http.ListenAndServeTLS(addr, utils.Env("WEB_CERT_FILE"), utils.Env("WEB_KEY_FILE"), nil)
 	}
 	if err != nil {
 		log.Fatal(err)

@@ -11,6 +11,14 @@ services:
       - internet
     env_file: .env
 
+  redis:
+    image: redis:alpine
+    ports: 
+      - ${REDIS_PORT}:${REDIS_PORT}
+    restart: always
+    networks:
+      - internet
+
   web:
     ports: 
       - ${WEB_PORT}:${WEB_PORT}
@@ -19,6 +27,7 @@ services:
       - runner
     depends_on:
       - db
+      - redis
       - runner
     networks:
       - internet

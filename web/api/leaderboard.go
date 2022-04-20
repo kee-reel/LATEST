@@ -1,7 +1,6 @@
 package api
 
 import (
-	"late/storage"
 	"net/http"
 )
 
@@ -15,15 +14,15 @@ import (
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /leaderboard [get]
-func GetLeaderboard(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetLeaderboard(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	_, web_err = getToken(r, token_str)
+	_, web_err = c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	leaderboard := storage.GetLeaderboard()
+	leaderboard := c.storage.GetLeaderboard()
 	return leaderboard, NoError
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -16,13 +15,13 @@ import (
 // @Success 200 string string "Request result described on HTML page"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [get]
-func GetRegistration(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetRegistration(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user, is_token_exists := storage.RegisterToken(ip, token)
+	user, is_token_exists := c.storage.RegisterToken(ip, token)
 	var resp string
 	if !is_token_exists {
 		resp = genHtmlResp([]string{
@@ -55,7 +54,7 @@ func GetRegistration(r *http.Request) (interface{}, WebError) {
 // @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 103, 200, 201, 700, 701"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [post]
-func PostRegistration(r *http.Request) (interface{}, WebError) {
+func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
 	email, web_err := getFormParam(r, "email")
 	if web_err != NoError {
 		return nil, web_err
@@ -70,7 +69,7 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, is_new_token := storage.CreateRegistrationToken(email, pass, name, ip)
+	token, is_new_token := c.storage.CreateRegistrationToken(email, pass, name, ip)
 	if token == nil {
 		return nil, EmailTaken
 	}
@@ -82,7 +81,7 @@ func PostRegistration(r *http.Request) (interface{}, WebError) {
 			subj := utils.Env("MAIL_REG_SUBJ")
 			sendMail(email, &subj, &msg)
 		} else {
-			user, is_token_exists := storage.RegisterToken(ip, token)
+			user, is_token_exists := c.storage.RegisterToken(ip, token)
 			if !is_token_exists {
 				return nil, TokenUnknown
 			}

@@ -2,7 +2,6 @@ package api
 
 import (
 	"late/models"
-	"late/storage"
 	"net/http"
 	"strings"
 )
@@ -19,12 +18,12 @@ import (
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 401, 402"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /tasks/flat [get]
-func GetTasksFlat(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetTasksFlat(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -34,7 +33,7 @@ func GetTasksFlat(r *http.Request) (interface{}, WebError) {
 	if ok && len(task_ids_str) > 1 {
 		task_ids_str_arr = strings.Split(task_ids_str[0], ",")
 	}
-	task_ids, is_valid := storage.GetTaskIdsById(&task_ids_str_arr)
+	task_ids, is_valid := c.storage.GetTaskIdsById(&task_ids_str_arr)
 	if !is_valid {
 		return nil, TaskIdInvalid
 	}
@@ -42,8 +41,8 @@ func GetTasksFlat(r *http.Request) (interface{}, WebError) {
 		return nil, TaskNotFound
 	}
 
-	tasks := storage.GetTasks(token, *task_ids)
-	resp := MakeFlatResponse(tasks)
+	tasks := c.storage.GetTasks(token, *task_ids)
+	resp := makeFlatResponse(tasks)
 	return resp, NoError
 }
 
@@ -53,7 +52,7 @@ type APITasksFlat struct {
 	Tasks    map[int]*models.Task    `json:"tasks"`
 }
 
-func MakeFlatResponse(tasks *[]models.Task) interface{} {
+func makeFlatResponse(tasks *[]models.Task) interface{} {
 	resp := APITasksFlat{
 		Projects: map[int]*models.Project{},
 		Units:    map[int]*models.Unit{},
@@ -85,12 +84,12 @@ func MakeFlatResponse(tasks *[]models.Task) interface{} {
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 8XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /tasks/hierarchy [get]
-func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -104,7 +103,7 @@ func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 			return nil, TasksFoldersInvalid
 		}
 	}
-	task_ids, not_found_index := storage.GetTaskIdsByFolder(&task_folders)
+	task_ids, not_found_index := c.storage.GetTaskIdsByFolder(&task_folders)
 	switch not_found_index {
 	case 0:
 		return nil, TasksProjectFolderNotFound
@@ -116,8 +115,8 @@ func GetTasksHierarchy(r *http.Request) (interface{}, WebError) {
 	if len(*task_ids) == 0 {
 		return nil, TaskNotFound
 	}
-	tasks := storage.GetTasks(token, *task_ids)
-	resp := MakeHierarchyResponse(tasks)
+	tasks := c.storage.GetTasks(token, *task_ids)
+	resp := makeHierarchyResponse(tasks)
 	return resp, NoError
 }
 
@@ -132,7 +131,7 @@ type APIUnitHierarchy struct {
 
 type APITasksHierarchy map[string]APIProjectHierarchy
 
-func MakeHierarchyResponse(tasks *[]models.Task) interface{} {
+func makeHierarchyResponse(tasks *[]models.Task) interface{} {
 	resp := APITasksHierarchy{}
 	for i, task := range *tasks {
 		project, ok := resp[task.Project.FolderName]

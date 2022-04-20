@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -16,13 +15,13 @@ import (
 // @Success 200 {object} string "Request result described on HTML page"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /reset [get]
-func GetReset(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetReset(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user, is_token_exists := storage.ResetToken(ip, token)
+	user, is_token_exists := c.storage.ResetToken(ip, token)
 	var resp string
 	if !is_token_exists {
 		resp = genHtmlResp([]string{
@@ -53,21 +52,21 @@ func GetReset(r *http.Request) (interface{}, WebError) {
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /reset [post]
-func PostReset(r *http.Request) (interface{}, WebError) {
+func (c *Controller) PostReset(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user := storage.GetUserById(token.UserId)
+	user := c.storage.GetUserById(token.UserId)
 	if user == nil {
 		panic("Can't find user with existing token")
 	}
-	reset_token := storage.CreateResetToken(user.Id, ip)
+	reset_token := c.storage.CreateResetToken(user.Id, ip)
 	if token == nil {
 		panic("Can't create reset token")
 	}
@@ -77,7 +76,7 @@ func PostReset(r *http.Request) (interface{}, WebError) {
 		subj := utils.Env("MAIL_RESET_SUBJ")
 		sendMail(&user.Email, &subj, &msg)
 	} else {
-		user, is_token_exists := storage.ResetToken(ip, reset_token)
+		user, is_token_exists := c.storage.ResetToken(ip, reset_token)
 		if !is_token_exists {
 			return nil, TokenUnknown
 		}

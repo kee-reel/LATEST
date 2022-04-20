@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -15,13 +14,13 @@ import (
 // @Param   token   query    string  true    "Verification token, sent by POST /verify"
 // @Success 200 string strgin "Request result described on HTML page"
 // @Router /restore [get]
-func GetRestore(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetRestore(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, is_token_exists := storage.RestoreToken(ip, token_str)
+	user_id, is_token_exists := c.storage.RestoreToken(ip, token_str)
 	var resp string
 	if !is_token_exists {
 		resp = genHtmlResp([]string{
@@ -34,7 +33,7 @@ func GetRestore(r *http.Request) (interface{}, WebError) {
 			`Если вы хотите восстановить пароль с этого IP, то отправьте новый запрос.`,
 		})
 	} else {
-		user := storage.GetUserById(*user_id)
+		user := c.storage.GetUserById(*user_id)
 		resp = genHtmlResp([]string{
 			`Ваш пароль успешно изменён!`,
 			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
@@ -54,7 +53,7 @@ func GetRestore(r *http.Request) (interface{}, WebError) {
 // @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 102, 200, 201"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /restore [post]
-func PostRestore(r *http.Request) (interface{}, WebError) {
+func (c *Controller) PostRestore(r *http.Request) (interface{}, WebError) {
 	email, web_err := getFormParam(r, "email")
 	if web_err != NoError {
 		return nil, web_err
@@ -65,7 +64,7 @@ func PostRestore(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, is_new_token := storage.CreateRestoreToken(email, ip, pass)
+	token, is_new_token := c.storage.CreateRestoreToken(email, ip, pass)
 	if token == nil {
 		return nil, EmailUnknown
 	}
@@ -76,7 +75,7 @@ func PostRestore(r *http.Request) (interface{}, WebError) {
 			subj := utils.Env("MAIL_RESTORE_SUBJ")
 			sendMail(email, &subj, &msg)
 		} else {
-			user_id, is_token_exists := storage.RestoreToken(ip, token)
+			user_id, is_token_exists := c.storage.RestoreToken(ip, token)
 			if !is_token_exists {
 				return nil, TokenUnknown
 			}

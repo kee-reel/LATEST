@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"late/models"
-	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -25,7 +24,7 @@ type APIToken struct {
 // @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 102, 200, 201, 202, 303"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /login [get]
-func GetLogin(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 	email, web_err := getUrlParam(r, "email")
 	if web_err != NoError {
 		return nil, web_err
@@ -36,16 +35,16 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	user, pass_matched, user_exists := storage.GetUser(email, pass)
+	user, pass_matched, user_exists := c.storage.GetUser(email, pass)
 	if !user_exists {
 		return nil, EmailUnknown
 	}
 	if !pass_matched {
 		return nil, PasswordWrong
 	}
-	token := storage.GetTokenForConnection(user, ip)
+	token := c.storage.GetTokenForConnection(user, ip)
 	if token == nil {
-		verification_token := storage.CreateVerificationToken(email, ip)
+		verification_token := c.storage.CreateVerificationToken(email, ip)
 		if verification_token == nil {
 			return nil, EmailUnknown
 		}
@@ -56,14 +55,14 @@ func GetLogin(r *http.Request) (interface{}, WebError) {
 			sendMail(email, &subj, &msg)
 			return nil, TokenNotVerified
 		} else {
-			user_id, is_token_exists := storage.VerifyToken(ip, verification_token)
+			user_id, is_token_exists := c.storage.VerifyToken(ip, verification_token)
 			if !is_token_exists {
 				return nil, TokenUnknown
 			}
 			if user_id == nil {
 				return nil, TokenBoundToOtherIP
 			}
-			token := storage.GetTokenForConnection(user, ip)
+			token := c.storage.GetTokenForConnection(user, ip)
 			if token == nil {
 				panic("Can't autoverify token")
 			}

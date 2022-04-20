@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
 	"net/http"
 )
 
@@ -14,13 +13,13 @@ import (
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Success 200 string strgin "Request result described on HTML page"
 // @Router /verify [get]
-func GetVerify(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetVerify(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, is_token_exists := storage.VerifyToken(ip, token)
+	user_id, is_token_exists := c.storage.VerifyToken(ip, token)
 	var resp string
 	if !is_token_exists {
 		resp = genHtmlResp([]string{
@@ -33,7 +32,7 @@ func GetVerify(r *http.Request) (interface{}, WebError) {
 			`Если вы хотите подтвердить вход с этого IP, то попробуйте вновь войти в свой профиль, чтобы получить новое письмо.`,
 		})
 	} else {
-		user := storage.GetUserById(*user_id)
+		user := c.storage.GetUserById(*user_id)
 		resp = genHtmlResp([]string{
 			`Теперь вам доступен вход с этого IP адреса!`,
 			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),

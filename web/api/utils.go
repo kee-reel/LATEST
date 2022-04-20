@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"late/models"
 	"late/security"
-	"late/storage"
 	"late/utils"
 	"net"
 	"net/http"
@@ -67,9 +66,6 @@ func validateParam(name *string, value *string) (*string, WebError) {
 		if value == nil {
 			return nil, LanguageNotProvided
 		}
-		if !isLanguageSupported(value) {
-			return nil, LanguageNotSupported
-		}
 	case "task_id":
 		if value == nil {
 			return nil, TaskIdNotProvided
@@ -80,8 +76,8 @@ func validateParam(name *string, value *string) (*string, WebError) {
 	return value, NoError
 }
 
-func getToken(r *http.Request, token_str *string) (*models.Token, WebError) {
-	token := storage.GetTokenData(token_str)
+func (c *Controller) getToken(r *http.Request, token_str *string) (*models.Token, WebError) {
+	token := c.storage.GetTokenData(token_str)
 	if token == nil {
 		return nil, TokenUnknown
 	}

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"late/storage"
 	"net/http"
 )
 
@@ -15,15 +14,15 @@ import (
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /logout [get]
-func GetLogout(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetLogout(r *http.Request) (interface{}, WebError) {
 	token_str, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := getToken(r, token_str)
+	token, web_err := c.getToken(r, token_str)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	storage.RemoveToken(token)
+	c.storage.RemoveToken(token)
 	return nil, NoError
 }

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"late/storage"
 	"net/http"
 	"strconv"
 )
@@ -25,12 +24,12 @@ type APITemplate struct {
 // @Failure 400 {object} api.APIError "Possible error codes: 300, 301, 302, 304, 600, 601"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /template [get]
-func GetTemplate(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetTemplate(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	_, web_err = getToken(r, token)
+	_, web_err = c.getToken(r, token)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -49,7 +48,7 @@ func GetTemplate(r *http.Request) (interface{}, WebError) {
 	}
 
 	resp := APITemplate{
-		Template: *storage.GetTaskTemplate(lang, task_id),
+		Template: *c.storage.GetTaskTemplate(lang, task_id),
 	}
 	return &resp, NoError
 }

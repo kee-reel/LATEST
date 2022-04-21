@@ -6,7 +6,7 @@ type APINoError struct {
 
 // @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
 type APIError struct {
-    Error WebError `json:"error" example:"300"`
+	Error WebError `json:"error" example:"300"`
 }
 
 // @Description Error code from https://github.com/kee-reel/LATE/blob/main/web/errors.go
@@ -35,6 +35,7 @@ const (
 	TokenUnknown        = 302 // "token" like this doesn't exist
 	TokenNotVerified    = 303 // "token" is not verified, it must be verified by link sent on email
 	TokenBoundToOtherIP = 304 // "token" is bound to other IP, need to get new token for this IP
+	TokenExists         = 305 // "token" is already created and sent on mail
 
 	TaskIdNotProvided = 400 // "task_id" field not provided
 	TaskIdInvalid     = 401 // "task_id" field is invalid, must be a number

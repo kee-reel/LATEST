@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -15,29 +16,33 @@ import (
 // @Success 200 string strgin "Request result described on HTML page"
 // @Router /restore [get]
 func (c *Controller) GetRestore(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
+	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, is_token_exists := c.storage.RestoreToken(ip, token_str)
+	user_id, token_err := c.storage.ApplyToken(storage.RestoreToken, token, ip)
+	web_err = translateTokenErr(token_err)
 	var resp string
-	if !is_token_exists {
+	switch web_err {
+	case TokenUnknown:
 		resp = genHtmlResp([]string{
 			`Эта ссылка более не действительна.`,
 			`Если вы ещё не завершили восстановление пароля, то попробуйте вновь отправить запрос на изменение пароля, чтобы получить новое письмо.`,
 		})
-	} else if user_id == nil {
+	case TokenBoundToOtherIP:
 		resp = genHtmlResp([]string{
 			`Эта ссылка была отправлена для другого IP адреса!`,
 			`Если вы хотите восстановить пароль с этого IP, то отправьте новый запрос.`,
 		})
-	} else {
+	case NoError:
 		user := c.storage.GetUserById(*user_id)
 		resp = genHtmlResp([]string{
 			`Ваш пароль успешно изменён!`,
 			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
 		})
+	default:
+		panic(fmt.Sprintf("Not handled option %s", web_err))
 	}
 	return &resp, NoError
 }
@@ -64,25 +69,20 @@ func (c *Controller) PostRestore(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, is_new_token := c.storage.CreateRestoreToken(email, ip, pass)
-	if token == nil {
-		return nil, EmailUnknown
+	token, token_err := c.storage.CreateToken(storage.RestoreToken, email, ip, pass)
+	web_err = translateTokenErr(token_err)
+	if web_err != NoError {
+		return nil, web_err
 	}
-	if is_new_token {
-		if utils.EnvB("MAIL_ENABLED") {
-			verify_link := fmt.Sprintf("https://%s/restore?token=%s", utils.Env("WEB_DOMAIN"), *token)
-			msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), *ip, verify_link)
-			subj := utils.Env("MAIL_RESTORE_SUBJ")
-			sendMail(email, &subj, &msg)
-		} else {
-			user_id, is_token_exists := c.storage.RestoreToken(ip, token)
-			if !is_token_exists {
-				return nil, TokenUnknown
-			}
-			if user_id == nil {
-				return nil, TokenBoundToOtherIP
-			}
-		}
+
+	if utils.EnvB("MAIL_ENABLED") {
+		verify_link := fmt.Sprintf("https://%s/restore?token=%s", utils.Env("WEB_DOMAIN"), *token)
+		msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), ip, verify_link)
+		subj := utils.Env("MAIL_RESTORE_SUBJ")
+		sendMail(email, subj, msg)
 	}
-	return nil, NoError
+
+	_, token_err = c.storage.ApplyToken(storage.RestoreToken, *token, ip)
+	web_err = translateTokenErr(token_err)
+	return nil, web_err
 }

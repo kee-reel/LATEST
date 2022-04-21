@@ -97,7 +97,7 @@ func (s *Storage) GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 	return &tasks
 }
 
-func (s *Storage) GetTaskTestData(task_id int) (*string, *string) {
+func (s *Storage) GetTaskTestData(task_id int) (string, string) {
 	query, err := s.db.Prepare(`SELECT t.source_code, t.fixed_tests FROM tasks AS t WHERE t.id = $1`)
 	utils.Err(err)
 
@@ -106,18 +106,18 @@ func (s *Storage) GetTaskTestData(task_id int) (*string, *string) {
 	err = query.QueryRow(task_id).Scan(&source_code, &fixed_tests)
 	utils.Err(err)
 
-	return &source_code, &fixed_tests
+	return source_code, fixed_tests
 }
 
-func (s *Storage) GetTaskTemplate(lang *string, task_id *int) *string {
+func (s *Storage) GetTaskTemplate(lang string, task_id *int) string {
 	query, err := s.db.Prepare(`SELECT t.source_code FROM solution_templates AS t WHERE t.extention = $1`)
 	utils.Err(err)
 
 	var source_code string
-	err = query.QueryRow(*lang).Scan(&source_code)
+	err = query.QueryRow(lang).Scan(&source_code)
 	utils.Err(err)
 
-	return &source_code
+	return source_code
 }
 
 func (s *Storage) GetTaskIdsByFolder(folder_names *[]string) (*[]int, int) {

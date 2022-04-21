@@ -1,6 +1,7 @@
 package api
 
 import (
+	"late/storage"
 	"net/http"
 )
 
@@ -15,14 +16,10 @@ import (
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /logout [get]
 func (c *Controller) GetLogout(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
+	token, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := c.getToken(r, token_str)
-	if web_err != NoError {
-		return nil, web_err
-	}
-	c.storage.RemoveToken(token)
+	c.storage.RemoveToken(storage.AccessToken, token.Token, token.IP)
 	return nil, NoError
 }

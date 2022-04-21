@@ -32,11 +32,7 @@ type APISolution struct {
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /solution [get]
 func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
-	if web_err != NoError {
-		return nil, web_err
-	}
-	token, web_err := c.getToken(r, token_str)
+	token, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -44,7 +40,7 @@ func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
-	task_id, err := strconv.Atoi(*task_id_str)
+	task_id, err := strconv.Atoi(task_id_str)
 	if err != nil {
 		return nil, TaskIdInvalid
 	}
@@ -128,11 +124,7 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 
 func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError) {
 	err := r.ParseMultipartForm(32 << 20)
-	token_str, web_err := getUrlParam(r, "token")
-	if web_err != NoError {
-		return nil, web_err
-	}
-	token, web_err := c.getToken(r, token_str)
+	token, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -147,7 +139,7 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	task_id, err := strconv.Atoi(*task_id_str)
+	task_id, err := strconv.Atoi(task_id_str)
 	if err != nil {
 		return nil, TaskIdInvalid
 	}
@@ -196,7 +188,8 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	solution.Task = &task
 	solution.Token = token
 	solution.IsVerbose = r.FormValue("verbose") == "true"
-	solution.Extention = *lang
+	solution.Extention = lang
+	solution.UserId = *c.storage.GetUserIdByEmail(token.Email)
 
 	return &solution, NoError
 }
@@ -212,10 +205,10 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	}
 	response, err := http.PostForm(runner_url, url.Values{
 		"solution":              {solution.Source},
-		"complete_solution":     {*complete_solution_source},
+		"complete_solution":     {complete_solution_source},
 		"user_tests":            {solution.TestCases},
-		"fixed_tests":           {*fixed_tests},
-		"random_tests":          {*random_tests},
+		"fixed_tests":           {fixed_tests},
+		"random_tests":          {random_tests},
 		"solution_ext":          {solution.Extention},
 		"complete_solution_ext": {task.Extention},
 		"verbose":               {verbose_text},
@@ -247,10 +240,10 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	return &test_result
 }
 
-func generateTests(task *models.Task) *string {
+func generateTests(task *models.Task) string {
 	result := ""
 	if len(task.Input) == 0 {
-		return &result
+		return result
 	}
 	random_tests_count := 10
 	test_case_size := 1 // To add '\n' after every test case
@@ -277,7 +270,7 @@ func generateTests(task *models.Task) *string {
 		start_index++
 	}
 	result = strings.Join(test_data, "")
-	return &result
+	return result
 }
 
 func genTestParam(test_data []string, param models.TaskParamData, start_index int) int {

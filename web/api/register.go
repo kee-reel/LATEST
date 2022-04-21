@@ -2,7 +2,9 @@ package api
 
 import (
 	"fmt"
+	"late/storage"
 	"late/utils"
+	"log"
 	"net/http"
 )
 
@@ -21,23 +23,29 @@ func (c *Controller) GetRegistration(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user, is_token_exists := c.storage.RegisterToken(ip, token)
+	user_id, token_err := c.storage.ApplyToken(storage.RegisterToken, token, ip)
+	web_err = translateTokenErr(token_err)
+
 	var resp string
-	if !is_token_exists {
+	switch web_err {
+	case TokenUnknown:
 		resp = genHtmlResp([]string{
 			`Эта ссылка более не действительна.`,
 			`Если вы ещё не зарегистрировались, то отправьте новый запрос на регистрацию.`,
 		})
-	} else if user == nil {
+	case TokenBoundToOtherIP:
 		resp = genHtmlResp([]string{
 			`Эта ссылка была отправлена для другого IP адреса!`,
 			`Если вы хотите пройти регистрацию с этого IP, то отправьте новый запрос на регистрацию.`,
 		})
-	} else {
+	case NoError:
+		user := c.storage.GetUserById(*user_id)
 		resp = genHtmlResp([]string{
 			"Регистрация успешно завершена!",
 			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
 		})
+	default:
+		panic("Not handled error")
 	}
 	return &resp, web_err
 }
@@ -69,27 +77,22 @@ func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, is_new_token := c.storage.CreateRegistrationToken(email, pass, name, ip)
-	if !is_new_token {
-		return nil, NoError
-	}
-	if token == nil {
-		return nil, EmailTaken
+	log.Println(name, pass)
+	token, token_err := c.storage.CreateToken(storage.RegisterToken, email, ip, name, pass)
+	web_err = translateTokenErr(token_err)
+	if web_err != NoError {
+		return nil, web_err
 	}
 
 	if utils.EnvB("MAIL_ENABLED") {
 		verify_link := fmt.Sprintf("https://%s/register?token=%s", utils.Env("WEB_DOMAIN"), *token)
-		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), *name, *ip, verify_link)
+		msg := fmt.Sprintf(utils.Env("MAIL_REG_MSG"), name, ip, verify_link)
 		subj := utils.Env("MAIL_REG_SUBJ")
-		sendMail(email, &subj, &msg)
-	} else {
-		user, is_token_exists := c.storage.RegisterToken(ip, token)
-		if !is_token_exists {
-			return nil, TokenUnknown
-		}
-		if user == nil {
-			return nil, TokenBoundToOtherIP
-		}
+		sendMail(email, subj, msg)
+		return nil, NoError
 	}
-	return nil, NoError
+
+	_, token_err = c.storage.ApplyToken(storage.RegisterToken, *token, ip)
+	web_err = translateTokenErr(token_err)
+	return nil, web_err
 }

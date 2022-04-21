@@ -25,11 +25,7 @@ type APITemplate struct {
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /template [get]
 func (c *Controller) GetTemplate(r *http.Request) (interface{}, WebError) {
-	token, web_err := getUrlParam(r, "token")
-	if web_err != NoError {
-		return nil, web_err
-	}
-	_, web_err = c.getToken(r, token)
+	_, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
@@ -40,7 +36,7 @@ func (c *Controller) GetTemplate(r *http.Request) (interface{}, WebError) {
 	var task_id *int
 	task_id_str, web_err := getUrlParam(r, "task_id")
 	if web_err == NoError {
-		task_id_temp, err := strconv.Atoi(*task_id_str)
+		task_id_temp, err := strconv.Atoi(task_id_str)
 		if err != nil {
 			return nil, TaskIdInvalid
 		}
@@ -48,7 +44,7 @@ func (c *Controller) GetTemplate(r *http.Request) (interface{}, WebError) {
 	}
 
 	resp := APITemplate{
-		Template: *c.storage.GetTaskTemplate(lang, task_id),
+		Template: c.storage.GetTaskTemplate(lang, task_id),
 	}
 	return &resp, NoError
 }

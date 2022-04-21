@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"late/storage"
 	"late/utils"
 	"net/http"
 )
@@ -21,23 +22,27 @@ func (c *Controller) GetReset(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user, is_token_exists := c.storage.ResetToken(ip, token)
+	_, token_err := c.storage.ApplyToken(storage.DeleteToken, token, ip)
+	web_err = translateTokenErr(token_err)
 	var resp string
-	if !is_token_exists {
+	switch web_err {
+	case TokenUnknown:
 		resp = genHtmlResp([]string{
 			`Эта ссылка более не действительна.`,
 			`Если вы ещё не сбросили прогресс, то отправьте новый запрос на сброс.`,
 		})
-	} else if user == nil {
+	case TokenBoundToOtherIP:
 		resp = genHtmlResp([]string{
 			`Эта ссылка была отправлена для другого IP адреса!`,
 			`Если вы хотите сбросить прогресс с этого IP, то отправьте новый запрос на сброс.`,
 		})
-	} else {
+	case NoError:
 		resp = genHtmlResp([]string{
 			"Прогресс успешно сброшен!",
 			"Теперь вы можете начать всё с чистого листа.</p>",
 		})
+	default:
+		panic("Not handled error")
 	}
 	return &resp, web_err
 }
@@ -53,36 +58,25 @@ func (c *Controller) GetReset(r *http.Request) (interface{}, WebError) {
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /reset [post]
 func (c *Controller) PostReset(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
+	token, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	token, web_err := c.getToken(r, token_str)
+
+	delete_token, token_err := c.storage.CreateToken(storage.DeleteToken, token.Email, token.IP)
+	web_err = translateTokenErr(token_err)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	ip := getIP(r)
-	user := c.storage.GetUserById(token.UserId)
-	if user == nil {
-		panic("Can't find user with existing token")
-	}
-	reset_token := c.storage.CreateResetToken(user.Id, ip)
-	if token == nil {
-		panic("Can't create reset token")
-	}
+
 	if utils.EnvB("MAIL_ENABLED") {
-		link := fmt.Sprintf("https://%s/reset?token=%s", utils.Env("WEB_DOMAIN"), *reset_token)
-		msg := fmt.Sprintf(utils.Env("MAIL_RESET_MSG"), *ip, link)
+		link := fmt.Sprintf("https://%s/reset?token=%s", utils.Env("WEB_DOMAIN"), *delete_token)
+		msg := fmt.Sprintf(utils.Env("MAIL_RESET_MSG"), token.IP, link)
 		subj := utils.Env("MAIL_RESET_SUBJ")
-		sendMail(&user.Email, &subj, &msg)
-	} else {
-		user, is_token_exists := c.storage.ResetToken(ip, reset_token)
-		if !is_token_exists {
-			return nil, TokenUnknown
-		}
-		if user == nil {
-			return nil, TokenBoundToOtherIP
-		}
+		sendMail(token.Email, subj, msg)
 	}
-	return nil, NoError
+
+	_, token_err = c.storage.ApplyToken(storage.DeleteToken, *delete_token, token.IP)
+	web_err = translateTokenErr(token_err)
+	return nil, web_err
 }

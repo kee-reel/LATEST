@@ -16,11 +16,7 @@ import (
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /profile [get]
 func (c *Controller) GetProfile(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
-	if web_err != NoError {
-		return nil, web_err
-	}
-	token, web_err := c.getToken(r, token_str)
+	token, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}

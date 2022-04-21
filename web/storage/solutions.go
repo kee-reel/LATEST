@@ -10,7 +10,7 @@ func (s *Storage) SaveSolution(solution *models.Solution, percent float32) float
 		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
 	best_percent := float32(0)
-	err = query.QueryRow(solution.Token.UserId, solution.Task.Id).Scan(&best_percent)
+	err = query.QueryRow(solution.UserId, solution.Task.Id).Scan(&best_percent)
 
 	score_diff := float32(0)
 	if best_percent < percent {
@@ -19,20 +19,20 @@ func (s *Storage) SaveSolution(solution *models.Solution, percent float32) float
 			leaderboard(user_id, project_id, score) VALUES($1, $2, $3)
 			ON CONFLICT (user_id, project_id) DO UPDATE SET score = (leaderboard.score + $3)`)
 		utils.Err(err)
-		_, err = query.Exec(solution.Token.UserId, solution.Task.Project.Id, score_diff)
+		_, err = query.Exec(solution.UserId, solution.Task.Project.Id, score_diff)
 		utils.Err(err)
 	}
 
 	query, err = s.db.Prepare(`INSERT INTO solutions(user_id, task_id, completion) VALUES($1, $2, $3)`)
 	utils.Err(err)
-	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, percent)
+	_, err = query.Exec(solution.UserId, solution.Task.Id, percent)
 	utils.Err(err)
 
 	query, err = s.db.Prepare(`INSERT INTO 
 		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
 		ON CONFLICT (user_id, task_id) DO UPDATE SET source_code = $3`)
 	utils.Err(err)
-	_, err = query.Exec(solution.Token.UserId, solution.Task.Id, solution.Source)
+	_, err = query.Exec(solution.UserId, solution.Task.Id, solution.Source)
 	utils.Err(err)
 	return score_diff
 }

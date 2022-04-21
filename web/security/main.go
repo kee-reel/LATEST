@@ -3,17 +3,18 @@ package security
 import (
 	"crypto/rand"
 	"late/utils"
+	"log"
 	"math/big"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const token_len = 256
+const token_len = 64
 const token_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 const token_chars_len = int64(len(token_chars))
 
-func IsTokenInvalid(token *string) bool {
-	return len(*token) != token_len
+func IsTokenInvalid(token string) bool {
+	return len(token) != token_len
 }
 
 func GenerateToken() string {
@@ -26,13 +27,15 @@ func GenerateToken() string {
 	return string(token_raw)
 }
 
-func HashPassword(pass *string) string {
-	hash_raw, err := bcrypt.GenerateFromPassword([]byte(*pass), bcrypt.DefaultCost)
+func HashPassword(pass string) string {
+	hash_raw, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	utils.Err(err)
+	log.Println(string(hash_raw), pass)
 	return string(hash_raw)
 }
 
-func CheckPassword(hash *string, pass *string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(*hash), []byte(*pass))
+func CheckPassword(hash string, pass string) bool {
+	log.Println(hash, pass, HashPassword(pass))
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 	return err == nil
 }

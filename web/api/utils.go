@@ -2,8 +2,10 @@ package api
 
 import (
 	"crypto/tls"
+	"fmt"
 	"late/models"
 	"late/security"
+	"late/storage"
 	"late/utils"
 	"net"
 	"net/http"
@@ -14,61 +16,57 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func getUrlParam(r *http.Request, name string) (*string, WebError) {
+func getUrlParam(r *http.Request, name string) (string, WebError) {
 	params, ok := r.URL.Query()[name]
-	var value *string
+	var value string
 	if ok && len(params[0]) > 0 {
-		value = &params[0]
+		value = params[0]
 	}
-	return validateParam(&name, value)
+	return validateParam(name, value)
 }
 
-func getFormParam(r *http.Request, name string) (*string, WebError) {
+func getFormParam(r *http.Request, name string) (string, WebError) {
 	value := r.FormValue(name)
-	if len(value) == 0 {
-		return validateParam(&name, nil)
-	}
-	return validateParam(&name, &value)
+	return validateParam(name, value)
 }
 
-func validateParam(name *string, value *string) (*string, WebError) {
-	switch *name {
+func validateParam(name string, value string) (string, WebError) {
+	switch name {
 	case "token":
-		if value == nil {
-			return nil, TokenNotProvided
+		if len(value) == 0 {
+			return "", TokenNotProvided
 		}
 		if security.IsTokenInvalid(value) {
-			return nil, TokenInvalid
+			return "", TokenInvalid
 		}
 	case "email":
-		if value == nil {
-			return nil, EmailNotProvided
+		if len(value) == 0 {
+			return "", EmailNotProvided
 		}
-		_, err := mail.ParseAddress(*value)
-		if err != nil {
-			return nil, EmailInvalid
+		if _, err := mail.ParseAddress(value); err != nil {
+			return "", EmailInvalid
 		}
 	case "pass":
-		if value == nil {
-			return nil, PasswordNotProvided
+		if len(value) == 0 {
+			return "", PasswordNotProvided
 		}
-		if len(*value) < 6 {
-			return nil, PasswordInvalid
+		if len(value) < 6 {
+			return "", PasswordInvalid
 		}
 	case "name":
-		if value == nil {
-			return nil, NameNotProvided
+		if len(value) == 0 {
+			return "", NameNotProvided
 		}
-		if len(*value) > 128 {
-			return nil, NameInvalid
+		if len(value) > 128 {
+			return "", NameInvalid
 		}
 	case "lang":
-		if value == nil {
-			return nil, LanguageNotProvided
+		if len(value) == 0 {
+			return "", LanguageNotProvided
 		}
 	case "task_id":
-		if value == nil {
-			return nil, TaskIdNotProvided
+		if len(value) == 0 {
+			return "", TaskIdNotProvided
 		}
 	default:
 		panic("Unsupported parameter")
@@ -76,24 +74,51 @@ func validateParam(name *string, value *string) (*string, WebError) {
 	return value, NoError
 }
 
-func (c *Controller) getToken(r *http.Request, token_str *string) (*models.Token, WebError) {
+func (c *Controller) getToken(r *http.Request) (*models.Token, WebError) {
+	token, web_err := getUrlParam(r, "token")
+	if web_err != NoError {
+		return nil, web_err
+	}
+
 	ip := getIP(r)
-	token, ip_matches := c.storage.GetTokenData(token_str, ip)
-	if !ip_matches {
+	token_data, token_err := c.storage.GetTokenData(storage.AccessToken, token, ip)
+	switch token_err {
+	case storage.TokenUnknown:
+		return nil, TokenUnknown
+	case storage.WrongIP:
 		return nil, TokenBoundToOtherIP
 	}
-	if token == nil {
-		return nil, TokenUnknown
-	}
-	return token, NoError
+	return &models.Token{
+		Token: token,
+		Email: token_data.Email,
+		IP:    token_data.IP,
+	}, NoError
 }
 
-func getIP(r *http.Request) *string {
+func translateTokenErr(token_err storage.TokenError) WebError {
+	switch token_err {
+	case storage.NoError:
+		return NoError
+	case storage.TokenUnknown:
+		return TokenUnknown
+	case storage.TokenExists:
+		return TokenExists
+	case storage.EmailTaken:
+		return EmailTaken
+	case storage.EmailUnknown:
+		return EmailUnknown
+	case storage.WrongIP:
+		return TokenBoundToOtherIP
+	}
+	panic(fmt.Sprintf("Error %s not handled", token_err))
+}
+
+func getIP(r *http.Request) string {
 	//Get IP from the X-REAL-IP header
 	ip := r.Header.Get("X-REAL-IP")
 	netIP := net.ParseIP(ip)
 	if netIP != nil {
-		return &ip
+		return ip
 	}
 
 	//Get IP from X-FORWARDED-FOR header
@@ -102,7 +127,7 @@ func getIP(r *http.Request) *string {
 	for _, ip := range splitIps {
 		netIP := net.ParseIP(ip)
 		if netIP != nil {
-			return &ip
+			return ip
 		}
 	}
 
@@ -111,18 +136,18 @@ func getIP(r *http.Request) *string {
 	utils.Err(err)
 	netIP = net.ParseIP(ip)
 	if netIP != nil {
-		return &ip
+		return ip
 	}
 	panic("Can't resolve client's ip")
 }
 
-func sendMail(email *string, subject *string, message *string) {
+func sendMail(email string, subject string, message string) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", utils.Env("MAIL_EMAIL"))
-	m.SetHeader("To", *email)
-	m.SetHeader("Subject", *subject)
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", subject)
 
-	m.SetBody("text/plain", strings.Replace(*message, "\\n", "\n", -1))
+	m.SetBody("text/plain", strings.Replace(message, "\\n", "\n", -1))
 	port, err := strconv.Atoi(utils.Env("MAIL_SERVER_PORT"))
 	utils.Err(err)
 	d := gomail.NewDialer(utils.Env("MAIL_SERVER"), port, utils.Env("MAIL_EMAIL"), utils.Env("MAIL_PASS"))

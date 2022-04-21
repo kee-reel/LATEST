@@ -15,11 +15,7 @@ import (
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /leaderboard [get]
 func (c *Controller) GetLeaderboard(r *http.Request) (interface{}, WebError) {
-	token_str, web_err := getUrlParam(r, "token")
-	if web_err != NoError {
-		return nil, web_err
-	}
-	_, web_err = c.getToken(r, token_str)
+	_, web_err := c.getToken(r)
 	if web_err != NoError {
 		return nil, web_err
 	}

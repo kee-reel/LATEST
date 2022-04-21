@@ -3,12 +3,14 @@ package api
 import (
 	"fmt"
 	"late/models"
+	"late/storage"
 	"late/utils"
+	"log"
 	"net/http"
 )
 
 type APIToken struct {
-	*models.Token
+	Token string `json:"token" example:"9rzNUDp8bP6VOnGIqOO011f5EB4jk0eN0osZt0KFZHTtWIpiwqzVj2vof5sOq80QIJbne5dHiH5vEUe7uJ42X5X39tHGpt0LTreFOjMkfdn4sB6gzouUHc4tGubhikoKuK05P06W1x0QK0zJzbPaZYG4mfBpfU1u8xbqSPVo8ZI9zumiJUiHC8MbJxMPYsGJjZMChQBtA0NvKuAReS3v1704QBX5zZCAyyNP47VZ51E9MMqVGoZBxFmJ4mCHRBy7"`
 	*models.User
 }
 
@@ -34,40 +36,46 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 
-	ip := getIP(r)
-	user, pass_matched, user_exists := c.storage.GetUser(email, pass)
+	log.Println(email, pass)
+	user, user_exists := c.storage.GetUser(email, pass)
 	if !user_exists {
 		return nil, EmailUnknown
 	}
-	if !pass_matched {
+	if user == nil {
 		return nil, PasswordWrong
 	}
-	token := c.storage.GetTokenForConnection(user.Email, ip)
+
+	ip := getIP(r)
+	token := c.storage.GetToken(storage.AccessToken, email, ip)
 	if token == nil {
-		verification_token := c.storage.CreateVerificationToken(email, ip)
-		if verification_token == nil {
-			return nil, EmailUnknown
+		verification_token, token_err := c.storage.CreateToken(storage.VerifyToken, email, ip)
+		web_err = translateTokenErr(token_err)
+		if web_err != NoError {
+			return nil, web_err
 		}
+
 		if utils.EnvB("MAIL_ENABLED") {
 			verify_link := fmt.Sprintf("https://%s/verify?token=%s", utils.Env("WEB_DOMAIN"), *verification_token)
-			msg := fmt.Sprintf(utils.Env("MAIL_VER_MSG"), *ip, verify_link)
+			msg := fmt.Sprintf(utils.Env("MAIL_VER_MSG"), ip, verify_link)
 			subj := utils.Env("MAIL_VER_SUBJ")
-			sendMail(email, &subj, &msg)
+			sendMail(email, subj, msg)
 			return nil, TokenNotVerified
-		} else {
-			user_id, is_token_exists := c.storage.VerifyToken(ip, verification_token)
-			if !is_token_exists {
-				return nil, TokenUnknown
-			}
-			if user_id == nil {
-				return nil, TokenBoundToOtherIP
-			}
-			token := c.storage.GetTokenForConnection(user, ip)
-			if token == nil {
-				panic("Can't autoverify token")
-			}
+		}
+
+		_, token_err = c.storage.ApplyToken(storage.VerifyToken, *verification_token, ip)
+		web_err = translateTokenErr(token_err)
+		if web_err != NoError {
+			return nil, web_err
+		}
+
+		token = c.storage.GetToken(storage.AccessToken, email, ip)
+		if token == nil {
+			panic("Auto verify failed")
 		}
 	}
-	resp := APIToken{token, user}
-	return &resp, web_err
+	resp := APIToken{
+		Token: *token,
+		User:  user,
+	}
+	return &resp, NoError
 }

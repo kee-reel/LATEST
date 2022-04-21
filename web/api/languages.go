@@ -45,11 +45,11 @@ func (c *Controller) getSupportedLanguages() *[]string {
 	return &langs
 }
 
-func (c *Controller) isLanguageSupported(lang *string) bool {
+func (c *Controller) isLanguageSupported(lang string) bool {
 	langs := c.getSupportedLanguages()
 	if len(*langs) == 0 {
 		return false
 	}
-	idx := sort.SearchStrings(*langs, *lang)
-	return idx < len(*langs) && (*langs)[idx] == *lang
+	idx := sort.SearchStrings(*langs, lang)
+	return idx < len(*langs) && (*langs)[idx] == lang
 }

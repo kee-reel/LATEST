@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"late/storage"
 	"net/http"
 )
 
@@ -19,24 +20,29 @@ func (c *Controller) GetVerify(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, is_token_exists := c.storage.VerifyToken(ip, token)
+	user_id, token_err := c.storage.ApplyToken(storage.VerifyToken, token, ip)
+	web_err = translateTokenErr(token_err)
+
 	var resp string
-	if !is_token_exists {
+	switch web_err {
+	case TokenUnknown:
 		resp = genHtmlResp([]string{
 			`Эта ссылка более не действительна.`,
 			`Если вы ещё не подтвердили вход с этого IP, то попробуйте вновь войти в свой профиль, чтобы получить новое письмо.`,
 		})
-	} else if user_id == nil {
+	case TokenBoundToOtherIP:
 		resp = genHtmlResp([]string{
 			`Эта ссылка была отправлена для другого IP адреса!`,
 			`Если вы хотите подтвердить вход с этого IP, то попробуйте вновь войти в свой профиль, чтобы получить новое письмо.`,
 		})
-	} else {
+	case NoError:
 		user := c.storage.GetUserById(*user_id)
 		resp = genHtmlResp([]string{
 			`Теперь вам доступен вход с этого IP адреса!`,
 			fmt.Sprintf("%s, теперь вы можете зайти в свой профиль.</p>", user.Name),
 		})
+	default:
+		panic("Not handled error")
 	}
 	return &resp, NoError
 }

@@ -3,7 +3,6 @@ package security
 import (
 	"crypto/rand"
 	"late/utils"
-	"log"
 	"math/big"
 
 	"golang.org/x/crypto/bcrypt"
@@ -30,12 +29,10 @@ func GenerateToken() string {
 func HashPassword(pass string) string {
 	hash_raw, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	utils.Err(err)
-	log.Println(string(hash_raw), pass)
 	return string(hash_raw)
 }
 
 func CheckPassword(hash string, pass string) bool {
-	log.Println(hash, pass, HashPassword(pass))
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
 	return err == nil
 }

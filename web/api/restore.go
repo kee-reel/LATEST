@@ -80,6 +80,7 @@ func (c *Controller) PostRestore(r *http.Request) (interface{}, WebError) {
 		msg := fmt.Sprintf(utils.Env("MAIL_RESTORE_MSG"), ip, verify_link)
 		subj := utils.Env("MAIL_RESTORE_SUBJ")
 		sendMail(email, subj, msg)
+		return nil, NoError
 	}
 
 	_, token_err = c.storage.ApplyToken(storage.RestoreToken, *token, ip)

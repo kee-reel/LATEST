@@ -89,9 +89,10 @@ func (c *Controller) getToken(r *http.Request) (*models.Token, WebError) {
 		return nil, TokenBoundToOtherIP
 	}
 	return &models.Token{
-		Token: token,
-		Email: token_data.Email,
-		IP:    token_data.IP,
+		Token:  token,
+		Email:  token_data.Email,
+		IP:     token_data.IP,
+		UserId: token_data.UserId,
 	}, NoError
 }
 

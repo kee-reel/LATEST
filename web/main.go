@@ -36,7 +36,7 @@ func main() {
 	http.HandleFunc("/leaderboard", c.Leaderboard)
 	http.HandleFunc("/tasks/flat", c.TasksFlat)
 	http.HandleFunc("/tasks/hierarchy", c.TasksHierarchy)
-	http.HandleFunc("/reset", c.Reset)
+	http.HandleFunc("/suspend", c.Suspend)
 
 	is_http := utils.EnvB("WEB_HTTP")
 	log.Printf("Started listening on %s HTTPS(%t)", addr, !is_http)

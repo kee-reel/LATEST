@@ -30,3 +30,9 @@ func Err(err error) {
 		panic(err)
 	}
 }
+
+func Assert(statement bool) {
+	if !statement {
+		panic("Assertion failed")
+	}
+}

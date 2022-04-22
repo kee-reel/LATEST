@@ -43,17 +43,18 @@ echo "Test task $TASK_ID"
 
 echo '
 ===
+Languages:'
+curl -s ${DOMAIN}languages
+
+
+echo '
+===
 Post solution in C:'
 curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='c' \
 	--form-string source_text='#include <stdio.h> 
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}'
-
-echo '
-===
-Languages:'
-curl -s ${DOMAIN}languages
 
 echo '
 ===
@@ -128,7 +129,7 @@ curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
     --form-string source_text='import os
-os.system("ls")'
+os.system("echo $PATH")'
 
 echo '
 ===

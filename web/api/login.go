@@ -37,7 +37,7 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 	}
 
 	log.Println(email, pass)
-	user, user_exists := c.storage.GetUser(email, pass)
+	user, user_exists := c.storage.AuthenticateUser(email, pass)
 	if !user_exists {
 		return nil, EmailUnknown
 	}

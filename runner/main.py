@@ -5,14 +5,13 @@ import time
 import random
 import logging
 from build import build_solution, LANGS
-from test import test_solution
+from test import test_solution, PATH
 from flask import Flask, request, url_for
 
 app = Flask(__name__)
 app.logger.setLevel(logging.DEBUG)
 
 fn_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-UPLOAD_FOLDER = './uploads'
 
 def save_file(request, field):
     extention = request.form.get(f'{field}_ext')
@@ -24,7 +23,7 @@ def save_file(request, field):
 
     random.seed(time.time())
     postfix = ''.join(random.choice(fn_letters) for _ in range(8))
-    fn = os.path.join(UPLOAD_FOLDER, f'{field}_{postfix}.{extention}')
+    fn = os.path.join(PATH, f'{field}_{postfix}.{extention}')
 
     if text:
         open(fn, 'w').write(text)

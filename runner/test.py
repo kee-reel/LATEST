@@ -4,6 +4,7 @@ import sys
 import subprocess
 from errors import ERROR
 
+PATH = './uploads'
 RUN_TIMEOUT = 0.5
 LANG_TO_EXEC = {
     'exe': lambda filename: [f'./{filename}'],
@@ -28,8 +29,11 @@ def prepare_str(s):
 
 
 def execute(cmd, params):
+    print(cmd, params)
     try:
-        p = subprocess.run(cmd, input=params, capture_output=True, text=True, timeout=RUN_TIMEOUT, check=True)
+        p = subprocess.run(
+                cmd, input=params, capture_output=True, 
+                text=True, timeout=RUN_TIMEOUT, check=True)
         return p.stdout, None
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr

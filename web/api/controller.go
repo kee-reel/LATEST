@@ -68,8 +68,8 @@ func (c *Controller) Leaderboard(w http.ResponseWriter, r *http.Request) {
 	HandleFunc(w, r, c.GetLeaderboard, nil)
 }
 
-func (c *Controller) Reset(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetReset, c.PostReset)
+func (c *Controller) Suspend(w http.ResponseWriter, r *http.Request) {
+	HandleFunc(w, r, c.GetSuspend, c.PostSuspend)
 }
 
 type WebMethodFunc func(r *http.Request) (interface{}, WebError)

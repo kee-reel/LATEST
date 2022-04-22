@@ -6,8 +6,8 @@ import (
 	"late/utils"
 )
 
-func (s *Storage) GetUser(email string, pass string) (*models.User, bool) {
-	query, err := s.db.Prepare(`SELECT u.id, u.pass FROM users as u WHERE u.email = $1`)
+func (s *Storage) AuthenticateUser(email string, pass string) (*models.User, bool) {
+	query, err := s.db.Prepare(`SELECT u.id, u.pass FROM users as u WHERE u.email = $1 AND u.is_suspended = FALSE`)
 	utils.Err(err)
 
 	var user_id int
@@ -24,7 +24,7 @@ func (s *Storage) GetUser(email string, pass string) (*models.User, bool) {
 
 func (s *Storage) GetUserById(user_id int) *models.User {
 	query, err := s.db.Prepare(`SELECT u.name, u.email, l.score FROM users as u 
-		LEFT JOIN leaderboard AS l ON l.user_id = u.id WHERE u.id = $1`)
+		LEFT JOIN leaderboard AS l ON l.user_id = u.id WHERE u.id = $1 AND u.is_suspended = FALSE`)
 	utils.Err(err)
 	user := models.User{
 		Score: 0,
@@ -43,7 +43,7 @@ func (s *Storage) GetUserById(user_id int) *models.User {
 }
 
 func (s *Storage) GetUserIdByEmail(email string) *int {
-	query, err := s.db.Prepare(`SELECT u.id FROM users AS u WHERE u.email = $1`)
+	query, err := s.db.Prepare(`SELECT u.id FROM users AS u WHERE u.email = $1 AND u.is_suspended = FALSE`)
 	utils.Err(err)
 	var user_id int
 	err = query.QueryRow(email).Scan(&user_id)
@@ -62,10 +62,9 @@ func (s *Storage) AddUser(email string, pass string, name string) int {
 	return user_id
 }
 
-func (s *Storage) RemoveUser(user_id int) {
+func (s *Storage) SuspendUser(user_id int) {
 	query, err := s.db.Prepare(`BEGIN;
-	DELETE FROM solutions AS s WHERE s.user_id = $1;
-	DELETE FROM solutions_sources AS s WHERE s.user_id = $1;
+	UPDATE users SET is_suspended = TRUE;
 	DELETE FROM leaderboard AS l WHERE l.user_id = $1;
 	COMMIT;`)
 	utils.Err(err)

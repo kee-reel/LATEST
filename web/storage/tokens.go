@@ -6,52 +6,11 @@ import (
 	"late/security"
 	"late/utils"
 	"log"
-	"time"
+	"strconv"
+	"strings"
 
 	"github.com/gomodule/redigo/redis"
 )
-
-type TokenData struct {
-	IP     string             `json:"ip"`
-	Email  string             `json:"email"`
-	Extra  *map[string]string `json:"extra"`
-	UserId int                `json:"-"`
-}
-
-type TokenType int
-
-const (
-	RegisterToken TokenType = 1
-	VerifyToken             = 2
-	AccessToken             = 3
-	RestoreToken            = 4
-	DeleteToken             = 5
-)
-
-type TokenError int
-
-const (
-	NoError      TokenError = 0
-	TokenUnknown            = 1
-	TokenExists             = 2
-	EmailTaken              = 3
-	EmailUnknown            = 4
-	WrongIP                 = 5
-)
-
-func makeTokenDurationMap() map[TokenType]time.Duration {
-	default_duration, err := time.ParseDuration(utils.Env("WEB_TOKEN_DEFAULT_DURATION"))
-	utils.Err(err)
-	access_duration, err := time.ParseDuration(utils.Env("WEB_TOKEN_ACCESS_DURATION"))
-	utils.Err(err)
-	return map[TokenType]time.Duration{
-		RegisterToken: default_duration,
-		VerifyToken:   default_duration,
-		AccessToken:   access_duration,
-		RestoreToken:  default_duration,
-		DeleteToken:   default_duration,
-	}
-}
 
 func (s *Storage) GetToken(token_type TokenType, email string, ip string) *string {
 	key := makeKey(token_type, email, ip)
@@ -60,29 +19,6 @@ func (s *Storage) GetToken(token_type TokenType, email string, ip string) *strin
 		return nil
 	}
 	return &token
-}
-
-func makeKey(token_type TokenType, email string, ip string) string {
-	return fmt.Sprintf("%d:%s:%s", token_type, email, ip)
-}
-
-func (s *Storage) addToken(token_type TokenType, email string, ip string, extra_data *map[string]string) string {
-	token_data := TokenData{
-		IP:    ip,
-		Email: email,
-		Extra: extra_data,
-	}
-	json_data, err := json.Marshal(token_data)
-	utils.Err(err)
-	key := makeKey(token_type, email, ip)
-	token := security.GenerateToken()
-	s.kv.Send("MULTI")
-	s.kv.Send("SET", fmt.Sprintf("%d:%s", token_type, token),
-		json_data, "EX", s.token_expiration[token_type].Seconds())
-	s.kv.Send("SET", key, token, "EX", s.token_expiration[token_type].Seconds())
-	_, err = s.kv.Do("EXEC")
-	utils.Err(err)
-	return token
 }
 
 func (s *Storage) GetTokenData(token_type TokenType, token string, ip string) (*TokenData, TokenError) {
@@ -183,8 +119,17 @@ func (s *Storage) ApplyToken(token_type TokenType, token string, ip string) (*in
 	case RestoreToken:
 		user_id := s.GetUserIdByEmail(token_data.Email)
 		s.UpdateUserPassword(*user_id, (*token_data.Extra)["pass"])
-	case DeleteToken:
-		s.RemoveUser(*user_id)
+	case SuspendToken:
+		s.SuspendUser(*user_id)
+		keys, err := redis.Strings(s.kv.Do("KEYS", fmt.Sprintf("*:%s:*", token_data.Email)))
+		utils.Err(err)
+		for _, k := range keys {
+			k_arr := strings.Split(k, ":")
+			utils.Assert(len(k_arr) == 3)
+			t, err := strconv.Atoi(k_arr[0])
+			utils.Err(err)
+			_ = s.RemoveToken(TokenType(t), k_arr[1], k_arr[2])
+		}
 	}
 
 	_ = s.RemoveToken(RegisterToken, token_data.Email, token_data.IP)

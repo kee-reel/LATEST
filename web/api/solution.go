@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"late/models"
 	"late/utils"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -217,6 +218,7 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	utils.Err(err)
+	log.Println(string(body))
 
 	var test_result TestResult
 	err = json.Unmarshal(body, &test_result)

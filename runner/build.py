@@ -10,7 +10,14 @@ LANG_CMD = {
         'cpp': lambda source, target: ['/usr/bin/g++', source, '-o', target, '-lm'],
         'pas': lambda source, target: ['/usr/bin/fpc', '-ve', '-Fe/dev/stderr', source, f'-o{target}'],
 }
-TRIGGER_WORD = 'system'
+TRIGGERS = {
+        'c': ('system',),
+        'cpp': ('system',),
+        'pas': ('system',),
+        'py': ('import os', 'import subprocess', 'exec\\('),
+}
+for t, l in TRIGGERS.items():
+    TRIGGERS[t] = '|'.join(l)
 TIMEOUT = 5
 
 
@@ -23,24 +30,26 @@ def execute(cmd):
 
 
 def build_solution(solution):
-    extention = solution[solution.rindex('.')+1:]
-    assert extention in LANGS, 'Language not supported'
-    if extention not in LANG_CMD:
-        return solution, None
+    ext = solution[solution.rindex('.')+1:]
+    assert ext in LANGS, 'Language not supported'
+    if ext in LANG_CMD:
+        compiled_solution = solution[:solution.rindex('.')] + '.exe'
+        cmd = LANG_CMD[ext](solution, compiled_solution)
+        _, err = execute(cmd)
+        if err:
+            return None, {
+                "error": ERROR.BUILD,
+                "msg": err,
+            }
+    else:
+        compiled_solution = solution
 
-    compiled_solution = solution[:solution.rindex('.')] + '.exe'
-    cmd = LANG_CMD[extention](solution, compiled_solution)
-    _, err = execute(cmd)
-    if err:
-        return None, {
-            "error": ERROR.BUILD,
-            "msg": err,
-        }
-    out, err = execute(['grep', '-oe', TRIGGER_WORD, compiled_solution])
+    print(TRIGGERS[ext])
+    out, err = execute(['grep', '-oaE', TRIGGERS[ext], compiled_solution])
     if out or err:
         return None, {
             "error": ERROR.BUILD,
-            "msg": 'System calls are no allowed',
+            "msg": 'System calls are no allowed'
         }
     return compiled_solution, err
 

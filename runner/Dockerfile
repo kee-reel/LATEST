@@ -21,12 +21,9 @@ ENV PATH $PATH:/home/docker/.local/bin
 RUN python3 -m pip install --upgrade pip
 RUN pip3 install -r requirements.txt
 
-COPY . .
 USER root
-
+COPY . .
 RUN mkdir $DIRPATH/uploads && chmod 777 $DIRPATH/uploads
-RUN cp $DIRPATH/stubs/* $DIRPATH/uploads/ && chmod 755 $DIRPATH/uploads/*
 
 USER docker
-
 CMD ["python3", "main.py"]

@@ -15,9 +15,15 @@ services:
     image: redis:alpine
     ports: 
       - ${REDIS_PORT}:${REDIS_PORT}
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_SOLUTIONS_LIST=solutions
+      - REDIS_TESTS_LIST=tests
     restart: always
     networks:
       - internet
+      - no-internet
 
   web:
     ports: 
@@ -41,6 +47,8 @@ services:
   runner:
     ports:
       - ${RUNNER_PORT}:${RUNNER_PORT}
+    depends_on:
+      - redis
     networks:
       - no-internet
     env_file: .env

@@ -29,3 +29,14 @@ func NewStorage() *Storage {
 		makeTokenDurationMap(),
 	}
 }
+
+func (s *Storage) MakeJob(data *[]byte) (*[]byte, error) {
+	_, err := s.kv.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST"), *data)
+	utils.Err(err)
+	test_result, err := redis.ByteSlices(s.kv.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 30))
+	utils.Err(err)
+	if len(test_result) != 2 {
+		panic("List poped more than one element")
+	}
+	return &(test_result[1]), err
+}

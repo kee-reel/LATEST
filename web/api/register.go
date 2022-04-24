@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"late/storage"
 	"late/utils"
-	"log"
 	"net/http"
 )
 
@@ -77,7 +76,6 @@ func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	log.Println(name, pass)
 	token, token_err := c.storage.CreateToken(storage.RegisterToken, email, ip, name, pass)
 	web_err = translateTokenErr(token_err)
 	if web_err != NoError {

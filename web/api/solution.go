@@ -6,11 +6,9 @@ import (
 	"io/ioutil"
 	"late/models"
 	"late/utils"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -57,17 +55,29 @@ type APISolutionVerboseResult struct {
 	Params string `example:"2;1;7;'"`
 	Result string `example:"8"`
 }
-type APISolutionErrorData struct {
-	Msg         string `json:"msg,omitempty" example:"Build fail message"`
-	Params      string `json:"params,omitempty" example:"2;1;7'"`
-	Expected    string `json:"expected,omitempty" example:"8"`
-	Result      string `json:"result,omitempty" example:"1"`
-	TestsPassed int    `json:"tests_passed" example:"7"`
-	TestsTotal  int    `json:"tests_total" example:"10"`
+type APISolutionBuildError struct {
+	Msg string `json:"msg,omitempty" example:"Build fail message"`
 }
-type SolutionErrorData struct {
-	APISolutionErrorData
-	Error *string `json:"error,omitempty"`
+type APISolutionTimeoutError struct {
+	Params string  `json:"params,omitempty" example:"2;1;7'"`
+	Time   float32 `json:"time,omitempty" example:"1.5"`
+}
+type APISolutionRuntimeError struct {
+	Params string `json:"params,omitempty" example:"2;1;7'"`
+	Msg    string `json:"msg,omitempty" example:"Build fail message"`
+}
+type APISolutionTestError struct {
+	Params   string `json:"params,omitempty" example:"2;1;7'"`
+	Expected string `json:"expected,omitempty" example:"8"`
+	Result   string `json:"result,omitempty" example:"1"`
+}
+type APISolutionErrorData struct {
+	Build       *APISolutionBuildError   `json:"build,omitempty"`
+	Timeout     *APISolutionTimeoutError `json:"timeout,omitempty"`
+	Runtime     *APISolutionRuntimeError `json:"runtime,omitempty"`
+	Test        *APISolutionTestError    `json:"test,omitempty"`
+	TestsPassed int                      `json:"tests_passed" example:"7"`
+	TestsTotal  int                      `json:"tests_total" example:"10"`
 }
 type APITestSuccessResult struct {
 	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
@@ -77,12 +87,6 @@ type APITestFailResult struct {
 	Error     WebError              `json:"error,omitempty" example:"508"`
 	ErrorData *APISolutionErrorData `json:"error_data,omitempty"`
 	ScoreDiff float32               `json:"score_diff, omitempty" example:"2.5"`
-}
-type TestResult struct {
-	Error     WebError                    `json:"error,omitempty" example:"508"`
-	ErrorData *SolutionErrorData          `json:"error_data,omitempty"`
-	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
 }
 
 // @Tags solution
@@ -195,49 +199,73 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	return &solution, NoError
 }
 
-func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *TestResult {
+type solutionData struct {
+	Text      string `json:"text"`
+	Extention string `json:"extention"`
+}
+
+type solutionTests struct {
+	User   string `json:"user,omitempty"`
+	Fixed  string `json:"fixed,omitempty"`
+	Random string `json:"random,omitempty"`
+}
+
+type runnerData struct {
+	UserSolution     solutionData  `json:"user_solution"`
+	CompleteSolution solutionData  `json:"complete_solution"`
+	Tests            solutionTests `json:"tests"`
+	Verbose          bool          `json:"verbose"`
+}
+
+type testResult struct {
+	Error         WebError                    `json:"error,omitempty" example:"508"`
+	ErrorData     *APISolutionErrorData       `json:"error_data,omitempty"`
+	Result        *[]APISolutionVerboseResult `json:"result,omitempty"`
+	ScoreDiff     float32                     `json:"score_diff,omitempty" example:"2.5"`
+	InternalError *string                     `json:"internal_error,omitempty"`
+}
+
+func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *testResult {
 	complete_solution_source, fixed_tests := c.storage.GetTaskTestData(task.Id)
-	random_tests := generateTests(task)
 
-	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
-	verbose_text := "false"
-	if solution.IsVerbose {
-		verbose_text = "true"
+	runner_data := runnerData{
+		UserSolution: solutionData{
+			Text:      solution.Source,
+			Extention: solution.Extention,
+		},
+		CompleteSolution: solutionData{
+			Text:      complete_solution_source,
+			Extention: task.Extention,
+		},
+		Tests:   solutionTests{},
+		Verbose: solution.IsVerbose,
 	}
-	response, err := http.PostForm(runner_url, url.Values{
-		"solution":              {solution.Source},
-		"complete_solution":     {complete_solution_source},
-		"user_tests":            {solution.TestCases},
-		"fixed_tests":           {fixed_tests},
-		"random_tests":          {random_tests},
-		"solution_ext":          {solution.Extention},
-		"complete_solution_ext": {task.Extention},
-		"verbose":               {verbose_text},
-	})
-	utils.Err(err)
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	utils.Err(err)
-	log.Println(string(body))
-
-	var test_result TestResult
-	err = json.Unmarshal(body, &test_result)
+	if len(solution.TestCases) > 0 {
+		runner_data.Tests.User = solution.TestCases
+	}
+	if len(fixed_tests) > 0 {
+		runner_data.Tests.Fixed = fixed_tests
+	}
+	rand_tests := generateTests(task)
+	if len(rand_tests) > 0 {
+		runner_data.Tests.Random = rand_tests
+	}
+	runner_data_json, err := json.Marshal(runner_data)
 	utils.Err(err)
 
-	if test_result.ErrorData != nil {
-		switch *test_result.ErrorData.Error {
-		case "build":
-			test_result.Error = SolutionBuildFail
-		case "timeout":
-			test_result.Error = SolutionTimeoutFail
-		case "runtime":
-			test_result.Error = SolutionRuntimeFail
-		case "test":
-			test_result.Error = SolutionTestFail
-		default:
-			panic("Unknown runner error")
-		}
-		test_result.ErrorData.Error = nil
+	test_result_json, err := c.storage.MakeJob(&runner_data_json)
+	utils.Err(err)
+
+	var test_result testResult
+	err = json.Unmarshal(*test_result_json, &test_result)
+	utils.Err(err)
+	if test_result.ErrorData == nil {
+		test_result.Error = NoError
+	} else {
+		test_result.Error = SolutionTestFail
+	}
+	if test_result.InternalError != nil {
+		panic(*test_result.InternalError)
 	}
 	return &test_result
 }

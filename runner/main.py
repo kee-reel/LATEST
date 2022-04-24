@@ -1,24 +1,27 @@
 #!/usr/env python3
 import os
 import sys
+import json
 import time
 import random
 import logging
-from build import build_solution, LANGS
-from test import test_solution, PATH
-from flask import Flask, request, url_for
 
-app = Flask(__name__)
-app.logger.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
+
+import redis
+
+from test import test_solution, PATH
+from build import build_solution, LANGS
+from schemas import TestResult, Solution
 
 fn_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
-def save_file(request, field):
-    extention = request.form.get(f'{field}_ext')
+def save_file(solution, field):
+    data = solution[field]
 
-    file_ = request.files.get(field)
-    text = request.form.get(field)
-    if not extention or (not file_ and not text):
+    text = data['text']
+    extention = data['extention']
+    if not extention or not text:
         return None
 
     random.seed(time.time())
@@ -38,6 +41,7 @@ def run_tests(sol_fn, comp_sol_fn, tests, is_verbose):
     if sol_fn != sol_fn_new:
         os.remove(sol_fn)
     if err:
+        err['tests_passed'] = 0
         return err
 
     comp_sol_fn_new, err = build_solution(comp_sol_fn)
@@ -52,34 +56,60 @@ def run_tests(sol_fn, comp_sol_fn, tests, is_verbose):
     return result
 
 
-@app.route('/', methods=['GET', 'POST'])
-def run_test():
-    if request.method == 'GET':
-        return {'langs': LANGS}
-    is_verbose = request.form.get('verbose') == 'true'
-    sol_fn = save_file(request, 'solution')
-    comp_sol_fn = save_file(request, 'complete_solution')
+def run_test(solution):
+    sol_fn = save_file(solution, 'user_solution')
+    comp_sol_fn = save_file(solution, 'complete_solution')
     assert sol_fn and comp_sol_fn, 'Internal error: malformed runner data'
 
     tests = {}
-    tests_total = 0
-    for t in ('user', 'fixed', 'random'):
-        test_set = request.form.get(f'{t}_tests')
-        if test_set:
-            test_set = test_set.split('\n')
-            tests[t] = test_set
-            tests_total += len(test_set)
-    if not tests:
+    tests_total = 0 # If there are no tests, then use at least one (w/o params)
+    tests = solution['tests']
+    for t in tests.keys():
+        tests[t] = tests[t].split('\n')
+        tests_total += len(tests[t])
+    if not tests_total:
         tests_total = 1
 
-    result = run_tests(sol_fn, comp_sol_fn, tests, is_verbose)
-    result['tests_total'] = tests_total
+    result = run_tests(sol_fn, comp_sol_fn, tests, solution['verbose'])
     if 'error' in result:
-        return {'error_data': result}
-    elif tests:
-        assert tests_total == result.get('tests_passed'), \
-            f'Tests count does not match: total {tests_total}, passed {result.get("tests_passed")}'
+        err = result.pop('error')
+        tests_passed = result.pop('tests_passed')
+        return {
+            'error_data': {
+                err: result,
+                'tests_passed': tests_passed,
+                'tests_total': tests_total,                
+            }
+        }
+
+    assert tests and tests_total == result.get('tests_passed'), \
+        f'Tests count does not match: total {tests_total}, passed {result.get("tests_passed")}'
+    del result['tests_passed']
     return result
 
-app.run(host='0.0.0.0', port=os.getenv('RUNNER_PORT'))
+conn = redis.Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'))
+solutions = os.getenv('REDIS_SOLUTIONS_LIST')
+tests = os.getenv('REDIS_TESTS_LIST')
+
+solution_schema = Solution()
+test_result_schema = TestResult()
+while True:
+    try:
+        _, solution_json = conn.brpop(solutions)
+        logging.debug(f'Received solution json: {solution_json}')
+        solution = json.loads(solution_json)
+        err = solution_schema.validate(solution)
+        if err:
+            raise Exception(err)
+        logging.debug(f'Received solution: {solution}')
+        test_result = run_test(solution)
+        logging.debug(f'Test result: {test_result}')
+        err = test_result_schema.validate(test_result)
+        if err:
+            raise Exception(err)
+        conn.lpush(tests, json.dumps(test_result))
+    except Exception as e:
+        conn.lpush(tests, json.dumps({
+            'internal_error': str(e)
+        }))
 

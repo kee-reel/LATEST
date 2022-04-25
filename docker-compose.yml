@@ -15,11 +15,6 @@ services:
     image: redis:alpine
     ports: 
       - ${REDIS_PORT}:${REDIS_PORT}
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_SOLUTIONS_LIST=solutions
-      - REDIS_TESTS_LIST=tests
     restart: always
     networks:
       - internet
@@ -34,24 +29,24 @@ services:
     depends_on:
       - db
       - redis
-      - runner
     networks:
       - internet
-      - no-internet
-    environment:
-      - RUNNER_HOST=runner
     env_file: .env
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
 
   runner:
-    ports:
-      - ${RUNNER_PORT}:${RUNNER_PORT}
+    restart: always
     depends_on:
       - redis
     networks:
       - no-internet
-    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_SOLUTIONS_LIST_PREFIX=${REDIS_SOLUTIONS_LIST_PREFIX}
+      - REDIS_TESTS_LIST=${REDIS_TESTS_LIST}
 
   manage:
     build: ./manage

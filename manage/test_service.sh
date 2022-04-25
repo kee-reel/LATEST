@@ -9,9 +9,9 @@ fi
 python3 fill_db.py
 
 if $WEB_HTTP; then
-    DOMAIN=http://$WEB_HOST:$WEB_PORT$WEB_ENTRY
+    DOMAIN=http://$WEB_HOST:$WEB_PORT/
 else
-    DOMAIN=https://$WEB_DOMAIN$WEB_ENTRY
+    DOMAIN=https://$WEB_DOMAIN/
 fi
 echo "Testing $DOMAIN"
 
@@ -23,6 +23,7 @@ echo "Restore: $TEST_MAIL
 $(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
 "
 
+curl ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | jq '.["token"]' | tr -d '"')
 echo "Token: $TOKEN
 "

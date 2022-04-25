@@ -5,7 +5,6 @@ import json
 import time
 import random
 import logging
-
 logging.basicConfig(level=logging.DEBUG)
 
 import redis
@@ -88,7 +87,7 @@ def run_test(solution):
     return result
 
 conn = redis.Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'))
-solutions = os.getenv('REDIS_SOLUTIONS_LIST')
+solutions = os.getenv('REDIS_SOLUTIONS_LIST_PREFIX')
 tests = os.getenv('REDIS_TESTS_LIST')
 
 solution_schema = Solution()

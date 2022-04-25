@@ -18,7 +18,7 @@ type Storage struct {
 
 func NewStorage() *Storage {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		utils.Env("DB_HOST"), utils.Env("DB_PORT"), utils.Env("DB_USER"), utils.Env("DB_PASS"), utils.Env("DB_NAME")))
+		utils.Env("DB_HOST"), utils.Env("DB_PORT"), utils.Env("POSTGRES_USER"), utils.Env("POSTGRES_PASSWORD"), utils.Env("POSTGRES_DB")))
 	utils.Err(err)
 
 	kv, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", utils.Env("REDIS_HOST"), utils.Env("REDIS_PORT")))
@@ -31,7 +31,7 @@ func NewStorage() *Storage {
 }
 
 func (s *Storage) MakeJob(data *[]byte) (*[]byte, error) {
-	_, err := s.kv.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST"), *data)
+	_, err := s.kv.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST_PREFIX"), *data)
 	utils.Err(err)
 	test_result, err := redis.ByteSlices(s.kv.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 30))
 	utils.Err(err)

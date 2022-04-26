@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"late/models"
@@ -51,42 +50,13 @@ func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
-type APISolutionVerboseResult struct {
-	Params string `example:"2;1;7;'"`
-	Result string `example:"8"`
-}
-type APISolutionBuildError struct {
-	Msg string `json:"msg,omitempty" example:"Build fail message"`
-}
-type APISolutionTimeoutError struct {
-	Params string  `json:"params,omitempty" example:"2;1;7'"`
-	Time   float32 `json:"time,omitempty" example:"1.5"`
-}
-type APISolutionRuntimeError struct {
-	Params string `json:"params,omitempty" example:"2;1;7'"`
-	Msg    string `json:"msg,omitempty" example:"Build fail message"`
-}
-type APISolutionTestError struct {
-	Params   string `json:"params,omitempty" example:"2;1;7'"`
-	Expected string `json:"expected,omitempty" example:"8"`
-	Result   string `json:"result,omitempty" example:"1"`
-}
-type APISolutionErrorData struct {
-	Build       *APISolutionBuildError   `json:"build,omitempty"`
-	Timeout     *APISolutionTimeoutError `json:"timeout,omitempty"`
-	Runtime     *APISolutionRuntimeError `json:"runtime,omitempty"`
-	Test        *APISolutionTestError    `json:"test,omitempty"`
-	TestsPassed int                      `json:"tests_passed" example:"7"`
-	TestsTotal  int                      `json:"tests_total" example:"10"`
-}
 type APITestSuccessResult struct {
-	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
+	Result    *[]models.SolutionVerboseResult `json:"result,omitempty"`
+	ScoreDiff float32                         `json:"score_diff, omitempty" example:"2.5"`
 }
 type APITestFailResult struct {
-	Error     WebError              `json:"error,omitempty" example:"508"`
-	ErrorData *APISolutionErrorData `json:"error_data,omitempty"`
-	ScoreDiff float32               `json:"score_diff, omitempty" example:"2.5"`
+	Error     WebError                  `json:"error,omitempty" example:"508"`
+	ErrorData *models.SolutionErrorData `json:"error_data,omitempty"`
 }
 
 // @Tags solution
@@ -117,13 +87,14 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
+	solution.Id = c.storage.SaveSolution(solution)
 	test_result := c.buildAndTest(solution.Task, solution)
 	percent := float32(1)
 	if test_result.ErrorData != nil {
 		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	test_result.ScoreDiff = c.storage.SaveSolution(solution, percent)
+	test_result.ScoreDiff = c.storage.UpdateSolutionScore(solution, percent)
 	return test_result, test_result.Error
 }
 
@@ -199,45 +170,27 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	return &solution, NoError
 }
 
-type solutionData struct {
-	Text      string `json:"text"`
-	Extention string `json:"extention"`
-}
-
-type solutionTests struct {
-	User   string `json:"user,omitempty"`
-	Fixed  string `json:"fixed,omitempty"`
-	Random string `json:"random,omitempty"`
-}
-
-type runnerData struct {
-	UserSolution     solutionData  `json:"user_solution"`
-	CompleteSolution solutionData  `json:"complete_solution"`
-	Tests            solutionTests `json:"tests"`
-	Verbose          bool          `json:"verbose"`
-}
-
 type testResult struct {
-	Error         WebError                    `json:"error,omitempty" example:"508"`
-	ErrorData     *APISolutionErrorData       `json:"error_data,omitempty"`
-	Result        *[]APISolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff     float32                     `json:"score_diff,omitempty" example:"2.5"`
-	InternalError *string                     `json:"internal_error,omitempty"`
+	models.TestResult
+	Error         WebError `json:"error,omitempty" example:"508"`
+	ScoreDiff     float32  `json:"score_diff,omitempty" example:"2.5"`
+	InternalError *string  `json:"internal_error,omitempty"`
 }
 
 func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *testResult {
 	complete_solution_source, fixed_tests := c.storage.GetTaskTestData(task.Id)
 
-	runner_data := runnerData{
-		UserSolution: solutionData{
+	runner_data := models.RunnerData{
+		Id: solution.Id,
+		UserSolution: models.SolutionData{
 			Text:      solution.Source,
 			Extention: solution.Extention,
 		},
-		CompleteSolution: solutionData{
+		CompleteSolution: models.SolutionData{
 			Text:      complete_solution_source,
 			Extention: task.Extention,
 		},
-		Tests:   solutionTests{},
+		Tests:   models.SolutionTests{},
 		Verbose: solution.IsVerbose,
 	}
 	if len(solution.TestCases) > 0 {
@@ -250,15 +203,14 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	if len(rand_tests) > 0 {
 		runner_data.Tests.Random = rand_tests
 	}
-	runner_data_json, err := json.Marshal(runner_data)
-	utils.Err(err)
 
-	test_result_json, err := c.storage.MakeJob(&runner_data_json)
-	utils.Err(err)
-
-	var test_result testResult
-	err = json.Unmarshal(*test_result_json, &test_result)
-	utils.Err(err)
+	test_result_raw := c.workers.DoJob(&runner_data)
+	if test_result_raw == nil {
+		panic(fmt.Sprintf("Internal error while processing solution %d", runner_data.Id))
+	}
+	test_result := testResult{
+		TestResult: *test_result_raw,
+	}
 	if test_result.ErrorData == nil {
 		test_result.Error = NoError
 	} else {

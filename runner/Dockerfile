@@ -15,14 +15,10 @@ RUN pip3 install -r requirements.txt
 # Copy files and create directory
 USER root
 RUN apk update && apk add gcc musl-dev
-RUN mkdir $DIRPATH/uploads && chmod 777 $DIRPATH/uploads
-COPY . .
-
-ENV FPC_VERSION="3.2.2" \
-    FPC_ARCH="x86_64-linux"
-
 # Free Pascal installation
 # Taken from https://github.com/Docker-Hub-frolvlad/docker-alpine-fpc/blob/master/Dockerfile
+ENV FPC_VERSION="3.2.2" \
+    FPC_ARCH="x86_64-linux"
 RUN apk add --no-cache binutils && \
     cd /tmp && \
     wget "https://downloads.sourceforge.net/project/freepascal/Linux/${FPC_VERSION}/fpc-${FPC_VERSION}.${FPC_ARCH}.tar" -O fpc.tar && \
@@ -42,7 +38,8 @@ RUN apk add --no-cache binutils && \
         -not -name 'rtl-objpas' \
         -exec rm -r {} \; && \
         rm -r "/lib64" "/tmp/"*
-
 # Start
+RUN mkdir $DIRPATH/uploads && chmod 777 $DIRPATH/uploads
+COPY . .
 USER $USER
 CMD ["python3", "-u", "main.py"]

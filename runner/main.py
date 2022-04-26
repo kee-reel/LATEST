@@ -102,6 +102,7 @@ while True:
             raise Exception(err)
         logging.debug(f'Received solution: {solution}')
         test_result = run_test(solution)
+        test_result['id'] = solution['id']
         logging.debug(f'Test result: {test_result}')
         err = test_result_schema.validate(test_result)
         if err:
@@ -109,6 +110,7 @@ while True:
         conn.lpush(tests, json.dumps(test_result))
     except Exception as e:
         conn.lpush(tests, json.dumps({
+            'id': solution['id'],
             'internal_error': str(e)
         }))
 

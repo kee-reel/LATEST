@@ -25,6 +25,7 @@ services:
       - ${WEB_PORT}:${WEB_PORT}
     links:
       - db
+      - redis
       - runner
     depends_on:
       - db
@@ -37,6 +38,8 @@ services:
 
   runner:
     restart: always
+    links:
+      - redis
     depends_on:
       - redis
     networks:

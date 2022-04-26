@@ -16,27 +16,21 @@ type Storage struct {
 	token_expiration map[TokenType]time.Duration
 }
 
+func CreateRedisConn() redis.Conn {
+	conn, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", utils.Env("REDIS_HOST"), utils.Env("REDIS_PORT")))
+	utils.Err(err)
+	return conn
+}
+
 func NewStorage() *Storage {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		utils.Env("DB_HOST"), utils.Env("DB_PORT"), utils.Env("POSTGRES_USER"), utils.Env("POSTGRES_PASSWORD"), utils.Env("POSTGRES_DB")))
 	utils.Err(err)
 
-	kv, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", utils.Env("REDIS_HOST"), utils.Env("REDIS_PORT")))
-	utils.Err(err)
-	return &Storage{
+	storage := Storage{
 		db,
-		kv,
+		CreateRedisConn(),
 		makeTokenDurationMap(),
 	}
-}
-
-func (s *Storage) MakeJob(data *[]byte) (*[]byte, error) {
-	_, err := s.kv.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST_PREFIX"), *data)
-	utils.Err(err)
-	test_result, err := redis.ByteSlices(s.kv.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 30))
-	utils.Err(err)
-	if len(test_result) != 2 {
-		panic("List poped more than one element")
-	}
-	return &(test_result[1]), err
+	return &storage
 }

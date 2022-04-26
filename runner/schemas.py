@@ -12,6 +12,7 @@ class SolutionTests(Schema):
     random = fields.Str()
 
 class Solution(Schema):
+    id = fields.Int()
     user_solution = fields.Nested(SolutionData)
     complete_solution = fields.Nested(SolutionData)
     tests = fields.Nested(SolutionTests)
@@ -53,6 +54,7 @@ class TestErrData(Schema):
             raise ValidationError(f'Malformed error data: {data}')
 
 class TestResult(Schema):
+    id = fields.Int()
     error_data = fields.Nested(TestErrData)
     result = fields.List(fields.Nested(TestVerbose))
 

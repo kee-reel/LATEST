@@ -8,5 +8,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main .
 
 FROM scratch
 COPY --from=build /app/main /bin/app
-EXPOSE 1234
 CMD ["/bin/app"]

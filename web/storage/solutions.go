@@ -5,7 +5,24 @@ import (
 	"late/utils"
 )
 
-func (s *Storage) SaveSolution(solution *models.Solution, percent float32) float32 {
+func (s *Storage) SaveSolution(solution *models.Solution) int64 {
+	var solution_id int64
+	query, err := s.db.Prepare(`INSERT INTO solutions(user_id, task_id, completion) 
+		VALUES($1, $2, 0) RETURNING id`)
+	utils.Err(err)
+	err = query.QueryRow(solution.UserId, solution.Task.Id).Scan(&solution_id)
+	utils.Err(err)
+
+	query, err = s.db.Prepare(`INSERT INTO 
+		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
+		ON CONFLICT (user_id, task_id) DO UPDATE SET source_code = $3`)
+	utils.Err(err)
+	_, err = query.Exec(solution.UserId, solution.Task.Id, solution.Source)
+	utils.Err(err)
+	return solution_id
+}
+
+func (s *Storage) UpdateSolutionScore(solution *models.Solution, percent float32) float32 {
 	query, err := s.db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
 		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
@@ -22,18 +39,6 @@ func (s *Storage) SaveSolution(solution *models.Solution, percent float32) float
 		_, err = query.Exec(solution.UserId, solution.Task.Project.Id, score_diff)
 		utils.Err(err)
 	}
-
-	query, err = s.db.Prepare(`INSERT INTO solutions(user_id, task_id, completion) VALUES($1, $2, $3)`)
-	utils.Err(err)
-	_, err = query.Exec(solution.UserId, solution.Task.Id, percent)
-	utils.Err(err)
-
-	query, err = s.db.Prepare(`INSERT INTO 
-		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
-		ON CONFLICT (user_id, task_id) DO UPDATE SET source_code = $3`)
-	utils.Err(err)
-	_, err = query.Exec(solution.UserId, solution.Task.Id, solution.Source)
-	utils.Err(err)
 	return score_diff
 }
 

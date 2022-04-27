@@ -1,10 +1,14 @@
-# Language Agnostic TEsting
+# Language Agnostic TESTing
 
-Web service that allows to run tests for programms written in these languages:
+Main goal of this project is to provide web-service that allows teachers to create programming courses with built-in interactive excercises.
+
+This web-service supports tests for programs written in these languages:
 
 * C
+* C++
 * Python
-* Planned: Go, C++, C#, Pascal
+* Pascal
+* Planned: Go, C#
 
 # Contents
 - [How it works](#how-it-works)

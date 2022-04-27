@@ -14,9 +14,10 @@ import (
 )
 
 type Workers struct {
-	kv          redis.Conn
-	jobs        sync.Map
-	job_timeout time.Duration
+	runner_result_queue redis.Conn
+	runner_job_queue    redis.Conn
+	jobs                sync.Map
+	job_timeout         time.Duration
 }
 
 func NewWorkers() *Workers {
@@ -24,6 +25,7 @@ func NewWorkers() *Workers {
 	utils.Err(err)
 
 	w := Workers{
+		storage.CreateRedisConn(),
 		storage.CreateRedisConn(),
 		sync.Map{},
 		job_timeout,
@@ -34,7 +36,7 @@ func NewWorkers() *Workers {
 
 func (w *Workers) processJobs() {
 	for {
-		test_result_json, err := redis.ByteSlices(w.kv.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 0))
+		test_result_json, err := redis.ByteSlices(w.runner_result_queue.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 0))
 		if err != nil {
 			log.Printf("Got redis error while processing jobs: %s, waiting", err)
 			time.Sleep(time.Second * 15)
@@ -62,7 +64,7 @@ func (w *Workers) DoJob(runner_data *models.RunnerData) *models.TestResult {
 
 	job_ch := make(chan *models.TestResult)
 	w.jobs.Store(runner_data.Id, &job_ch)
-	_, err = w.kv.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST_PREFIX"), runner_data_json)
+	_, err = w.runner_job_queue.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST_PREFIX"), runner_data_json)
 	utils.Err(err)
 
 	select {

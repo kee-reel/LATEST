@@ -44,7 +44,6 @@ def build_solution(solution):
     else:
         compiled_solution = solution
 
-    print(TRIGGERS[ext])
     out, err = execute(['grep', '-oaE', TRIGGERS[ext], compiled_solution])
     if out or err:
         return None, {

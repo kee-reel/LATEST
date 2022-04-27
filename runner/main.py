@@ -5,7 +5,7 @@ import json
 import time
 import random
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 import redis
 
@@ -95,20 +95,18 @@ test_result_schema = TestResult()
 while True:
     try:
         _, solution_json = conn.brpop(solutions)
-        logging.debug(f'Received solution json: {solution_json}')
         solution = json.loads(solution_json)
         err = solution_schema.validate(solution)
         if err:
             raise Exception(err)
-        logging.debug(f'Received solution: {solution}')
         test_result = run_test(solution)
         test_result['id'] = solution['id']
-        logging.debug(f'Test result: {test_result}')
         err = test_result_schema.validate(test_result)
         if err:
             raise Exception(err)
         conn.lpush(tests, json.dumps(test_result))
     except Exception as e:
+        logging.error(f'Exception for solution: {solution_json} - {e}')
         conn.lpush(tests, json.dumps({
             'id': solution['id'],
             'internal_error': str(e)

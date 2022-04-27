@@ -50,6 +50,7 @@ print(s) # Output addition result
 # Requirements
 
 * docker-compose
+* Bash
 * x86\_64 or aarch64 (RPi 4) compatiable architecture
 
 # Quick start
@@ -149,7 +150,7 @@ I have [repository](https://github.com/kee-reel/latest-sample-project) with exam
 You can easily start web service with docker-compose:
 
 ```bash
-./run.sh up -d # Run all containers in detached mode
+./run.sh up -d
 ```
 
 After that you can manage web server via **manage** container. To open interactive bash shell inside **manage**:
@@ -167,7 +168,7 @@ sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
 (inside **manage**) Tasks are ready, lets insert them into **db**:
 
 ```bash
-python3 fill_db.py # Fill database with sample project
+python3 fill_db.py
 ```
 
 (inside **manage**) All set, now we can try to send requests to web server by yourself or test server with script:

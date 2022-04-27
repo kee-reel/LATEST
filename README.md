@@ -50,22 +50,20 @@ print(s) # Output addition result
 # Requirements
 
 * docker-compose
+* x86\_64 or aarch64 (RPi 4) compatiable architecture
 
 # Quick start
 
-```bash
-# Run all containers in detached mode for dev environment
-./run-docker-compose.sh dev up -d
+Copy `.env.example` file to `.env` (and modify default passwords if needed):
 
-# Get id of "manage" container and open interactive bash shell inside of it
-sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
+```bash
+cp .env.example .env
 ```
 
-Inside opened bash shell:
+Build containers and run service test:
 
 ```bash
-# Fill database with sample project, create user and run all available requests
-./test_service.sh
+./restart-and-test.sh
 ```
 
 # Architecture
@@ -146,13 +144,13 @@ I have [repository](https://github.com/kee-reel/latest-sample-project) with exam
 
 # Service start
 
+> Here I will explain all stuff that happens under the hood of `restart-and-test.sh`
+
 You can easily start web service with docker-compose:
 
 ```bash
-./run-docker-compose.sh dev up -d # Run all containers in detached mode for dev environment
+./run.sh up -d # Run all containers in detached mode
 ```
-
-> You can check file [/manage/test\_service.sh](/manage/test_service.sh) - it sets up environment and makes sample requests.
 
 After that you can manage web server via **manage** container. To open interactive bash shell inside **manage**:
 
@@ -160,19 +158,19 @@ After that you can manage web server via **manage** container. To open interacti
 sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
 ```
 
-Then you need to fetch tasks that you want to insert in **db**:
+(inside **manage**) Then you need to fetch tasks that you want to insert in **db**:
 
 ```bash
 ./fetch_tasks.sh
 ```
 
-Tasks are ready, lets insert them into **db**:
+(inside **manage**) Tasks are ready, lets insert them into **db**:
 
 ```bash
 python3 fill_db.py # Fill database with sample project
 ```
 
-All set, now we can try to send requests to web server by yourself or test server with script:
+(inside **manage**) All set, now we can try to send requests to web server by yourself or test server with script:
 
 ```bash
 ./test_service.sh

@@ -56,6 +56,7 @@ type User struct {
 }
 
 type Solution struct {
+	Id                   int64
 	Task                 *Task
 	Source               string
 	Path                 string
@@ -69,3 +70,59 @@ type Solution struct {
 }
 
 type Leaderboard map[string]float32
+
+type SolutionVerboseResult struct {
+	Params string `example:"2;1;7;'"`
+	Result string `example:"8"`
+}
+type SolutionBuildError struct {
+	Msg string `json:"msg,omitempty" example:"Build fail message"`
+}
+type SolutionTimeoutError struct {
+	Params string  `json:"params,omitempty" example:"2;1;7'"`
+	Time   float32 `json:"time,omitempty" example:"1.5"`
+}
+type SolutionRuntimeError struct {
+	Params string `json:"params,omitempty" example:"2;1;7'"`
+	Msg    string `json:"msg,omitempty" example:"Build fail message"`
+}
+type SolutionTestError struct {
+	Params   string `json:"params,omitempty" example:"2;1;7'"`
+	Expected string `json:"expected,omitempty" example:"8"`
+	Result   string `json:"result,omitempty" example:"1"`
+}
+
+type SolutionErrorData struct {
+	Build       *SolutionBuildError   `json:"build,omitempty"`
+	Timeout     *SolutionTimeoutError `json:"timeout,omitempty"`
+	Runtime     *SolutionRuntimeError `json:"runtime,omitempty"`
+	Test        *SolutionTestError    `json:"test,omitempty"`
+	TestsPassed int                   `json:"tests_passed" example:"7"`
+	TestsTotal  int                   `json:"tests_total" example:"10"`
+}
+
+type TestResult struct {
+	Id            int64                    `json:"id,omitempty"`
+	ErrorData     *SolutionErrorData       `json:"error_data,omitempty"`
+	Result        *[]SolutionVerboseResult `json:"result,omitempty"`
+	InternalError *string                  `json:"internal_error,omitempty"`
+}
+
+type SolutionData struct {
+	Text      string `json:"text"`
+	Extention string `json:"extention"`
+}
+
+type SolutionTests struct {
+	User   string `json:"user,omitempty"`
+	Fixed  string `json:"fixed,omitempty"`
+	Random string `json:"random,omitempty"`
+}
+
+type RunnerData struct {
+	Id               int64         `json:"id,omitempty"`
+	UserSolution     SolutionData  `json:"user_solution"`
+	CompleteSolution SolutionData  `json:"complete_solution"`
+	Tests            SolutionTests `json:"tests"`
+	Verbose          bool          `json:"verbose"`
+}

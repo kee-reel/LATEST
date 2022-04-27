@@ -1,16 +1,13 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"late/models"
 	"late/utils"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -53,36 +50,13 @@ func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
 
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
-type APISolutionVerboseResult struct {
-	Params string `example:"2;1;7;'"`
-	Result string `example:"8"`
-}
-type APISolutionErrorData struct {
-	Msg         string `json:"msg,omitempty" example:"Build fail message"`
-	Params      string `json:"params,omitempty" example:"2;1;7'"`
-	Expected    string `json:"expected,omitempty" example:"8"`
-	Result      string `json:"result,omitempty" example:"1"`
-	TestsPassed int    `json:"tests_passed" example:"7"`
-	TestsTotal  int    `json:"tests_total" example:"10"`
-}
-type SolutionErrorData struct {
-	APISolutionErrorData
-	Error *string `json:"error,omitempty"`
-}
 type APITestSuccessResult struct {
-	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
+	Result    *[]models.SolutionVerboseResult `json:"result,omitempty"`
+	ScoreDiff float32                         `json:"score_diff, omitempty" example:"2.5"`
 }
 type APITestFailResult struct {
-	Error     WebError              `json:"error,omitempty" example:"508"`
-	ErrorData *APISolutionErrorData `json:"error_data,omitempty"`
-	ScoreDiff float32               `json:"score_diff, omitempty" example:"2.5"`
-}
-type TestResult struct {
-	Error     WebError                    `json:"error,omitempty" example:"508"`
-	ErrorData *SolutionErrorData          `json:"error_data,omitempty"`
-	Result    *[]APISolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff float32                     `json:"score_diff, omitempty" example:"2.5"`
+	Error     WebError                  `json:"error,omitempty" example:"508"`
+	ErrorData *models.SolutionErrorData `json:"error_data,omitempty"`
 }
 
 // @Tags solution
@@ -113,13 +87,14 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
+	solution.Id = c.storage.SaveSolution(solution)
 	test_result := c.buildAndTest(solution.Task, solution)
 	percent := float32(1)
 	if test_result.ErrorData != nil {
 		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	test_result.ScoreDiff = c.storage.SaveSolution(solution, percent)
+	test_result.ScoreDiff = c.storage.UpdateSolutionScore(solution, percent)
 	return test_result, test_result.Error
 }
 
@@ -195,49 +170,54 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	return &solution, NoError
 }
 
-func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *TestResult {
+type testResult struct {
+	models.TestResult
+	Error         WebError `json:"error,omitempty" example:"508"`
+	ScoreDiff     float32  `json:"score_diff,omitempty" example:"2.5"`
+	InternalError *string  `json:"internal_error,omitempty"`
+}
+
+func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *testResult {
 	complete_solution_source, fixed_tests := c.storage.GetTaskTestData(task.Id)
-	random_tests := generateTests(task)
 
-	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
-	verbose_text := "false"
-	if solution.IsVerbose {
-		verbose_text = "true"
+	runner_data := models.RunnerData{
+		Id: solution.Id,
+		UserSolution: models.SolutionData{
+			Text:      solution.Source,
+			Extention: solution.Extention,
+		},
+		CompleteSolution: models.SolutionData{
+			Text:      complete_solution_source,
+			Extention: task.Extention,
+		},
+		Tests:   models.SolutionTests{},
+		Verbose: solution.IsVerbose,
 	}
-	response, err := http.PostForm(runner_url, url.Values{
-		"solution":              {solution.Source},
-		"complete_solution":     {complete_solution_source},
-		"user_tests":            {solution.TestCases},
-		"fixed_tests":           {fixed_tests},
-		"random_tests":          {random_tests},
-		"solution_ext":          {solution.Extention},
-		"complete_solution_ext": {task.Extention},
-		"verbose":               {verbose_text},
-	})
-	utils.Err(err)
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	utils.Err(err)
-	log.Println(string(body))
+	if len(solution.TestCases) > 0 {
+		runner_data.Tests.User = solution.TestCases
+	}
+	if len(fixed_tests) > 0 {
+		runner_data.Tests.Fixed = fixed_tests
+	}
+	rand_tests := generateTests(task)
+	if len(rand_tests) > 0 {
+		runner_data.Tests.Random = rand_tests
+	}
 
-	var test_result TestResult
-	err = json.Unmarshal(body, &test_result)
-	utils.Err(err)
-
-	if test_result.ErrorData != nil {
-		switch *test_result.ErrorData.Error {
-		case "build":
-			test_result.Error = SolutionBuildFail
-		case "timeout":
-			test_result.Error = SolutionTimeoutFail
-		case "runtime":
-			test_result.Error = SolutionRuntimeFail
-		case "test":
-			test_result.Error = SolutionTestFail
-		default:
-			panic("Unknown runner error")
-		}
-		test_result.ErrorData.Error = nil
+	test_result_raw := c.workers.DoJob(&runner_data)
+	if test_result_raw == nil {
+		panic(fmt.Sprintf("Internal error while processing solution %d", runner_data.Id))
+	}
+	test_result := testResult{
+		TestResult: *test_result_raw,
+	}
+	if test_result.ErrorData == nil {
+		test_result.Error = NoError
+	} else {
+		test_result.Error = SolutionTestFail
+	}
+	if test_result.InternalError != nil {
+		panic(*test_result.InternalError)
 	}
 	return &test_result
 }

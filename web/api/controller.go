@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"late/storage"
 	"late/utils"
+	"late/workers"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -12,11 +13,13 @@ import (
 
 type Controller struct {
 	storage *storage.Storage
+	workers *workers.Workers
 }
 
 func NewController() *Controller {
 	return &Controller{
 		storage.NewStorage(),
+		workers.NewWorkers(),
 	}
 }
 

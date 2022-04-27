@@ -29,7 +29,6 @@ def prepare_str(s):
 
 
 def execute(cmd, params):
-    print(cmd, params)
     try:
         p = subprocess.run(
                 cmd, input=params, capture_output=True, 
@@ -45,6 +44,7 @@ def run(sol, comp_sol, params=None):
     except subprocess.TimeoutExpired:
         return {
             'error': ERROR.TIMEOUT,
+            'time': RUN_TIMEOUT,
         }
     if err:
         return {

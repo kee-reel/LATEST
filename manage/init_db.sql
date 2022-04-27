@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS solution_templates (
 	source_code TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS solutions(
+	id SERIAL PRIMARY KEY,
 	user_id INTEGER NOT NULL,
 	task_id INTEGER NOT NULL,
 	completion FLOAT NOT NULL,

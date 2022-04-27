@@ -11,4 +11,4 @@ services:
     build:
       context: runner
       args:
-        IMAGE: ubuntu:latest
+        IMAGE: python:3.8-alpine

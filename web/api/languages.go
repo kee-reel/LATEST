@@ -1,10 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"late/utils"
 	"net/http"
 	"sort"
 )
@@ -29,20 +25,23 @@ func (c *Controller) GetLanguages(r *http.Request) (interface{}, WebError) {
 }
 
 func (c *Controller) getSupportedLanguages() *[]string {
-	runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
-	response, err := http.Get(runner_url)
-	utils.Err(err)
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	utils.Err(err)
+	return &[]string{"c", "cpp", "pas", "py"}
+	/*
+		runner_url := fmt.Sprintf("http://%s:%s", utils.Env("RUNNER_HOST"), utils.Env("RUNNER_PORT"))
+		response, err := http.Get(runner_url)
+		utils.Err(err)
+		defer response.Body.Close()
+		body, err := ioutil.ReadAll(response.Body)
+		utils.Err(err)
 
-	var result map[string][]string
-	err = json.Unmarshal([]byte(body), &result)
-	utils.Err(err)
+		var result map[string][]string
+		err = json.Unmarshal([]byte(body), &result)
+		utils.Err(err)
 
-	langs := result["langs"]
-	sort.Strings(langs)
-	return &langs
+		langs := result["langs"]
+		sort.Strings(langs)
+		return &langs
+	*/
 }
 
 func (c *Controller) isLanguageSupported(lang string) bool {

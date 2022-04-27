@@ -5,7 +5,6 @@ import (
 	"late/models"
 	"late/storage"
 	"late/utils"
-	"log"
 	"net/http"
 )
 
@@ -36,7 +35,6 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 
-	log.Println(email, pass)
 	user, user_exists := c.storage.AuthenticateUser(email, pass)
 	if !user_exists {
 		return nil, EmailUnknown

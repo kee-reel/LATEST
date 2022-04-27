@@ -1,29 +1,45 @@
 ARG IMAGE
 FROM $IMAGE
-
 USER root
-# Some images doesn't create docker user
-RUN if [ ! -e /home/docker ]; then useradd -m docker; fi
-ENV DIRPATH /home/docker/app
+
+ENV USER appuser
+RUN addgroup -S appgroup && adduser -S $USER -G appgroup
+
+ENV DIRPATH /home/$USER/app
 WORKDIR $DIRPATH
-
-COPY requirements.txt .
-
-ENV TZ=Etc/UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN apt update #&& apt upgrade -y
-RUN apt install -y fpc 
-RUN apt install -y python3
-RUN apt install -y pip
-
-USER docker
-ENV PATH $PATH:/home/docker/.local/bin
-RUN python3 -m pip install --upgrade pip
-RUN pip3 install -r requirements.txt
-
+# Install requirements
 USER root
-COPY . .
+COPY requirements.txt .
+USER $USER
+RUN pip3 install -r requirements.txt
+# Copy files and create directory
+USER root
+RUN apk update && apk add gcc musl-dev
+# Free Pascal installation
+# Taken from https://github.com/Docker-Hub-frolvlad/docker-alpine-fpc/blob/master/Dockerfile
+ENV FPC_VERSION="3.2.2" \
+    FPC_ARCH="x86_64-linux"
+RUN apk add --no-cache binutils && \
+    cd /tmp && \
+    wget "https://downloads.sourceforge.net/project/freepascal/Linux/${FPC_VERSION}/fpc-${FPC_VERSION}.${FPC_ARCH}.tar" -O fpc.tar && \
+    tar xf "fpc.tar" && \
+    cd "fpc-${FPC_VERSION}.${FPC_ARCH}" && \
+    rm demo* doc* && \
+    \
+# Workaround musl vs glibc entrypoint for `fpcmkcfg`
+    mkdir /lib64 && \
+        ln -s /lib/ld-musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 && \
+        \
+        echo -e '/usr\nN\nN\nN\n' | sh ./install.sh && \
+        find "/usr/lib/fpc/${FPC_VERSION}/units/${FPC_ARCH}/" -type d -mindepth 1 -maxdepth 1 \
+        -not -name 'fcl-base' \
+        -not -name 'rtl' \
+        -not -name 'rtl-console' \
+        -not -name 'rtl-objpas' \
+        -exec rm -r {} \; && \
+        rm -r "/lib64" "/tmp/"*
+# Start
 RUN mkdir $DIRPATH/uploads && chmod 777 $DIRPATH/uploads
-
-USER docker
-CMD ["python3", "main.py"]
+COPY . .
+USER $USER
+CMD ["python3", "-u", "main.py"]

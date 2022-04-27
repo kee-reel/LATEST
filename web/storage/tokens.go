@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"late/security"
 	"late/utils"
-	"log"
 	"strconv"
 	"strings"
 
@@ -72,7 +71,6 @@ func (s *Storage) CreateToken(token_type TokenType, email string, ip string, arg
 		}
 	}
 
-	log.Println(token_type)
 	var extra_data *map[string]string
 	switch token_type {
 	case RegisterToken:
@@ -83,7 +81,6 @@ func (s *Storage) CreateToken(token_type TokenType, email string, ip string, arg
 			"name": args[0],
 			"pass": security.HashPassword(args[1]),
 		}
-		log.Println(*extra_data)
 	case RestoreToken:
 		if len(args) != 1 {
 			panic("Wrong restore args")
@@ -103,11 +100,9 @@ func (s *Storage) ApplyToken(token_type TokenType, token string, ip string) (*in
 		return nil, token_err
 	}
 
-	log.Println(token_type)
 	user_id := s.GetUserIdByEmail(token_data.Email)
 	switch token_type {
 	case RegisterToken:
-		log.Println(*token_data.Extra)
 		user_id_temp := s.AddUser(token_data.Email, (*token_data.Extra)["pass"], (*token_data.Extra)["name"])
 		user_id = &user_id_temp
 		_, token_err = s.CreateToken(AccessToken, token_data.Email, token_data.IP)

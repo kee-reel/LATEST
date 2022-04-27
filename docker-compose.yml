@@ -18,32 +18,38 @@ services:
     restart: always
     networks:
       - internet
+      - no-internet
 
   web:
     ports: 
       - ${WEB_PORT}:${WEB_PORT}
     links:
       - db
+      - redis
       - runner
     depends_on:
       - db
       - redis
-      - runner
     networks:
       - internet
-      - no-internet
-    environment:
-      - RUNNER_HOST=runner
     env_file: .env
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
 
   runner:
-    ports:
-      - ${RUNNER_PORT}:${RUNNER_PORT}
+    restart: always
+    links:
+      - redis
+    depends_on:
+      - redis
     networks:
       - no-internet
-    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_SOLUTIONS_LIST_PREFIX=${REDIS_SOLUTIONS_LIST_PREFIX}
+      - REDIS_TESTS_LIST=${REDIS_TESTS_LIST}
 
   manage:
     build: ./manage

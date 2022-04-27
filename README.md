@@ -30,6 +30,8 @@ This testing system is "language agnostic" because:
 
 * All input parameters is passed via standard input
 * Result is received in specific format via standard output
+* Teacher provides task solution only in one language
+* Standard output of all students' solutions will be compared against teacher's solution
 
 This is example of program for this testing system:
 
@@ -56,7 +58,7 @@ print(s) # Output addition result
 ./run-docker-compose.sh dev up -d
 
 # Get id of "manage" container and open interactive bash shell inside of it
-sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
+sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
 ```
 
 Inside opened bash shell:
@@ -71,20 +73,21 @@ Inside opened bash shell:
 Service have 4 containers:
 
 * 🕸 web - web service written in Go, that:
-	* Receives requests from clients
-	* Communicates with **db**
-	* Sends solutions into runner container
-	* Responds with test result
+	* Receives request from clients
+	* Authenticates client using access token stored inside **redis**
+	* Manages user and task related data stored inside **db**
+	* Puts solution and takes results from **redis** queue 
+	* Responds with test result to client
 * 🏃 runner - internal web service written in Python, that:
-	* Receives solutions from **web** service
-	* Builds solutions (if it's not written with interpreted language)
-	* Tests solutions
-	* Responds with test result to **web** service
-* 🏗 manage - container with Bash and Python scripts, that could be used for:
-	* Filling database with tests
-	* Creating users
-	* Giving tokens to users, that's required to send any solutions for testing
+	* Takes solution from **redis** job queue
+	* Builds solution
+	* Tests solution
+	* Sends test result to **redis** result queue
+* 🏗 manage - container with Bash and Python scripts, that is used for:
+	* Filling **db** with tasks
+	* Testing **web** service
 * 🗄 db - PostgreSQL container (postgres:latest)
+* 📋 redis - Redis container (redis:alpine)
 
 # Tests structure
 
@@ -139,7 +142,7 @@ Apart from `desc.json` file, task folder also must contain other files:
 * `fixed_tests.txt` - file with tests for solution. It contains values that will be passed into both reference and incoming solutions
 * `template.*` - file with template for solution. Contents of this file could be used on UI side, to provide user with sample code for easy start
 
-I have [repository](https://github.com/kee-reel/late-sample-project) with example project - you can use it for for reference.
+I have [repository](https://github.com/kee-reel/latest-sample-project) with example project - you can use it for for reference.
 
 # Service start
 
@@ -154,25 +157,26 @@ You can easily start web service with docker-compose:
 After that you can manage web server via **manage** container. To open interactive bash shell inside **manage**:
 
 ```bash
-# Get id of manage container and open bash inside "manage" of it
-sudo docker exec -it $(sudo docker ps | grep late_manage | cut -d' ' -f1) bash
+sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
 ```
 
-Then you need to prepare tests - you can use mine for this time:
+Then you need to fetch tasks that you want to insert in **db**:
 
 ```bash
-cd tests # Go inside (tests folder is created during container build process)
-git clone https://github.com/kee-reel/late-sample-project # Clone sample project
-cd .. # Go back
+./fetch_tasks.sh
 ```
 
-Tests are ready, lets insert them into database:
+Tasks are ready, lets insert them into **db**:
 
 ```bash
 python3 fill_db.py # Fill database with sample project
 ```
 
-All set, now we can try to send requests to web server.
+All set, now we can try to send requests to web server by yourself or test server with script:
+
+```bash
+./test_service.sh
+```
 
 # Requests
 

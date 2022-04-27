@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"late/models"
 	"late/security"
-	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"net"
 	"net/http"
@@ -81,11 +81,11 @@ func (c *Controller) getToken(r *http.Request) (*models.Token, WebError) {
 	}
 
 	ip := getIP(r)
-	token_data, token_err := c.storage.GetTokenData(storage.AccessToken, token, ip)
+	token_data, token_err := c.tokens.GetTokenData(tokens.AccessToken, token, ip)
 	switch token_err {
-	case storage.TokenUnknown:
+	case tokens.TokenUnknown:
 		return nil, TokenUnknown
-	case storage.WrongIP:
+	case tokens.WrongIP:
 		return nil, TokenBoundToOtherIP
 	}
 	return &models.Token{
@@ -96,19 +96,19 @@ func (c *Controller) getToken(r *http.Request) (*models.Token, WebError) {
 	}, NoError
 }
 
-func translateTokenErr(token_err storage.TokenError) WebError {
+func translateTokenErr(token_err tokens.TokenError) WebError {
 	switch token_err {
-	case storage.NoError:
+	case tokens.NoError:
 		return NoError
-	case storage.TokenUnknown:
+	case tokens.TokenUnknown:
 		return TokenUnknown
-	case storage.TokenExists:
+	case tokens.TokenExists:
 		return TokenExists
-	case storage.EmailTaken:
+	case tokens.EmailTaken:
 		return EmailTaken
-	case storage.EmailUnknown:
+	case tokens.EmailUnknown:
 		return EmailUnknown
-	case storage.WrongIP:
+	case tokens.WrongIP:
 		return TokenBoundToOtherIP
 	}
 	panic(fmt.Sprintf("Error %s not handled", token_err))

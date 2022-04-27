@@ -1,4 +1,4 @@
-package storage
+package tokens
 
 import (
 	"encoding/json"
@@ -26,7 +26,7 @@ func makeKey(token_type TokenType, email string, ip string) string {
 	return fmt.Sprintf("%d:%s:%s", token_type, email, ip)
 }
 
-func (s *Storage) addToken(token_type TokenType, email string, ip string, extra_data *map[string]string) string {
+func (t *Tokens) addToken(token_type TokenType, email string, ip string, extra_data *map[string]string) string {
 	token_data := TokenData{
 		IP:    ip,
 		Email: email,
@@ -36,11 +36,11 @@ func (s *Storage) addToken(token_type TokenType, email string, ip string, extra_
 	utils.Err(err)
 	key := makeKey(token_type, email, ip)
 	token := security.GenerateToken()
-	s.kv.Send("MULTI")
-	s.kv.Send("SET", fmt.Sprintf("%d:%s", token_type, token),
-		json_data, "EX", s.token_expiration[token_type].Seconds())
-	s.kv.Send("SET", key, token, "EX", s.token_expiration[token_type].Seconds())
-	_, err = s.kv.Do("EXEC")
+	t.kv.Send("MULTI")
+	t.kv.Send("SET", fmt.Sprintf("%d:%s", token_type, token),
+		json_data, "EX", t.token_expiration[token_type].Seconds())
+	t.kv.Send("SET", key, token, "EX", t.token_expiration[token_type].Seconds())
+	_, err = t.kv.Do("EXEC")
 	utils.Err(err)
 	return token
 }

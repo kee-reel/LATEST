@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"net/http"
 )
@@ -22,7 +22,7 @@ func (c *Controller) GetRegistration(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, token_err := c.storage.ApplyToken(storage.RegisterToken, token, ip)
+	user_id, token_err := c.tokens.ApplyToken(tokens.RegisterToken, token, ip)
 	web_err = translateTokenErr(token_err)
 
 	var resp string
@@ -76,7 +76,7 @@ func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, token_err := c.storage.CreateToken(storage.RegisterToken, email, ip, name, pass)
+	token, token_err := c.tokens.CreateToken(tokens.RegisterToken, email, ip, name, pass)
 	web_err = translateTokenErr(token_err)
 	if web_err != NoError {
 		return nil, web_err
@@ -90,7 +90,7 @@ func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
 		return nil, NoError
 	}
 
-	_, token_err = c.storage.ApplyToken(storage.RegisterToken, *token, ip)
+	_, token_err = c.tokens.ApplyToken(tokens.RegisterToken, *token, ip)
 	web_err = translateTokenErr(token_err)
 	return nil, web_err
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"late/workers"
 	"log"
@@ -14,12 +15,15 @@ import (
 type Controller struct {
 	storage *storage.Storage
 	workers *workers.Workers
+	tokens  *tokens.Tokens
 }
 
 func NewController() *Controller {
+	s := storage.NewStorage()
 	return &Controller{
-		storage.NewStorage(),
+		s,
 		workers.NewWorkers(),
+		tokens.NewTokens(s),
 	}
 }
 

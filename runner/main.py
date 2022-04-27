@@ -106,7 +106,7 @@ while True:
             raise Exception(err)
         conn.lpush(tests, json.dumps(test_result))
     except Exception as e:
-        logging.error(f'Exception for solution: {solution_json} - {e}')
+        logging.error(f'Exception for solution: {solution_json if solution_json else None} - {e}')
         conn.lpush(tests, json.dumps({
             'id': solution['id'],
             'internal_error': str(e)

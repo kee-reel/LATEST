@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	"late/models"
-	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"net/http"
 )
@@ -44,9 +44,9 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token := c.storage.GetToken(storage.AccessToken, email, ip)
+	token := c.tokens.GetToken(tokens.AccessToken, email, ip)
 	if token == nil {
-		verification_token, token_err := c.storage.CreateToken(storage.VerifyToken, email, ip)
+		verification_token, token_err := c.tokens.CreateToken(tokens.VerifyToken, email, ip)
 		web_err = translateTokenErr(token_err)
 		if web_err != NoError {
 			return nil, web_err
@@ -60,13 +60,13 @@ func (c *Controller) GetLogin(r *http.Request) (interface{}, WebError) {
 			return nil, TokenNotVerified
 		}
 
-		_, token_err = c.storage.ApplyToken(storage.VerifyToken, *verification_token, ip)
+		_, token_err = c.tokens.ApplyToken(tokens.VerifyToken, *verification_token, ip)
 		web_err = translateTokenErr(token_err)
 		if web_err != NoError {
 			return nil, web_err
 		}
 
-		token = c.storage.GetToken(storage.AccessToken, email, ip)
+		token = c.tokens.GetToken(tokens.AccessToken, email, ip)
 		if token == nil {
 			panic("Auto verify failed")
 		}

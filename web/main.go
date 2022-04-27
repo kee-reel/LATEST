@@ -1,7 +1,7 @@
 // @title LATE API
 // @version 0.1
-// @description Web service that allows to run tests for programms written in almost any language.
-// @description Project page: https://github.com/kee-reel/LATE
+// @description Main goal of this project is to provide web-service that allows teachers to create programming courses with built-in interactive excercises.
+// @description Project page: https://github.com/kee-reel/LATEST
 
 // @contact.name Kee Reel
 // @contact.url https://kee-reel.com/about-ru

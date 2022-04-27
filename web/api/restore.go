@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"net/http"
 )
@@ -21,7 +21,7 @@ func (c *Controller) GetRestore(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, token_err := c.storage.ApplyToken(storage.RestoreToken, token, ip)
+	user_id, token_err := c.tokens.ApplyToken(tokens.RestoreToken, token, ip)
 	web_err = translateTokenErr(token_err)
 	var resp string
 	switch web_err {
@@ -69,7 +69,7 @@ func (c *Controller) PostRestore(r *http.Request) (interface{}, WebError) {
 	}
 
 	ip := getIP(r)
-	token, token_err := c.storage.CreateToken(storage.RestoreToken, email, ip, pass)
+	token, token_err := c.tokens.CreateToken(tokens.RestoreToken, email, ip, pass)
 	web_err = translateTokenErr(token_err)
 	if web_err != NoError {
 		return nil, web_err
@@ -83,7 +83,7 @@ func (c *Controller) PostRestore(r *http.Request) (interface{}, WebError) {
 		return nil, NoError
 	}
 
-	_, token_err = c.storage.ApplyToken(storage.RestoreToken, *token, ip)
+	_, token_err = c.tokens.ApplyToken(tokens.RestoreToken, *token, ip)
 	web_err = translateTokenErr(token_err)
 	return nil, web_err
 }

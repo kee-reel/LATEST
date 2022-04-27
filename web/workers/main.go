@@ -3,7 +3,6 @@ package workers
 import (
 	"encoding/json"
 	"late/models"
-	"late/storage"
 	"late/utils"
 	"log"
 	"sync"
@@ -25,8 +24,8 @@ func NewWorkers() *Workers {
 	utils.Err(err)
 
 	w := Workers{
-		storage.CreateRedisConn(),
-		storage.CreateRedisConn(),
+		utils.CreateRedisConn(),
+		utils.CreateRedisConn(),
 		sync.Map{},
 		job_timeout,
 	}

@@ -4,7 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/gomodule/redigo/redis"
 )
+
+func CreateRedisConn() redis.Conn {
+	conn, err := redis.Dial("tcp", fmt.Sprintf("%s:%s", Env("REDIS_HOST"), Env("REDIS_PORT")))
+	Err(err)
+	return conn
+}
 
 func Env(key string) string {
 	val := os.Getenv(key)

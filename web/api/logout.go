@@ -1,7 +1,7 @@
 package api
 
 import (
-	"late/storage"
+	"late/tokens"
 	"net/http"
 )
 
@@ -20,6 +20,6 @@ func (c *Controller) GetLogout(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
-	c.storage.RemoveToken(storage.AccessToken, token.Token, token.IP)
+	c.tokens.RemoveToken(tokens.AccessToken, token.Token, token.IP)
 	return nil, NoError
 }

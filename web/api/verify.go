@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
+	"late/tokens"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ func (c *Controller) GetVerify(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	user_id, token_err := c.storage.ApplyToken(storage.VerifyToken, token, ip)
+	user_id, token_err := c.tokens.ApplyToken(tokens.VerifyToken, token, ip)
 	web_err = translateTokenErr(token_err)
 
 	var resp string

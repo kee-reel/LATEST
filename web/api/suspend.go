@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"late/storage"
+	"late/tokens"
 	"late/utils"
 	"net/http"
 )
@@ -22,7 +22,7 @@ func (c *Controller) GetSuspend(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 	ip := getIP(r)
-	_, token_err := c.storage.ApplyToken(storage.SuspendToken, token, ip)
+	_, token_err := c.tokens.ApplyToken(tokens.SuspendToken, token, ip)
 	web_err = translateTokenErr(token_err)
 	var resp string
 	switch web_err {
@@ -64,7 +64,7 @@ func (c *Controller) PostSuspend(r *http.Request) (interface{}, WebError) {
 		return nil, web_err
 	}
 
-	delete_token, token_err := c.storage.CreateToken(storage.SuspendToken, token.Email, token.IP)
+	delete_token, token_err := c.tokens.CreateToken(tokens.SuspendToken, token.Email, token.IP)
 	web_err = translateTokenErr(token_err)
 	if web_err != NoError {
 		return nil, web_err
@@ -78,7 +78,7 @@ func (c *Controller) PostSuspend(r *http.Request) (interface{}, WebError) {
 		return nil, NoError
 	}
 
-	_, token_err = c.storage.ApplyToken(storage.SuspendToken, *delete_token, token.IP)
+	_, token_err = c.tokens.ApplyToken(tokens.SuspendToken, *delete_token, token.IP)
 	web_err = translateTokenErr(token_err)
 	return nil, web_err
 }

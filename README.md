@@ -70,7 +70,7 @@ Inside opened bash shell:
 
 # Architecture
 
-Service have 4 containers:
+Here are all services managed by docker-compose:
 
 * 🕸 web - web service written in Go, that:
 	* Receives request from clients
@@ -82,7 +82,7 @@ Service have 4 containers:
 	* Takes solution from **redis** job queue
 	* Builds solution
 	* Tests solution
-	* Sends test result to **redis** result queue
+	* Sends test result into **redis** result queue
 * 🏗 manage - container with Bash and Python scripts, that is used for:
 	* Filling **db** with tasks
 	* Testing **web** service

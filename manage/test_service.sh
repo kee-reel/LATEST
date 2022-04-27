@@ -1,11 +1,6 @@
 # !/bin/bash
+./fetch_tasks.sh
 
-if [[ -z "$(ls tests)" ]]; then
-	cd tests # Go inside
-	git clone $GIT_REPO $GIT_REPO_FOLDER # Clone sample project
-	git clone $TEMPLATES_GIT_REPO templates # Clone templates
-	cd ..
-fi
 python3 fill_db.py
 
 if $WEB_HTTP; then
@@ -23,7 +18,6 @@ echo "Restore: $TEST_MAIL
 $(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
 "
 
-curl ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | jq '.["token"]' | tr -d '"')
 echo "Token: $TOKEN
 "

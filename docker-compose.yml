@@ -14,7 +14,7 @@ services:
   redis:
     image: redis:alpine
     ports: 
-      - ${REDIS_PORT}:${REDIS_PORT}
+      - ${REDIS_EXT_PORT}:${REDIS_PORT}
     restart: always
     networks:
       - internet

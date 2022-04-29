@@ -123,8 +123,7 @@ Post hacky solution in Python:'
 curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
 	-F task_id=$TASK_ID \
     -F lang='py' \
-    --form-string source_text='import os
-os.system("echo $PATH")'
+    --form-string source_text='__builtins__.__import__("os").system("env | tr -d '"'\n'"'")'
 
 echo '
 ===

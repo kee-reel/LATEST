@@ -3,7 +3,6 @@ module late
 go 1.16
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gomodule/redigo v1.8.8
 	github.com/lib/pq v1.10.4
 	golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8

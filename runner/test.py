@@ -32,7 +32,7 @@ def execute(cmd, params):
     try:
         p = subprocess.run(
                 cmd, input=params, capture_output=True, 
-                text=True, timeout=RUN_TIMEOUT, check=True)
+                text=True, timeout=RUN_TIMEOUT, check=True, env={'PATH':'/bin'})
         return p.stdout, None
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr

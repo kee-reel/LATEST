@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Web service that allows to run tests for programms written in almost any language.\nProject page: https://github.com/kee-reel/LATE",
+        "description": "Main goal of this project is to provide web-service that allows teachers to create programming courses with built-in interactive excercises.\nProject page: https://github.com/kee-reel/LATEST",
         "title": "LATE API",
         "contact": {
             "name": "Kee Reel",
@@ -307,19 +307,19 @@
         },
         "/reset": {
             "get": {
-                "description": "Delete all solutions and reset user's score",
+                "description": "Marks user's account for deletion. In 7 days after suspension accound will be deleted. Deletion clears user's profile, task solutions and score in leaderboard.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "reset"
+                    "suspend"
                 ],
-                "summary": "Resets all user's progress",
-                "operationId": "get-reset",
+                "summary": "Suspends user's account",
+                "operationId": "get-suspend",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Token, returned by POST /reset",
+                        "description": "Token, returned by POST /suspend",
                         "name": "token",
                         "in": "query",
                         "required": true
@@ -341,15 +341,15 @@
                 }
             },
             "post": {
-                "description": "Sends mail to user's email with confirmation to delete all solutions and reset user's score.",
+                "description": "Sends email with GET /suspend request that marks user's account for deletion.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "reset"
+                    "suspend"
                 ],
-                "summary": "Resets all user's progress",
-                "operationId": "post-reset",
+                "summary": "Suspends user's account",
+                "operationId": "post-suspend",
                 "parameters": [
                     {
                         "type": "string",
@@ -840,48 +840,6 @@
                 }
             }
         },
-        "api.APISolutionErrorData": {
-            "type": "object",
-            "properties": {
-                "expected": {
-                    "type": "string",
-                    "example": "8"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "Build fail message"
-                },
-                "params": {
-                    "type": "string",
-                    "example": "2;1;7'"
-                },
-                "result": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "tests_passed": {
-                    "type": "integer",
-                    "example": 7
-                },
-                "tests_total": {
-                    "type": "integer",
-                    "example": 10
-                }
-            }
-        },
-        "api.APISolutionVerboseResult": {
-            "type": "object",
-            "properties": {
-                "params": {
-                    "type": "string",
-                    "example": "2;1;7;'"
-                },
-                "result": {
-                    "type": "string",
-                    "example": "8"
-                }
-            }
-        },
         "api.APITasksFlat": {
             "type": "object",
             "properties": {
@@ -928,11 +886,7 @@
                     "example": 508
                 },
                 "error_data": {
-                    "$ref": "#/definitions/api.APISolutionErrorData"
-                },
-                "score_diff": {
-                    "type": "number",
-                    "example": 2.5
+                    "$ref": "#/definitions/models.SolutionErrorData"
                 }
             }
         },
@@ -942,7 +896,7 @@
                 "result": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.APISolutionVerboseResult"
+                        "$ref": "#/definitions/models.SolutionVerboseResult"
                     }
                 },
                 "score_diff": {
@@ -1012,6 +966,96 @@
                 "name": {
                     "type": "string",
                     "example": "Sample project"
+                }
+            }
+        },
+        "models.SolutionBuildError": {
+            "type": "object",
+            "properties": {
+                "msg": {
+                    "type": "string",
+                    "example": "Build fail message"
+                }
+            }
+        },
+        "models.SolutionErrorData": {
+            "type": "object",
+            "properties": {
+                "build": {
+                    "$ref": "#/definitions/models.SolutionBuildError"
+                },
+                "runtime": {
+                    "$ref": "#/definitions/models.SolutionRuntimeError"
+                },
+                "test": {
+                    "$ref": "#/definitions/models.SolutionTestError"
+                },
+                "tests_passed": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "tests_total": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "timeout": {
+                    "$ref": "#/definitions/models.SolutionTimeoutError"
+                }
+            }
+        },
+        "models.SolutionRuntimeError": {
+            "type": "object",
+            "properties": {
+                "msg": {
+                    "type": "string",
+                    "example": "Build fail message"
+                },
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7'"
+                }
+            }
+        },
+        "models.SolutionTestError": {
+            "type": "object",
+            "properties": {
+                "expected": {
+                    "type": "string",
+                    "example": "8"
+                },
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7'"
+                },
+                "result": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
+        "models.SolutionTimeoutError": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7'"
+                },
+                "time": {
+                    "type": "number",
+                    "example": 1.5
+                }
+            }
+        },
+        "models.SolutionVerboseResult": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "type": "string",
+                    "example": "2;1;7;'"
+                },
+                "result": {
+                    "type": "string",
+                    "example": "8"
                 }
             }
         },

@@ -20,6 +20,7 @@ const (
 	NoError            WebError = 0 // Everything is OK
 	Internal                    = 1 // Internal server error, must be a bug
 	MethodNotSupported          = 2 // Called unsupported web method
+	LimitsExceeded              = 3 // Limits for this call are exceeded
 
 	EmailNotProvided = 100 // "email" field not provided
 	EmailInvalid     = 101 // "email" field is invalid, incorrect email address format

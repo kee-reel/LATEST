@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"late/limits"
 	"late/storage"
 	"late/tokens"
 	"late/utils"
@@ -12,76 +13,115 @@ import (
 	"runtime/debug"
 )
 
+type methodType int
+
+const (
+	Get  methodType = 0
+	Post            = 1
+)
+
+type EndpointType int
+
+const (
+	Register       EndpointType = 0
+	Login                       = 1
+	Verify                      = 2
+	Restore                     = 3
+	Logout                      = 4
+	Suspend                     = 5
+	TasksFlat                   = 6
+	TasksHierarchy              = 7
+	Languages                   = 8
+	Template                    = 9
+	Solution                    = 10
+	Leaderboard                 = 11
+	Profile                     = 12
+)
+
 type Controller struct {
-	storage *storage.Storage
-	workers *workers.Workers
-	tokens  *tokens.Tokens
+	storage       *storage.Storage
+	workers       *workers.Workers
+	tokens        *tokens.Tokens
+	limits        *limits.Limits
+	endpoints_map webMethodFuncMap
 }
 
 func NewController() *Controller {
 	s := storage.NewStorage()
-	return &Controller{
+	c := Controller{
 		s,
 		workers.NewWorkers(),
 		tokens.NewTokens(s),
+		limits.NewLimits(
+			map[int]limits.Limit{
+				Login:          {2, 5},
+				Verify:         {2, 5},
+				Restore:        {2, 5},
+				Logout:         {2, 5},
+				Suspend:        {2, 5},
+				TasksFlat:      {2, 5},
+				TasksHierarchy: {2, 5},
+				Languages:      {2, 5},
+				Template:       {2, 5},
+				Solution:       {2, 5},
+				Leaderboard:    {2, 5},
+				Profile:        {2, 5},
+			},
+			limits.Limit{5, 5},
+		),
+		webMethodFuncMap{},
+	}
+	c.endpoints_map = makeHandleFuncMap(&c)
+	return &c
+}
+
+func makeHandleFuncMap(c *Controller) webMethodFuncMap {
+	return webMethodFuncMap{
+		Login:          {Get: c.GetLogin},
+		Verify:         {Get: c.GetVerify},
+		Restore:        {Get: c.GetRestore, Post: c.PostRestore},
+		Logout:         {Get: c.GetLogout},
+		Suspend:        {Get: c.GetSuspend, Post: c.PostSuspend},
+		TasksFlat:      {Get: c.GetTasksFlat},
+		TasksHierarchy: {Get: c.GetTasksHierarchy},
+		Languages:      {Get: c.GetLanguages},
+		Template:       {Get: c.GetTemplate},
+		Solution:       {Get: c.GetSolution, Post: c.PostSolution},
+		Leaderboard:    {Get: c.GetLeaderboard},
+		Profile:        {Get: c.GetProfile},
 	}
 }
 
-func (c *Controller) TasksFlat(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetTasksFlat, nil)
+func (c *Controller) MakeHandleFunc(e EndpointType) HttpFunc {
+	f_get := c.endpoints_map[e][Get]
+	f_post := c.endpoints_map[e][Post]
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := getIP(r)
+		if c.limits.HandleCall(int(e), ip) {
+			var f webMethodFunc
+			switch r.Method {
+			case "GET":
+				f = f_get
+			case "POST":
+				f = f_post
+			}
+			c.HandleFunc(w, r, f)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			response := fmt.Sprintf("{\"error\": \"%d\"}", LimitsExceeded)
+			w.Write([]byte(response))
+		}
+	}
 }
 
-func (c *Controller) TasksHierarchy(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetTasksHierarchy, nil)
-}
+type HttpFunc func(w http.ResponseWriter, r *http.Request)
 
-func (c *Controller) Solution(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetSolution, c.PostSolution)
-}
+type webMethodFunc func(r *http.Request) (interface{}, WebError)
 
-func (c *Controller) Register(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetRegistration, c.PostRegistration)
-}
+type webMethodFuncMap map[EndpointType]map[methodType]webMethodFunc
 
-func (c *Controller) Verify(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetVerify, nil)
-}
-
-func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetLogin, nil)
-}
-
-func (c *Controller) Logout(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetLogout, nil)
-}
-
-func (c *Controller) Profile(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetProfile, nil)
-}
-
-func (c *Controller) Template(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetTemplate, nil)
-}
-
-func (c *Controller) Languages(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetLanguages, nil)
-}
-
-func (c *Controller) Restore(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetRestore, c.PostRestore)
-}
-
-func (c *Controller) Leaderboard(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetLeaderboard, nil)
-}
-
-func (c *Controller) Suspend(w http.ResponseWriter, r *http.Request) {
-	HandleFunc(w, r, c.GetSuspend, c.PostSuspend)
-}
-
-type WebMethodFunc func(r *http.Request) (interface{}, WebError)
-
-func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post WebMethodFunc) {
+func (c *Controller) HandleFunc(w http.ResponseWriter, r *http.Request, f webMethodFunc) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
@@ -91,19 +131,10 @@ func HandleFunc(w http.ResponseWriter, r *http.Request, get WebMethodFunc, post 
 	web_err = MethodNotSupported
 	var resp interface{}
 	defer RecoverRequest(w)
-	switch r.Method {
-	case "GET":
-		if get == nil {
-			web_err = MethodNotSupported
-		} else {
-			resp, web_err = get(r)
-		}
-	case "POST":
-		if post == nil {
-			web_err = MethodNotSupported
-		} else {
-			resp, web_err = post(r)
-		}
+	if f == nil {
+		web_err = MethodNotSupported
+	} else {
+		resp, web_err = f(r)
 	}
 
 	if resp == nil {

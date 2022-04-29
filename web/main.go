@@ -24,20 +24,24 @@ func main() {
 	var err error
 	addr := fmt.Sprintf("0.0.0.0:%s", utils.Env("WEB_PORT"))
 	c := api.NewController()
-	http.HandleFunc("/login", c.Login)
-	http.HandleFunc("/logout", c.Logout)
-	http.HandleFunc("/verify", c.Verify)
-	http.HandleFunc("/restore", c.Restore)
-	http.HandleFunc("/profile", c.Profile)
-	http.HandleFunc("/register", c.Register)
-	http.HandleFunc("/template", c.Template)
-	http.HandleFunc("/solution", c.Solution)
-	http.HandleFunc("/languages", c.Languages)
-	http.HandleFunc("/leaderboard", c.Leaderboard)
-	http.HandleFunc("/tasks/flat", c.TasksFlat)
-	http.HandleFunc("/tasks/hierarchy", c.TasksHierarchy)
-	http.HandleFunc("/suspend", c.Suspend)
-
+	endpoints := map[string]api.EndpointType{
+		"/login":           api.Login,
+		"/logout":          api.Logout,
+		"/verify":          api.Verify,
+		"/restore":         api.Restore,
+		"/profile":         api.Profile,
+		"/register":        api.Register,
+		"/template":        api.Template,
+		"/solution":        api.Solution,
+		"/languages":       api.Languages,
+		"/leaderboard":     api.Leaderboard,
+		"/tasks/flat":      api.TasksFlat,
+		"/tasks/hierarchy": api.TasksHierarchy,
+		"/suspend":         api.Suspend,
+	}
+	for k, v := range endpoints {
+		http.HandleFunc(k, c.MakeHandleFunc(v))
+	}
 	is_http := utils.EnvB("WEB_HTTP")
 	log.Printf("Started listening on %s HTTPS(%t)", addr, !is_http)
 	if is_http {

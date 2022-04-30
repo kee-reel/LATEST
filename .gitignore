@@ -3,3 +3,4 @@
 .env.redis
 tags
 utils/swag
+web/web

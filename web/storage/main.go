@@ -3,7 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	"late/utils"
+	"web/utils"
 
 	_ "github.com/lib/pq"
 )

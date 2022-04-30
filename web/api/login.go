@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
-	"late/models"
-	"late/tokens"
-	"late/utils"
+	"web/models"
+	"web/tokens"
+	"web/utils"
 	"net/http"
 )
 

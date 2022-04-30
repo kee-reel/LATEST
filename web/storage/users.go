@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"late/models"
-	"late/security"
-	"late/utils"
+	"web/models"
+	"web/security"
+	"web/utils"
 )
 
 func (s *Storage) AuthenticateUser(email string, pass string) (*models.User, bool) {

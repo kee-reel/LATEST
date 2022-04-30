@@ -3,9 +3,9 @@ package tokens
 import (
 	"encoding/json"
 	"fmt"
-	"late/security"
-	"late/storage"
-	"late/utils"
+	"web/security"
+	"web/storage"
+	"web/utils"
 	"strconv"
 	"strings"
 	"time"

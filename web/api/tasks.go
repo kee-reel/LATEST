@@ -1,7 +1,7 @@
 package api
 
 import (
-	"late/models"
+	"web/models"
 	"net/http"
 	"strings"
 )

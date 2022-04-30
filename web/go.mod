@@ -1,4 +1,4 @@
-module late
+module web
 
 go 1.16
 

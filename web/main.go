@@ -12,10 +12,10 @@ package main
 
 import (
 	"fmt"
-	"late/api"
-	"late/utils"
 	"log"
 	"net/http"
+	"web/api"
+	"web/utils"
 )
 
 type EndpointFunc func(w http.ResponseWriter, r *http.Request)

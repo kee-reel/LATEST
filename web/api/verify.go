@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"late/tokens"
+	"web/tokens"
 	"net/http"
 )
 

@@ -3,11 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"late/limits"
-	"late/storage"
-	"late/tokens"
-	"late/utils"
-	"late/workers"
+	"web/limits"
+	"web/storage"
+	"web/tokens"
+	"web/utils"
+	"web/workers"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -67,7 +67,6 @@ func NewController() *Controller {
 				Leaderboard:    {2, 5},
 				Profile:        {2, 5},
 			},
-			limits.Limit{5, 5},
 		),
 		webMethodFuncMap{},
 	}

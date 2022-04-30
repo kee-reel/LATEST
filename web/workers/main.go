@@ -2,8 +2,8 @@ package workers
 
 import (
 	"encoding/json"
-	"late/models"
-	"late/utils"
+	"web/models"
+	"web/utils"
 	"log"
 	"sync"
 	"time"

@@ -3,8 +3,8 @@ package tokens
 import (
 	"encoding/json"
 	"fmt"
-	"late/security"
-	"late/utils"
+	"web/security"
+	"web/utils"
 	"time"
 )
 

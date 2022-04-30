@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"late/models"
-	"late/utils"
+	"web/models"
+	"web/utils"
 )
 
 func (s *Storage) GetLeaderboardScore(user_id int) float32 {

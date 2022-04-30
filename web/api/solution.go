@@ -3,8 +3,8 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
-	"late/models"
-	"late/utils"
+	"web/models"
+	"web/utils"
 	"math"
 	"math/rand"
 	"net/http"

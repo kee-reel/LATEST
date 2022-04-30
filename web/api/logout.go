@@ -1,7 +1,7 @@
 package api
 
 import (
-	"late/tokens"
+	"web/tokens"
 	"net/http"
 )
 

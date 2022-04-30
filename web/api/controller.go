@@ -3,14 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"runtime/debug"
 	"web/limits"
 	"web/storage"
 	"web/tokens"
 	"web/utils"
 	"web/workers"
-	"log"
-	"net/http"
-	"runtime/debug"
 )
 
 type methodType int
@@ -54,18 +54,18 @@ func NewController() *Controller {
 		tokens.NewTokens(s),
 		limits.NewLimits(
 			map[int]limits.Limit{
-				Login:          {2, 5},
-				Verify:         {2, 5},
-				Restore:        {2, 5},
-				Logout:         {2, 5},
-				Suspend:        {2, 5},
-				TasksFlat:      {2, 5},
-				TasksHierarchy: {2, 5},
-				Languages:      {2, 5},
-				Template:       {2, 5},
-				Solution:       {2, 5},
-				Leaderboard:    {2, 5},
-				Profile:        {2, 5},
+				Login:          {0.2, 1},
+				Verify:         {0.2, 1},
+				Restore:        {0.2, 1},
+				Logout:         {0.2, 1},
+				Suspend:        {0.2, 1},
+				TasksFlat:      {0.2, 1},
+				TasksHierarchy: {0.2, 1},
+				Languages:      {0.2, 1},
+				Template:       {0.2, 1},
+				Solution:       {0.2, 1},
+				Leaderboard:    {0.2, 1},
+				Profile:        {0.2, 1},
 			},
 		),
 		webMethodFuncMap{},
@@ -91,12 +91,44 @@ func makeHandleFuncMap(c *Controller) webMethodFuncMap {
 	}
 }
 
+func writeError(w http.ResponseWriter, web_err WebError) {
+	writeErrorWithData(w, map[string]interface{}{"error": web_err})
+}
+
+func writeErrorWithData(w http.ResponseWriter, data map[string]interface{}) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	str_json, err := json.Marshal(data)
+	utils.Err(err)
+	w.Write(str_json)
+}
+
 func (c *Controller) MakeHandleFunc(e EndpointType) HttpFunc {
 	f_get := c.endpoints_map[e][Get]
 	f_post := c.endpoints_map[e][Post]
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip := getIP(r)
-		if c.limits.HandleCall(int(e), ip) {
+		var client_id string
+		switch e {
+		case Login, Register:
+			email, web_err := getUrlParam(r, "email")
+			if web_err != NoError {
+				writeError(w, web_err)
+				return
+			}
+			client_id = email
+		case Languages:
+			ip := getIP(r)
+			client_id = ip
+		default:
+			token, web_err := getUrlParam(r, "token")
+			if web_err != NoError {
+				writeError(w, web_err)
+				return
+			}
+			client_id = token
+		}
+		need_to_wait := c.limits.HandleCall(int(e), client_id)
+		if need_to_wait == 0 {
 			var f webMethodFunc
 			switch r.Method {
 			case "GET":
@@ -106,10 +138,10 @@ func (c *Controller) MakeHandleFunc(e EndpointType) HttpFunc {
 			}
 			c.HandleFunc(w, r, f)
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json")
-			response := fmt.Sprintf("{\"error\": \"%d\"}", LimitsExceeded)
-			w.Write([]byte(response))
+			writeErrorWithData(
+				w,
+				map[string]interface{}{"error": LimitsExceeded, "wait": need_to_wait},
+			)
 		}
 	}
 }

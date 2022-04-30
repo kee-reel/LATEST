@@ -10,7 +10,7 @@ import (
 
 type Limit struct {
 	Rate  float32
-	Burst int
+	Burst float32
 }
 
 type Limits struct {
@@ -26,24 +26,32 @@ func NewLimits(call_to_lim map[int]Limit) *Limits {
 	return &l
 }
 
-func (l *Limits) HandleCall(call_type int, ip string) bool {
-	key := fmt.Sprintf("%d:%s", call_type, ip)
-	data, err := redis.Int(l.kv.Do("GET", key))
+func (l *Limits) HandleCall(call_type int, client_id string) float32 {
+	key := fmt.Sprintf("%d:%s", call_type, client_id)
+	data, err := redis.String(l.kv.Do("GET", key))
 	lim := l.call_to_lim[call_type]
-	volume := float32(0)
-	var dt int64
+
+	var volume float32
+	var old_dt int32
+	dt := int32(time.Now().Unix())
 	if err == nil {
-		volume = data && 0xFFFF_0000_0000_0000
-		dt = data && 0x0000_FFFF_FFFF_FFFF
-		return false
+		_, err := fmt.Sscanf(data, "%f:%d", &volume, &old_dt)
+		utils.Err(err)
+		dt_diff := dt - old_dt
+		volume_diff := float32(dt_diff) * lim.Rate
+		if volume_diff > volume {
+			volume = 0
+		} else {
+			volume -= volume_diff
+		}
 	}
-	cur_dt := time.Now().Unix()
-	new_volume := volume - float32(cur_dt-dt)*lim.Rate
-	expire_in := new_volume / lim.Rate
-	l.kv.Send("MULTI")
-	l.kv.Send("SET", key, new_volume)
-	l.kv.Send("EXPIRE", key, expire_in)
-	_, err = redis.Ints(l.kv.Do("EXEC"))
-	utils.Err(err)
-	return true
+	volume += 1
+	if volume <= lim.Burst {
+		expire_in := int32(volume * 1000 / lim.Rate)
+		data = fmt.Sprintf("%.1f:%d", volume, dt)
+		_, err := l.kv.Do("SET", key, data, "PX", expire_in)
+		utils.Err(err)
+		return 0
+	}
+	return (volume - lim.Burst) / lim.Rate
 }

@@ -67,7 +67,7 @@ type APITestFailResult struct {
 // @Description Apart from errors raised due to invalid POST parameters, there are 2 "normal" errors:
 // @Description 504 - Solution build error. If this happens, then result will contain: `{"error":508,"error_data":{"msg":"multiline compilation error", "tests_passed":0, "tests_total":15}}`
 // @Description 505 - Solution test error. If this happens, then result will contain: `{"error":509,"error_data":{"expected":"expected result", "params":"semicolon separated input parameters", "result":"actual result", "tests_passed":7, "tests_total":15}}`
-// @Description 506 - Solution timeout error (took more than 0.5 secs). If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "result":"actual result", "tests_passed":0, "tests_total":15}}`
+// @Description 506 - Solution timeout error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "result":"actual result", "time": 0.5, "tests_passed":0, "tests_total":15}}`
 // @Description 507 - Solution runtime error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "msg":"actual result", "tests_passed":2, "tests_total":15}}`
 // @Description If `verbose` flag is `true` then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result"}]}`
 // @ID post-solution

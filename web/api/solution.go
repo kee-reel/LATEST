@@ -69,7 +69,7 @@ type APITestFailResult struct {
 // @Description 505 - Solution test error. If this happens, then result will contain: `{"error":509,"error_data":{"expected":"expected result", "params":"semicolon separated input parameters", "result":"actual result", "tests_passed":7, "tests_total":15}}`
 // @Description 506 - Solution timeout error (took more than 0.5 secs). If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "result":"actual result", "tests_passed":0, "tests_total":15}}`
 // @Description 507 - Solution runtime error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "msg":"actual result", "tests_passed":2, "tests_total":15}}`
-// @Description If "verbose" flag is "true" then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result"}]}`
+// @Description If `verbose` flag is `true` then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result"}]}`
 // @ID post-solution
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"

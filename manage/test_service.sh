@@ -11,62 +11,47 @@ fi
 echo "Testing $DOMAIN"
 
 echo "Register: $TEST_MAIL
-$(curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register)
-"
+$(curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register)"
 
 echo "Restore: $TEST_MAIL
-$(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)
-"
+$(curl -s -X POST -F email=$TEST_MAIL -F pass=${TEST_PASS}_new ${DOMAIN}restore)"
 
 TOKEN=$(curl -s ${DOMAIN}login?email=$TEST_MAIL\&pass=${TEST_PASS}_new | jq '.["token"]' | tr -d '"')
-echo "Token: $TOKEN
-"
+echo "Token: $TOKEN"
 
-echo '
-===
-Profile:
-'
-curl -s ${DOMAIN}profile?token=$TOKEN
+echo "Profile: $(curl -s ${DOMAIN}profile?token=$TOKEN)"
 
-echo "
-Existing tasks:"
 TASKS=$(curl -s -X GET ${DOMAIN}tasks/hierarchy?token=$TOKEN\&folders=sample_tests,unit-2,task-1)
-echo $TASKS
+echo "Existing tasks: $TASKS"
 
 TASK_ID=$(echo $TASKS | jq '.sample_tests["units"]["unit-2"]["tasks"]["task-1"]["id"]')
 echo "Test task $TASK_ID"
 
-echo '
-===
-Languages:'
-curl -s ${DOMAIN}languages
+echo "Languages: $(curl -s ${DOMAIN}languages)"
 
+VERBOSE='false'
+send-solution() {
+    RESP=$(curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
+        -F task_id=$TASK_ID \
+        -F lang=$2 \
+        -F verbose=$VERBOSE \
+        --form-string source_text="$3")
+    WAIT=$(echo $RESP | jq '.["wait"]')
+    if [[ $WAIT != 'null' ]]; then
+        echo "[...] Waiting for $WAIT to satisfy call limits"
+        sleep $WAIT
+        send-solution $1 $2 "$3"
+    else
+        echo "[XXX] Response for $1 solution in $2: $RESP
+        "
+    fi
+}
 
-echo '
-===
-Post solution in C:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='c' \
-	--form-string source_text='#include <stdio.h> 
-int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}'
-
-echo '
-===
-Post solution in Python:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='py' \
-    --form-string source_text='print(int(input())+int(input()))'
-
-echo '
-===
-Post solution in Pascal:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='pas' \
-	--form-string source_text='
-var
+send-solution 'normal' 'c' '#include <stdio.h>
+int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}
+'
+send-solution 'normal' 'py' 'print(int(input())+int(input()))'
+send-solution 'normal' 'pas' 'var
     A, B: Integer;
 begin
     Read(A);
@@ -74,23 +59,12 @@ begin
     writeln(A+B);
 end.'
 
-echo '
-===
-Post wrong solution in C:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='c' \
-	--form-string source_text='#include <stdio.h> 
+send-solution 'wrong' 'c' '
+#include <stdio.h>
 int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",1+b);}'
-
-echo '
-===
-Post wrong solution in Pascal:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='pas' \
-	--form-string source_text='
-var
+send-solution 'wrong' 'py' 'res = int(input())+1
+print(res)'
+send-solution 'wrong' 'pas' 'var
     A, B: Integer;
 begin
     Read(A);
@@ -98,76 +72,25 @@ begin
     writeln(A+B-10);
 end.'
 
-echo '
-===
-Post wrong solution in Python:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='py' \
-    --form-string source_text='res = int(input())+1
-print(res)'
-
-echo '
-===
-Post hacky solution in C:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='c' \
-	--form-string source_text='#include <stdio.h> 
+send-solution 'hacky' 'c' '#include <stdio.h>
 #include <stdlib.h>
 int main(){system("ls");}'
-
-echo '
-===
-Post hacky solution in Python:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='py' \
-    --form-string source_text='__builtins__.__import__("os").system("env | tr -d '"'\n'"'")'
-
-echo '
-===
-Post hacky solution in Pascal:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='pas' \
-	--form-string source_text="
-program project1;
-{$mode objfpc}{$H+}
+send-solution 'hacky' 'py' '__builtins__.__import__("os").system("env")'
+send-solution 'hacky' 'pas' '{$mode objfpc}{$H+}'"
 uses 
   Process;
-  var 
+var 
     s : ansistring;
-    begin
+begin
     if RunCommand('/bin/bash',['cd / && ls'],s) then
            writeln(s); 
 end."
 
-echo '
-===
-Post malformed solution in C:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='c' \
-	--form-string source_text='#include <stdio.h> 
+send-solution 'malformed' 'c' '#include <stdio.h>
 int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}'
-
-echo '
-===
-Post malformed solution in Python:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='py' \
-    --form-string source_text='res = int(input()))+int(input)
+send-solution 'malformed' 'py' 'res = int(input()))+int(input)
 print(res)'
-
-echo '
-===
-Post malformed solution in Pascal:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='pas' \
-	--form-string source_text='
+send-solution 'malformed' 'pas' 'var
 var
     A, B: Integer;
 beg
@@ -176,22 +99,10 @@ beg
     writeln(AB-10);
 end.'
 
-echo '
-===
-Post solution with verbose flag:'
-curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
-	-F task_id=$TASK_ID \
-    -F lang='c' \
-	--form-string source_text='#include <stdio.h> 
-int main(){int a,b;scanf("%d%d",&a,&b);printf("%d",a+b);}' \
-	-F verbose=true
+VERBOSE='true'
+send-solution 'malformed' 'c' '#include <stdio.h>
+int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}'
 
-echo '
-===
-Get template for C:'
-curl -s ${DOMAIN}template?token=$TOKEN\&lang='c'
+echo "Get template for C: $(curl -s ${DOMAIN}template?token=$TOKEN\&lang='c')"
 
-echo '
-===
-Leaderboard:'
-curl -s ${DOMAIN}leaderboard?token=$TOKEN
+echo "Leaderboard: $(curl -s ${DOMAIN}leaderboard?token=$TOKEN)"

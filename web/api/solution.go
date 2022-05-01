@@ -3,8 +3,7 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
-	"web/models"
-	"web/utils"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"web/models"
+	"web/utils"
 )
 
 type APISolution struct {
@@ -172,9 +173,8 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 
 type testResult struct {
 	models.TestResult
-	Error         WebError `json:"error,omitempty" example:"508"`
-	ScoreDiff     float32  `json:"score_diff,omitempty" example:"2.5"`
-	InternalError *string  `json:"internal_error,omitempty"`
+	Error     WebError `json:"error,omitempty" example:"508"`
+	ScoreDiff float32  `json:"score_diff,omitempty" example:"2.5"`
 }
 
 func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *testResult {
@@ -208,6 +208,9 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	if test_result_raw == nil {
 		panic(fmt.Sprintf("Internal error while processing solution %d", runner_data.Id))
 	}
+	if test_result_raw.ErrorData != nil {
+		log.Print(*test_result_raw.ErrorData)
+	}
 	test_result := testResult{
 		TestResult: *test_result_raw,
 	}
@@ -217,6 +220,8 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 		test_result.Error = SolutionTestFail
 	}
 	if test_result.InternalError != nil {
+		log.Print(*test_result_raw.InternalError)
+		log.Print(*test_result.InternalError)
 		panic(*test_result.InternalError)
 	}
 	return &test_result

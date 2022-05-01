@@ -1,23 +1,35 @@
 package storage
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"web/models"
 	"web/utils"
 )
 
 func (s *Storage) SaveSolution(solution *models.Solution) int64 {
 	var solution_id int64
-	query, err := s.db.Prepare(`INSERT INTO solutions(user_id, task_id, completion) 
-		VALUES($1, $2, 0) RETURNING id`)
+
+	query, err := s.db.Prepare(`SELECT s.id, l.response FROM last_solutions AS l
+		WHERE user_id = $1 AND task_id = $2 AND s.hash = $3`)
 	utils.Err(err)
 	err = query.QueryRow(solution.UserId, solution.Task.Id).Scan(&solution_id)
 	utils.Err(err)
 
-	query, err = s.db.Prepare(`INSERT INTO 
-		solutions_sources(user_id, task_id, source_code) VALUES($1, $2, $3)
-		ON CONFLICT (user_id, task_id) DO UPDATE SET source_code = $3`)
+	query, err := s.db.Prepare(`INSERT INTO solutions(user_id, task_id, hash) 
+		VALUES($1, $2, $3) RETURNING id`)
 	utils.Err(err)
-	_, err = query.Exec(solution.UserId, solution.Task.Id, solution.Source)
+	err = query.QueryRow(solution.UserId, solution.Task.Id).Scan(&solution_id)
+	utils.Err(err)
+
+	h := sha1.New()
+	h.Write([]byte(s))
+	sha1_hash := hex.EncodeToString(h.Sum(nil))
+	query, err = s.db.Prepare(`INSERT INTO 
+		last_solutions(solution_id, hash) VALUES($1, $2, $3)
+		DO UPDATE SET source_code = $3, response = NULL`)
+	utils.Err(err)
+	_, err = query.Exec(solution.UserId, solution.Task.Id, solution.Source, sha1_hash)
 	utils.Err(err)
 	return solution_id
 }
@@ -43,7 +55,7 @@ func (s *Storage) UpdateSolutionScore(solution *models.Solution, percent float32
 }
 
 func (s *Storage) GetSolutionText(user_id int, task_id int) *string {
-	query, err := s.db.Prepare(`SELECT s.source_code FROM solutions_sources as s
+	query, err := s.db.Prepare(`SELECT s.source_code FROM last_solutions as s
 		WHERE s.user_id = $1 AND s.task_id = $2`)
 	utils.Err(err)
 

@@ -177,10 +177,6 @@ python3 fill_db.py
 ./test_service.sh
 ```
 
-# Requests
+# API documentation
 
-API responds with error codes that ould be found in [web/api/errors.go](/web/api/errors.go)
-
-If you know what Swagger is -- you can check specs for all requests in [swagger.json](/web/docs/swagger.json).
-
-If you don't -- check out hosted Swagger docs [here](https://kee-reel.com/cyber-api/).
+[Here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/kee-reel/LATEST/main/web/swagger.json) you can check out API documentation, provided in [web/api/errors.go](/web/api/errors.go)

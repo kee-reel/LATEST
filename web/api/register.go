@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"web/tokens"
 	"web/utils"
-	"net/http"
 )
 
 // @Tags register
@@ -16,7 +16,7 @@ import (
 // @Success 200 string string "Request result described on HTML page"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [get]
-func (c *Controller) GetRegistration(r *http.Request) (interface{}, WebError) {
+func (c *Controller) GetRegister(r *http.Request) (interface{}, WebError) {
 	token, web_err := getUrlParam(r, "token")
 	if web_err != NoError {
 		return nil, web_err
@@ -61,7 +61,7 @@ func (c *Controller) GetRegistration(r *http.Request) (interface{}, WebError) {
 // @Failure 400 {object} api.APIError "Possible error codes: 100, 101, 103, 200, 201, 700, 701"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
 // @Router /register [post]
-func (c *Controller) PostRegistration(r *http.Request) (interface{}, WebError) {
+func (c *Controller) PostRegister(r *http.Request) (interface{}, WebError) {
 	email, web_err := getFormParam(r, "email")
 	if web_err != NoError {
 		return nil, web_err

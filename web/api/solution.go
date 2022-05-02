@@ -88,14 +88,35 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
-	solution.Id = c.storage.SaveSolution(solution)
-	test_result := c.buildAndTest(solution.Task, solution)
+	var test_result_raw *models.TestResult
+	solution.Id, test_result_raw = c.storage.SaveSolution(solution)
+	if test_result_raw == nil {
+		test_result_raw = c.buildAndTest(solution.Task, solution)
+	}
+
+	if test_result_raw.ErrorData != nil {
+		log.Print(*test_result_raw.ErrorData)
+	}
+	test_result := testResult{
+		TestResult: *test_result_raw,
+	}
+	if test_result.ErrorData == nil {
+		test_result.Error = NoError
+	} else {
+		test_result.Error = SolutionTestFail
+	}
+	if test_result.InternalError != nil {
+		log.Print(*test_result_raw.InternalError)
+		log.Print(*test_result.InternalError)
+		panic(*test_result.InternalError)
+	}
+
 	percent := float32(1)
 	if test_result.ErrorData != nil {
 		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	test_result.ScoreDiff = c.storage.UpdateSolutionScore(solution, percent)
+	test_result.ScoreDiff = c.storage.UpdateSolutionScore(solution, test_result_raw, percent)
 	return test_result, test_result.Error
 }
 
@@ -130,26 +151,22 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	var solution models.Solution
 	task := (*tasks)[0]
 
-	var solution_text *string
 	source_text := r.FormValue("source_text")
-	if source_text != "" {
-		solution_text = &source_text
-	} else {
+	if source_text == "" {
 		file, _, err := r.FormFile("source_file")
 		if err != nil {
 			return nil, SolutionTextNotProvided
 		}
-		raw_data, err := ioutil.ReadAll(file)
+		solution_text_bytes, err := ioutil.ReadAll(file)
 		utils.Err(err)
-		str_data := string(raw_data)
-		solution_text = &str_data
+		source_text = string(solution_text_bytes)
 	}
 
-	if len(*solution_text) > 50000 {
+	if len(source_text) > 50000 {
 		return nil, SolutionTextTooLong
 	}
 
-	solution.Source = *solution_text
+	solution.Source = string(source_text)
 	solution.TestCases = r.FormValue("test_cases")
 	if len(solution.TestCases) > 50000 {
 		return nil, SolutionTestsTooLong
@@ -177,7 +194,7 @@ type testResult struct {
 	ScoreDiff float32  `json:"score_diff,omitempty" example:"2.5"`
 }
 
-func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *testResult {
+func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *models.TestResult {
 	complete_solution_source, fixed_tests := c.storage.GetTaskTestData(task.Id)
 
 	runner_data := models.RunnerData{
@@ -208,23 +225,7 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 	if test_result_raw == nil {
 		panic(fmt.Sprintf("Internal error while processing solution %d", runner_data.Id))
 	}
-	if test_result_raw.ErrorData != nil {
-		log.Print(*test_result_raw.ErrorData)
-	}
-	test_result := testResult{
-		TestResult: *test_result_raw,
-	}
-	if test_result.ErrorData == nil {
-		test_result.Error = NoError
-	} else {
-		test_result.Error = SolutionTestFail
-	}
-	if test_result.InternalError != nil {
-		log.Print(*test_result_raw.InternalError)
-		log.Print(*test_result.InternalError)
-		panic(*test_result.InternalError)
-	}
-	return &test_result
+	return test_result_raw
 }
 
 func generateTests(task *models.Task) string {

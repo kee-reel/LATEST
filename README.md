@@ -179,4 +179,6 @@ python3 fill_db.py
 
 # API documentation
 
-[Here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/kee-reel/LATEST/main/web/swagger.json) you can check out API documentation, provided in [web/api/errors.go](/web/api/errors.go)
+[Here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/kee-reel/LATEST/main/web/swagger.json) you can check out API documentation, provided in [web/swagger.json](/web/swagger.json)
+
+API returns error codes described in [web/api/errors.go](/web/api/errors.go)

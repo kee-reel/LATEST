@@ -63,18 +63,12 @@ type Solution struct {
 	Extention            string
 	ExecFilename         string
 	CompleteExecFilename string
-	TestCases            string
 	Token                *Token
 	UserId               int
-	IsVerbose            bool
 }
 
 type Leaderboard map[string]float32
 
-type SolutionVerboseResult struct {
-	Params string `example:"2;1;7;'"`
-	Result string `example:"8"`
-}
 type SolutionBuildError struct {
 	Msg string `json:"msg,omitempty" example:"Build fail message"`
 }
@@ -102,10 +96,9 @@ type SolutionErrorData struct {
 }
 
 type TestResult struct {
-	Id            int64                    `json:"id,omitempty"`
-	ErrorData     *SolutionErrorData       `json:"error_data,omitempty"`
-	Result        *[]SolutionVerboseResult `json:"result,omitempty"`
-	InternalError *string                  `json:"internal_error,omitempty"`
+	Id            int64              `json:"id,omitempty"`
+	ErrorData     *SolutionErrorData `json:"error_data,omitempty"`
+	InternalError *string            `json:"internal_error,omitempty"`
 }
 
 type SolutionData struct {
@@ -114,7 +107,6 @@ type SolutionData struct {
 }
 
 type SolutionTests struct {
-	User   string `json:"user,omitempty"`
 	Fixed  string `json:"fixed,omitempty"`
 	Random string `json:"random,omitempty"`
 }
@@ -124,5 +116,4 @@ type RunnerData struct {
 	UserSolution     SolutionData  `json:"user_solution"`
 	CompleteSolution SolutionData  `json:"complete_solution"`
 	Tests            SolutionTests `json:"tests"`
-	Verbose          bool          `json:"verbose"`
 }

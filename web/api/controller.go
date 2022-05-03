@@ -54,6 +54,7 @@ func NewController() *Controller {
 		tokens.NewTokens(s),
 		limits.NewLimits(
 			map[int]limits.Limit{
+				int(Register):  {0.2, 1},
 				Login:          {0.2, 1},
 				Verify:         {0.2, 1},
 				Restore:        {0.2, 1},
@@ -63,7 +64,7 @@ func NewController() *Controller {
 				TasksHierarchy: {0.2, 1},
 				Languages:      {0.2, 1},
 				Template:       {0.2, 1},
-				Solution:       {0.2, 1},
+				Solution:       {10, 10},
 				Leaderboard:    {0.2, 1},
 				Profile:        {0.2, 1},
 			},
@@ -76,6 +77,7 @@ func NewController() *Controller {
 
 func makeHandleFuncMap(c *Controller) webMethodFuncMap {
 	return webMethodFuncMap{
+		Register:       {Get: c.GetRegister, Post: c.PostRegister},
 		Login:          {Get: c.GetLogin},
 		Verify:         {Get: c.GetVerify},
 		Restore:        {Get: c.GetRestore, Post: c.PostRestore},
@@ -107,41 +109,39 @@ func (c *Controller) MakeHandleFunc(e EndpointType) HttpFunc {
 	f_get := c.endpoints_map[e][Get]
 	f_post := c.endpoints_map[e][Post]
 	return func(w http.ResponseWriter, r *http.Request) {
-		var client_id string
-		switch e {
-		case Login, Register:
-			email, web_err := getUrlParam(r, "email")
-			if web_err != NoError {
-				writeError(w, web_err)
-				return
-			}
-			client_id = email
-		case Languages:
-			ip := getIP(r)
-			client_id = ip
+		var m methodType
+		var f webMethodFunc
+		switch r.Method {
+		case "GET":
+			m = Get
+			f = f_get
+		case "POST":
+			m = Post
+			f = f_post
 		default:
-			token, web_err := getUrlParam(r, "token")
-			if web_err != NoError {
-				writeError(w, web_err)
-				return
-			}
-			client_id = token
+			writeError(w, MethodNotSupported)
+			return
 		}
+
+		var client_id string
+		var web_err WebError
+		if ((e == Register || e == Restore) && m == Post) || (e == Login && m == Get) {
+			client_id = getIP(r)
+		} else {
+			client_id, web_err = getUrlParam(r, "token")
+		}
+
+		if web_err != NoError {
+			writeError(w, web_err)
+			return
+		}
+
 		need_to_wait := c.limits.HandleCall(int(e), client_id)
 		if need_to_wait == 0 {
-			var f webMethodFunc
-			switch r.Method {
-			case "GET":
-				f = f_get
-			case "POST":
-				f = f_post
-			}
 			c.HandleFunc(w, r, f)
 		} else {
-			writeErrorWithData(
-				w,
-				map[string]interface{}{"error": LimitsExceeded, "wait": need_to_wait},
-			)
+			writeErrorWithData(w,
+				map[string]interface{}{"error": LimitsExceeded, "wait": need_to_wait})
 		}
 	}
 }
@@ -159,7 +159,6 @@ func (c *Controller) HandleFunc(w http.ResponseWriter, r *http.Request, f webMet
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	var web_err WebError
-	web_err = MethodNotSupported
 	var resp interface{}
 	defer RecoverRequest(w)
 	if f == nil {

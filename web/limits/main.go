@@ -29,7 +29,10 @@ func NewLimits(call_to_lim map[int]Limit) *Limits {
 func (l *Limits) HandleCall(call_type int, client_id string) float32 {
 	key := fmt.Sprintf("%d:%s", call_type, client_id)
 	data, err := redis.String(l.kv.Do("GET", key))
-	lim := l.call_to_lim[call_type]
+	lim, ok := l.call_to_lim[call_type]
+	if !ok {
+		panic(fmt.Sprintf("Limit for call %d not handled", call_type))
+	}
 
 	var volume float32
 	var old_dt int32

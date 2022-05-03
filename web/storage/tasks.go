@@ -3,11 +3,11 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"web/models"
-	"web/utils"
 	"log"
 	"strconv"
 	"strings"
+	"web/models"
+	"web/utils"
 
 	_ "github.com/lib/pq"
 )
@@ -47,11 +47,13 @@ func (s *Storage) GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 		task.Unit = unit
 		task.UnitId = unit.Id
 
-		query, err = s.db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
-			WHERE s.user_id = $1 AND s.task_id = $2 GROUP BY s.task_id`)
-		utils.Err(err)
+		/*
+			query, err = s.db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
+				WHERE s.user_id = $1 AND s.task_id = $2 GROUP BY s.task_id`)
+			utils.Err(err)
 
-		task.Completion = 0
+			task.Completion = 0
+		*/
 		_ = query.QueryRow(token.UserId, task_id).Scan(&task.Completion)
 
 		err = json.Unmarshal(in_params_str, &task.Input)

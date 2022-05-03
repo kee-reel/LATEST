@@ -68,14 +68,13 @@ def run(sol, comp_sol, params=None):
         }
     return {'result': result}
 
-def test_solution(solution, complete_solution, test_sets, is_verbose):
+def test_solution(solution, complete_solution, test_sets):
     sol_ext = get_ext(solution)
     comp_sol_ext = get_ext(complete_solution)
     assert sol_ext in LANG_TO_EXEC and comp_sol_ext in LANG_TO_EXEC, 'Language not supported'
     assert os.path.exists(solution) and os.path.exists(complete_solution), 'Not found solution files'
 
     is_tested = False
-    results = []
     sol_exec = LANG_TO_EXEC[sol_ext](solution)
     comp_sol_exec = LANG_TO_EXEC[comp_sol_ext](complete_solution)
     tests_count = 0
@@ -89,8 +88,6 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
             result['params'] = test
             if 'error' in result:
                 return result, tests_count
-            if is_verbose:
-                results.append(result)
             tests_count += 1
 
     # No test cases
@@ -98,9 +95,7 @@ def test_solution(solution, complete_solution, test_sets, is_verbose):
         result = run(sol_exec, comp_sol_exec)
         if 'error' in result:
             return result, tests_count
-        if is_verbose:
-            results.append(result)
         tests_count += 1
 
-    return {'result': results} if results else {}, tests_count
+    return {}, tests_count
 

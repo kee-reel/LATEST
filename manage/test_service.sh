@@ -42,7 +42,7 @@ send-solution() {
         sleep $WAIT
         send-solution $1 $2 "$3"
     else
-        echo "[XXX] Response for $1 solution in $2: $RESP
+        echo "[$1] Response solution in $2: $RESP
         "
     fi
 }

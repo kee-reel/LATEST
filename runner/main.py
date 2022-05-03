@@ -13,8 +13,6 @@ from test import test_solution, PATH
 from build import build_solution, LANGS
 from schemas import TestResult, Solution
 
-fn_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
 def save_file(solution, field):
     data = solution[field]
 
@@ -23,9 +21,7 @@ def save_file(solution, field):
     if not extention or not text:
         return None
 
-    random.seed(time.time())
-    postfix = ''.join(random.choice(fn_letters) for _ in range(8))
-    fn = os.path.join(PATH, f'{field}_{postfix}.{extention}')
+    fn = os.path.join(PATH, f'{field}.{extention}')
 
     if text:
         open(fn, 'w').write(text)
@@ -35,7 +31,7 @@ def save_file(solution, field):
     return fn
 
 
-def run_tests(sol_fn, comp_sol_fn, tests, is_verbose):
+def run_tests(sol_fn, comp_sol_fn, tests):
     sol_fn_new, err = build_solution(sol_fn)
     if sol_fn != sol_fn_new:
         os.remove(sol_fn)
@@ -48,7 +44,7 @@ def run_tests(sol_fn, comp_sol_fn, tests, is_verbose):
         os.remove(comp_sol_fn)
     assert not err, f'Complete solution build error: {err}'
 
-    result, tests_passed = test_solution(sol_fn_new, comp_sol_fn_new, tests, is_verbose)
+    result, tests_passed = test_solution(sol_fn_new, comp_sol_fn_new, tests)
     os.remove(sol_fn_new)
     os.remove(comp_sol_fn_new)
     result['tests_passed'] = tests_passed
@@ -69,7 +65,7 @@ def run_test(solution):
     if not tests_total:
         tests_total = 1
 
-    result = run_tests(sol_fn, comp_sol_fn, tests, solution['verbose'])
+    result = run_tests(sol_fn, comp_sol_fn, tests)
     if 'error' in result:
         err = result.pop('error')
         tests_passed = result.pop('tests_passed')
@@ -95,16 +91,10 @@ test_result_schema = TestResult()
 while True:
     try:
         _, solution_json = conn.brpop(solutions)
-        solution = json.loads(solution_json)
-        err = solution_schema.validate(solution)
-        if err:
-            raise Exception(err)
+        solution = solution_schema.loads(solution_json)
         test_result = run_test(solution)
         test_result['id'] = solution['id']
-        err = test_result_schema.validate(test_result)
-        if err:
-            raise Exception(err)
-        conn.lpush(tests, json.dumps(test_result))
+        conn.lpush(tests, test_result_schema.dumps(test_result))
     except Exception as e:
         logging.error(f'Exception for solution: {solution_json if solution_json else None} - {e}')
         conn.lpush(tests, json.dumps({

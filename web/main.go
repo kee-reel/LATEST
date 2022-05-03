@@ -1,5 +1,5 @@
-// @title LATE API
-// @version 0.1
+// @title LATEST
+// @version 0.5
 // @description Main goal of this project is to provide web-service that allows teachers to create programming courses with built-in interactive excercises.
 // @description Project page: https://github.com/kee-reel/LATEST
 

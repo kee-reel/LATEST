@@ -80,7 +80,6 @@ type testResult struct {
 // @Param   task_id   formData    int  true    "ID of task to pass with given solution"
 // @Param   source_text   formData    string  false    "Source text of passing solution - must be less than 5000 symbols"
 // @Param   source_file   formData    file  false    "File with source text of passing solution"
-// @Param   test_cases   formData    string  false    "User test cases for solution"
 // @Success 200 {object} api.APITestSuccessResult "Success"
 // @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"

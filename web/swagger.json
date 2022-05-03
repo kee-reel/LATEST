@@ -2,13 +2,13 @@
     "swagger": "2.0",
     "info": {
         "description": "Main goal of this project is to provide web-service that allows teachers to create programming courses with built-in interactive excercises.\nProject page: https://github.com/kee-reel/LATEST",
-        "title": "LATE API",
+        "title": "LATEST",
         "contact": {
             "name": "Kee Reel",
             "url": "https://kee-reel.com/about-ru",
             "email": "c4rb0n_unit@protonmail.com"
         },
-        "version": "0.1"
+        "version": "0.5"
     },
     "host": "localhost:12345",
     "basePath": "/",
@@ -548,12 +548,6 @@
                         "type": "file",
                         "description": "File with source text of passing solution",
                         "name": "source_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "User test cases for solution",
-                        "name": "test_cases",
                         "in": "formData"
                     }
                 ],

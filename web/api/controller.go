@@ -125,7 +125,6 @@ func (c *Controller) MakeHandleFunc(e EndpointType) HttpFunc {
 
 		var client_id string
 		var web_err WebError
-		log.Print(e, m)
 		if ((e == Register || e == Restore) && m == Post) || (e == Login && m == Get) {
 			client_id = getIP(r)
 		} else {

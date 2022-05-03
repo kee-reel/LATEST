@@ -7,7 +7,6 @@ class SolutionData(Schema):
     extention = fields.Str()
 
 class SolutionTests(Schema):
-    user = fields.Str()
     fixed = fields.Str()
     random = fields.Str()
 
@@ -16,11 +15,6 @@ class Solution(Schema):
     user_solution = fields.Nested(SolutionData)
     complete_solution = fields.Nested(SolutionData)
     tests = fields.Nested(SolutionTests)
-    verbose = fields.Bool()
-
-class TestVerbose(Schema):
-    params = fields.Str()
-    result = fields.Str()
 
 class BuildErr(Schema):
     msg = fields.Str()
@@ -56,5 +50,4 @@ class TestErrData(Schema):
 class TestResult(Schema):
     id = fields.Int()
     error_data = fields.Nested(TestErrData)
-    result = fields.List(fields.Nested(TestVerbose))
 

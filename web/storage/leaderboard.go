@@ -6,8 +6,7 @@ import (
 )
 
 func (s *Storage) GetLeaderboardScore(user_id int) float32 {
-	query, err := s.db.Prepare(`SELECT SUM(l.score) FROM leaderboard as l 
-		WHERE l.user_id = $1 GROUP BY l.project_id`)
+	query, err := s.db.Prepare(`SELECT l.score FROM leaderboard as l WHERE l.user_id = $1`)
 	utils.Err(err)
 	score := float32(0)
 	_ = query.QueryRow(user_id).Scan(&score)
@@ -15,9 +14,8 @@ func (s *Storage) GetLeaderboardScore(user_id int) float32 {
 }
 
 func (s *Storage) GetLeaderboard() *models.Leaderboard {
-	query, err := s.db.Prepare(`SELECT u.name, SUM(l.score) FROM leaderboard AS l
-		JOIN users AS u ON u.id = l.user_id
-		GROUP BY u.name, l.user_id, l.project_id`)
+	query, err := s.db.Prepare(`SELECT u.name, l.score FROM leaderboard AS l
+		JOIN users AS u ON u.id = l.user_id`)
 	utils.Err(err)
 	rows, err := query.Query()
 	defer rows.Close()

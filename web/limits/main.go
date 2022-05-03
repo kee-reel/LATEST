@@ -2,7 +2,6 @@ package limits
 
 import (
 	"fmt"
-	"log"
 	"time"
 	"web/utils"
 
@@ -57,6 +56,5 @@ func (l *Limits) HandleCall(call_type int, client_id string) float32 {
 		utils.Err(err)
 		return 0
 	}
-	log.Print(volume, lim.Burst, lim.Rate)
 	return (volume - lim.Burst) / lim.Rate
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -52,12 +51,17 @@ func (c *Controller) GetSolution(r *http.Request) (interface{}, WebError) {
 var user_tests_re = regexp.MustCompile(`^((-?\d+;)+\n)+$`)
 
 type APITestSuccessResult struct {
-	Result    *[]models.SolutionVerboseResult `json:"result,omitempty"`
-	ScoreDiff float32                         `json:"score_diff, omitempty" example:"2.5"`
+	ScoreDiff float32 `json:"score_diff, omitempty" example:"2.5"`
 }
 type APITestFailResult struct {
 	Error     WebError                  `json:"error,omitempty" example:"508"`
 	ErrorData *models.SolutionErrorData `json:"error_data,omitempty"`
+}
+
+type testResult struct {
+	models.TestResult
+	Error     WebError `json:"error,omitempty" example:"508"`
+	ScoreDiff float32  `json:"score_diff,omitempty" example:"2.5"`
 }
 
 // @Tags solution
@@ -69,16 +73,14 @@ type APITestFailResult struct {
 // @Description 505 - Solution test error. If this happens, then result will contain: `{"error":509,"error_data":{"expected":"expected result", "params":"semicolon separated input parameters", "result":"actual result", "tests_passed":7, "tests_total":15}}`
 // @Description 506 - Solution timeout error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "result":"actual result", "time": 0.5, "tests_passed":0, "tests_total":15}}`
 // @Description 507 - Solution runtime error. If this happens, then result will contain: `{"error":509,"error_data":{"params":"semicolon separated input parameters", "msg":"actual result", "tests_passed":2, "tests_total":15}}`
-// @Description If `verbose` flag is `true` then result will contain (if no error occurs): `{"result":[{"params":"semicolon separated input parameters", "result":"actual result"}]}`
 // @ID post-solution
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
 // @Param   lang   formData    string  true    "Language of passing solution"
 // @Param   task_id   formData    int  true    "ID of task to pass with given solution"
-// @Param   source_text   formData    string  false    "Source text of passing solution"
+// @Param   source_text   formData    string  false    "Source text of passing solution - must be less than 5000 symbols"
 // @Param   source_file   formData    file  false    "File with source text of passing solution"
 // @Param   test_cases   formData    string  false    "User test cases for solution"
-// @Param   verbose   formData    bool  false    "If specified - when solution is passed, all test results will be returned"
 // @Success 200 {object} api.APITestSuccessResult "Success"
 // @Failure 400 {object} api.APITestFailResult "Possible error codes: 300, 301, 302, 304, 4XX, 5XX, 6XX"
 // @Failure 500 {object} api.APIInternalError "Server internal bug"
@@ -88,27 +90,22 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
+
 	var test_result_raw *models.TestResult
-	solution.Id, test_result_raw = c.storage.SaveSolution(solution)
+	solution.Id, test_result_raw = c.storage.CreateSolutionAttempt(solution)
 	if test_result_raw == nil {
 		test_result_raw = c.buildAndTest(solution.Task, solution)
+		c.storage.SaveSolutionResult(solution.Id, test_result_raw)
+	}
+	if test_result_raw.InternalError != nil {
+		panic(*test_result_raw.InternalError)
 	}
 
-	if test_result_raw.ErrorData != nil {
-		log.Print(*test_result_raw.ErrorData)
-	}
 	test_result := testResult{
 		TestResult: *test_result_raw,
 	}
-	if test_result.ErrorData == nil {
-		test_result.Error = NoError
-	} else {
+	if test_result.ErrorData != nil {
 		test_result.Error = SolutionTestFail
-	}
-	if test_result.InternalError != nil {
-		log.Print(*test_result_raw.InternalError)
-		log.Print(*test_result.InternalError)
-		panic(*test_result.InternalError)
 	}
 
 	percent := float32(1)
@@ -116,7 +113,7 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 		percent = float32(test_result.ErrorData.TestsPassed) /
 			float32(test_result.ErrorData.TestsTotal)
 	}
-	test_result.ScoreDiff = c.storage.UpdateSolutionScore(solution, test_result_raw, percent)
+	test_result.ScoreDiff = c.storage.UpdateSolutionAttempt(solution, percent)
 	return test_result, test_result.Error
 }
 
@@ -162,36 +159,17 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 		source_text = string(solution_text_bytes)
 	}
 
-	if len(source_text) > 50000 {
+	if len(source_text) > 10000 {
 		return nil, SolutionTextTooLong
 	}
 
 	solution.Source = string(source_text)
-	solution.TestCases = r.FormValue("test_cases")
-	if len(solution.TestCases) > 50000 {
-		return nil, SolutionTestsTooLong
-	}
-	if len(solution.TestCases) > 0 {
-		solution.TestCases = strings.Replace(solution.TestCases, "\r", "", -1)
-		matches := user_tests_re.MatchString(solution.TestCases)
-		if !matches {
-			return nil, SolutionTestsInvalid
-		}
-	}
-
 	solution.Task = &task
 	solution.Token = token
-	solution.IsVerbose = r.FormValue("verbose") == "true"
 	solution.Extention = lang
 	solution.UserId = *c.storage.GetUserIdByEmail(token.Email)
 
 	return &solution, NoError
-}
-
-type testResult struct {
-	models.TestResult
-	Error     WebError `json:"error,omitempty" example:"508"`
-	ScoreDiff float32  `json:"score_diff,omitempty" example:"2.5"`
 }
 
 func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) *models.TestResult {
@@ -207,11 +185,7 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 			Text:      complete_solution_source,
 			Extention: task.Extention,
 		},
-		Tests:   models.SolutionTests{},
-		Verbose: solution.IsVerbose,
-	}
-	if len(solution.TestCases) > 0 {
-		runner_data.Tests.User = solution.TestCases
+		Tests: models.SolutionTests{},
 	}
 	if len(fixed_tests) > 0 {
 		runner_data.Tests.Fixed = fixed_tests

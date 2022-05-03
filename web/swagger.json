@@ -507,7 +507,7 @@
                 }
             },
             "post": {
-                "description": "Receives solution in form of file or plain text.\nBuilds solution and then runs. While running it gives various input parameters (through stdin) and expects specific result (from stdout).\nApart from errors raised due to invalid POST parameters, there are 2 \"normal\" errors:\n504 - Solution build error. If this happens, then result will contain: `{\"error\":508,\"error_data\":{\"msg\":\"multiline compilation error\", \"tests_passed\":0, \"tests_total\":15}}`\n505 - Solution test error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"expected\":\"expected result\", \"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"tests_passed\":7, \"tests_total\":15}}`\n506 - Solution timeout error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"time\": 0.5, \"tests_passed\":0, \"tests_total\":15}}`\n507 - Solution runtime error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"msg\":\"actual result\", \"tests_passed\":2, \"tests_total\":15}}`\nIf `verbose` flag is `true` then result will contain (if no error occurs): `{\"result\":[{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\"}]}`",
+                "description": "Receives solution in form of file or plain text.\nBuilds solution and then runs. While running it gives various input parameters (through stdin) and expects specific result (from stdout).\nApart from errors raised due to invalid POST parameters, there are 2 \"normal\" errors:\n504 - Solution build error. If this happens, then result will contain: `{\"error\":508,\"error_data\":{\"msg\":\"multiline compilation error\", \"tests_passed\":0, \"tests_total\":15}}`\n505 - Solution test error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"expected\":\"expected result\", \"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"tests_passed\":7, \"tests_total\":15}}`\n506 - Solution timeout error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"result\":\"actual result\", \"time\": 0.5, \"tests_passed\":0, \"tests_total\":15}}`\n507 - Solution runtime error. If this happens, then result will contain: `{\"error\":509,\"error_data\":{\"params\":\"semicolon separated input parameters\", \"msg\":\"actual result\", \"tests_passed\":2, \"tests_total\":15}}`",
                 "produces": [
                     "application/json"
                 ],
@@ -540,7 +540,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Source text of passing solution",
+                        "description": "Source text of passing solution - must be less than 5000 symbols",
                         "name": "source_text",
                         "in": "formData"
                     },
@@ -554,12 +554,6 @@
                         "type": "string",
                         "description": "User test cases for solution",
                         "name": "test_cases",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "If specified - when solution is passed, all test results will be returned",
-                        "name": "verbose",
                         "in": "formData"
                     }
                 ],
@@ -893,12 +887,6 @@
         "api.APITestSuccessResult": {
             "type": "object",
             "properties": {
-                "result": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.SolutionVerboseResult"
-                    }
-                },
                 "score_diff": {
                     "type": "number",
                     "example": 2.5
@@ -1043,19 +1031,6 @@
                 "time": {
                     "type": "number",
                     "example": 1.5
-                }
-            }
-        },
-        "models.SolutionVerboseResult": {
-            "type": "object",
-            "properties": {
-                "params": {
-                    "type": "string",
-                    "example": "2;1;7;'"
-                },
-                "result": {
-                    "type": "string",
-                    "example": "8"
                 }
             }
         },

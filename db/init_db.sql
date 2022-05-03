@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS users (
     is_suspended BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE(email));
 
+CREATE TABLE IF NOT EXISTS task_completions (
+    user_id INT NOT NULL,
+    task_id INT NOT NULL,
+    completion FLOAT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id),
+    CONSTRAINT fk_task FOREIGN KEY(task_id) REFERENCES tasks(id),
+    UNIQUE(user_id, task_id));
+
 CREATE TABLE IF NOT EXISTS solutions(
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     task_id INT NOT NULL,
@@ -50,7 +58,6 @@ CREATE TABLE IF NOT EXISTS solutions(
     text TEXT NOT NULL,
     response VARCHAR(1024) NULL,
     received_times INT NOT NULL DEFAULT 0,
-    completion FLOAT NOT NULL DEFAULT 0,
     last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(task_id, hash));
 
@@ -66,8 +73,5 @@ CREATE TABLE IF NOT EXISTS solution_attempts(
 
 CREATE TABLE IF NOT EXISTS leaderboard (
     user_id INT NOT NULL,
-    project_id INT NOT NULL,
     score FLOAT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id),
-    CONSTRAINT fk_project FOREIGN KEY(project_id) REFERENCES projects(id),
-    UNIQUE(user_id, project_id));
+    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id));

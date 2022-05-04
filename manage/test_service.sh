@@ -10,6 +10,8 @@ else
 fi
 echo "Testing $DOMAIN"
 
+echo "Limits: $(curl -s ${DOMAIN}limits)"
+
 echo "Register: $TEST_MAIL
 $(curl -s -X POST -F email=$TEST_MAIL -F pass=$TEST_PASS -F name=$TEST_NAME ${DOMAIN}register)"
 
@@ -27,7 +29,7 @@ echo "Existing tasks: $TASKS"
 TASK_ID=$(echo $TASKS | jq '.sample_tests["units"]["unit-2"]["tasks"]["task-1"]["id"]')
 echo "Test task $TASK_ID"
 
-echo "Languages: $(curl -s ${DOMAIN}languages)"
+echo "Languages: $(curl -s ${DOMAIN}languages?token=$TOKEN)"
 
 VERBOSE='false'
 send-solution() {

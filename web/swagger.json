@@ -10,7 +10,7 @@
         },
         "version": "0.5"
     },
-    "host": "localhost:12345",
+    "host": "localhost:1473",
     "basePath": "/",
     "paths": {
         "/languages": {
@@ -24,6 +24,15 @@
                 ],
                 "summary": "Get supported languages",
                 "operationId": "get-languages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token returned by GET /login",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -71,6 +80,36 @@
                         "description": "Possible error codes: 300, 301, 302, 304",
                         "schema": {
                             "$ref": "#/definitions/api.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Server internal bug",
+                        "schema": {
+                            "$ref": "#/definitions/api.APIInternalError"
+                        }
+                    }
+                }
+            }
+        },
+        "/limits": {
+            "get": {
+                "description": "Returns map with `rate` and `burst` call limits for each endpoint. Call limits is implemented with \"Leaky Bucket\" algorithm. `rate` - is how much calls could be made per second. `burst` - how much calls could be made in single burst.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "limits"
+                ],
+                "summary": "Get service call limits",
+                "operationId": "get-limits",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/limits.Limit"
+                            }
                         }
                     },
                     "500": {
@@ -925,6 +964,19 @@
                     "additionalProperties": {
                         "$ref": "#/definitions/models.Task"
                     }
+                }
+            }
+        },
+        "limits.Limit": {
+            "type": "object",
+            "properties": {
+                "burst": {
+                    "type": "number",
+                    "example": 10
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 0.5
                 }
             }
         },

@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -94,6 +95,7 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	solution.Id, test_result_raw = c.storage.CreateSolutionAttempt(solution)
 	if test_result_raw == nil {
 		test_result_raw = c.buildAndTest(solution.Task, solution)
+		log.Print(*test_result_raw)
 		c.storage.SaveSolutionResult(solution.Id, test_result_raw)
 	}
 	if test_result_raw.InternalError != nil {

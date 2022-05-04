@@ -14,26 +14,40 @@ This web-service supports tests for programs written in these languages:
 - [How it works](#how-it-works)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
+- [Quick start explained](#quick-start-explained)
 - [Architecture](#architecture)
 - [Tests structure](#tests-structure)
-- [Service start](#service-start)
 - [Requests](#requests)
 
 # How it works
 
-* ✉️ Web service receives solution source code for specific task
-* 🔨 Source code is built inside separate docker container
+* ✉️ Web service receives solution  for specific task
+* 🔨 Solution is built inside separate docker container
 * 🧪 If build succeeded, then solution is tested with various test cases
 * 📊 User receives test result
 
 This testing system is "language agnostic" because:
 
 * All input parameters is passed via standard input
-* Result is received in specific format via standard output
-* Teacher provides task solution only in one language
-* Standard output of all students' solutions will be compared against teacher's solution
+* Result is received from standard output
+* Teacher provides solution only in one language
+* Output of all students' solutions will be compared against output of teacher's solution
 
-This is example of program for this testing system:
+Here are few examples of programs for this testing system:
+
+* In C:
+
+```cpp
+#include <stdio.h>
+int main()
+{
+    int a, b;
+    scanf("%d%d", &a, &b);
+    printf("%d",a+b);
+}
+```
+
+ * In Python:
 
 ```python
 n = int(input()) # Receive count
@@ -53,6 +67,33 @@ print(s) # Output addition result
 * Bash
 * x86\_64 or aarch64 (RPi 4) compatiable architecture
 
+# Architecture
+
+Here are all services managed by docker-compose:
+
+* 🗄 db - database PostgreSQL (postgres:latest)
+* 📋 redis - key-value storage Redis (redis:alpine)
+* 🕸 web - web service written in Go, that:
+	* Receives HTTP requests from clients
+	* Authenticates clients with access token stored inside **redis**
+	* Manages user and task related data stored inside **db**
+	* Puts solution in **redis** queue and takes test results from there
+	* Responds with test results to clients
+* 🏃 runner - internal web service written in Python, that:
+	* Takes solution from **redis**
+	* Builds solution
+	* Tests solution
+	* Sends test result into **redis**
+* 🏗 manage - container with Bash and Python scripts, that is used for:
+	* Filling **db** with tasks
+	* Testing **web** service
+
+# API documentation
+
+[Here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/kee-reel/LATEST/main/web/swagger.json) you can check out API documentation, provided in [web/swagger.json](/web/swagger.json)
+
+API returns error codes described in [web/api/errors.go](/web/api/errors.go)
+
 # Quick start
 
 Copy `.env.example` file to `.env` (and modify default passwords if needed):
@@ -64,29 +105,40 @@ cp .env.example .env
 Build containers and run service test:
 
 ```bash
-./restart-and-test.sh
+./utils/restart-and-test.sh
 ```
 
-# Architecture
+# Quick start explained
 
-Here are all services managed by docker-compose:
+You can easily start web service with docker-compose:
 
-* 🕸 web - web service written in Go, that:
-	* Receives request from clients
-	* Authenticates client using access token stored inside **redis**
-	* Manages user and task related data stored inside **db**
-	* Puts solution and takes results from **redis** queue 
-	* Responds with test result to client
-* 🏃 runner - internal web service written in Python, that:
-	* Takes solution from **redis** job queue
-	* Builds solution
-	* Tests solution
-	* Sends test result into **redis** result queue
-* 🏗 manage - container with Bash and Python scripts, that is used for:
-	* Filling **db** with tasks
-	* Testing **web** service
-* 🗄 db - PostgreSQL container (postgres:latest)
-* 📋 redis - Redis container (redis:alpine)
+```bash
+./utils/run.sh up -d
+```
+
+After that you can manage web server via **manage** container. To open interactive bash shell inside **manage**:
+
+```bash
+sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
+```
+
+(inside **manage**) Then you need to fetch tasks that you want to insert in **db**:
+
+```bash
+./fetch_tasks.sh
+```
+
+(inside **manage**) Tasks are ready, lets insert them into **db**:
+
+```bash
+python3 fill_db.py
+```
+
+(inside **manage**) All set, now we can try to send requests to web server by yourself or test server with script:
+
+```bash
+./test_service.sh
+```
 
 # Tests structure
 
@@ -142,43 +194,3 @@ Apart from `desc.json` file, task folder also must contain other files:
 * `template.*` - file with template for solution. Contents of this file could be used on UI side, to provide user with sample code for easy start
 
 I have [repository](https://github.com/kee-reel/latest-sample-project) with example project - you can use it for for reference.
-
-# Service start
-
-> Here I will explain all stuff that happens under the hood of `restart-and-test.sh`
-
-You can easily start web service with docker-compose:
-
-```bash
-./run.sh up -d
-```
-
-After that you can manage web server via **manage** container. To open interactive bash shell inside **manage**:
-
-```bash
-sudo docker exec -it $(sudo docker ps | grep manage | cut -d' ' -f1) bash
-```
-
-(inside **manage**) Then you need to fetch tasks that you want to insert in **db**:
-
-```bash
-./fetch_tasks.sh
-```
-
-(inside **manage**) Tasks are ready, lets insert them into **db**:
-
-```bash
-python3 fill_db.py
-```
-
-(inside **manage**) All set, now we can try to send requests to web server by yourself or test server with script:
-
-```bash
-./test_service.sh
-```
-
-# API documentation
-
-[Here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/kee-reel/LATEST/main/web/swagger.json) you can check out API documentation, provided in [web/swagger.json](/web/swagger.json)
-
-API returns error codes described in [web/api/errors.go](/web/api/errors.go)

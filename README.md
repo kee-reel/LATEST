@@ -13,11 +13,11 @@ This web-service supports tests for programs written in these languages:
 # Contents
 - [How it works](#how-it-works)
 - [Requirements](#requirements)
+- [Architecture](#architecture)
+- [API documentaton](#api-documentation)
 - [Quick start](#quick-start)
 - [Quick start explained](#quick-start-explained)
-- [Architecture](#architecture)
 - [Tests structure](#tests-structure)
-- [Requests](#requests)
 
 # How it works
 

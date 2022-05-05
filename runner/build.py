@@ -37,6 +37,17 @@ def build_solution(solution):
         cmd = LANG_CMD[ext](solution, compiled_solution)
         _, err = execute(cmd)
         if err:
+            start_word = None
+            if ext == 'pas':
+                start_word = 'Fatal: '
+            elif ext == 'py':
+                start_word = 'line '
+            elif ext == 'c' or ext == 'cpp':
+                start_word = 'error'
+            if start_word:
+                i = err.find(start_word)
+                if i != -1:
+                    err = err[i:]
             return None, {
                 "error": ERROR.BUILD,
                 "msg": err,

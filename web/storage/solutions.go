@@ -25,17 +25,21 @@ func (s *Storage) CreateSolutionAttempt(solution *models.Solution) (int64, *mode
 	hash_str := fmt.Sprintf("%x", hash)
 	err = query.QueryRow(solution.Task.Id, hash_str).Scan(&solution_id, &response, &received_times)
 	if err == nil {
-		if received_times > s.solution_cache_threshold {
-			err = json.Unmarshal(*response, &test_result)
-			if err != nil {
+		if response != nil && received_times > s.solution_cache_threshold {
+			var error_data *models.SolutionErrorData
+			err = json.Unmarshal(*response, &error_data)
+			if err == nil {
+				test_result = &models.TestResult{
+					Id:        solution_id,
+					ErrorData: error_data,
+				}
+			} else {
 				log.Printf("[ERROR] Cant unmarshal cached response: %s\n err: %s", string(*response), err)
 				query, err = s.db.Prepare(`UPDATE solutions SET response = NULL, received_times = 0 WHERE id = $1`)
 				utils.Err(err)
 				_, err = query.Exec(solution_id)
 				utils.Err(err)
 			}
-		} else {
-			response = nil
 		}
 	} else {
 		query, err = s.db.Prepare(`INSERT INTO 
@@ -82,16 +86,22 @@ func (s *Storage) SaveSolutionResult(solution_id int64, resp *models.TestResult)
 	if resp.InternalError != nil || (resp.ErrorData != nil && resp.ErrorData.Timeout != nil) {
 		return
 	}
+
+	var old_json_data *[]byte
 	query, err := s.db.Prepare(`SELECT response FROM solutions WHERE id = $1`)
 	utils.Err(err)
-
-	var response *[]byte
-	err = query.QueryRow(solution_id).Scan(&response)
+	err = query.QueryRow(solution_id).Scan(&old_json_data)
 	utils.Err(err)
 
-	data_json, err := json.Marshal(resp)
-	utils.Err(err)
-	if response == nil || bytes.Equal(*response, data_json) {
+	var data_json *[]byte
+	if resp.ErrorData != nil {
+		temp, err := json.Marshal(resp.ErrorData)
+		utils.Err(err)
+		data_json = &temp
+	}
+	// If both nil or have same content
+	if data_json == old_json_data ||
+		(data_json != nil && old_json_data != nil && bytes.Equal(*old_json_data, *data_json)) {
 		query, err = s.db.Prepare(`UPDATE solutions
 			SET received_times = received_times + 1
 			WHERE id = $1`)

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -95,7 +94,6 @@ func (c *Controller) PostSolution(r *http.Request) (interface{}, WebError) {
 	solution.Id, test_result_raw = c.storage.CreateSolutionAttempt(solution)
 	if test_result_raw == nil {
 		test_result_raw = c.buildAndTest(solution.Task, solution)
-		log.Print(*test_result_raw)
 		c.storage.SaveSolutionResult(solution.Id, test_result_raw)
 	}
 	if test_result_raw.InternalError != nil {
@@ -198,7 +196,7 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 
 	test_result_raw := c.workers.DoJob(&runner_data)
 	if test_result_raw == nil {
-		panic(fmt.Sprintf("Internal error while processing solution %d", runner_data.Id))
+		panic(fmt.Sprintf("Timeout while processing solution %d", runner_data.Id))
 	}
 	return test_result_raw
 }

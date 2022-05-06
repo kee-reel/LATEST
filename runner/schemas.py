@@ -10,7 +10,7 @@ class SolutionTests(Schema):
     fixed = fields.Str()
     random = fields.Str()
 
-class Solution(Schema):
+class Task(Schema):
     id = fields.Int()
     user_solution = fields.Nested(SolutionData)
     complete_solution = fields.Nested(SolutionData)
@@ -47,7 +47,7 @@ class TestErrData(Schema):
         if len(set(data.keys()) & self._one_of) != 1:
             raise ValidationError(f'Malformed error data: {data}')
 
-class TestResult(Schema):
+class Result(Schema):
     id = fields.Int()
     error_data = fields.Nested(TestErrData)
 

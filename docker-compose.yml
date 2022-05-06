@@ -14,7 +14,13 @@ services:
       - ./logs:/logs
 
   redis:
-    image: redis:alpine
+    build:
+      context: ./redis
+      args:
+        REDIS_TASK_LIST: ${REDIS_TASK_LIST}
+        REDIS_RESULT_LIST: ${REDIS_RESULT_LIST}
+        REDIS_RUNNER_USER: ${REDIS_RUNNER_USER}
+        REDIS_RUNNER_PASSWORD: ${REDIS_RUNNER_PASSWORD}
     ports: 
       - ${REDIS_EXT_PORT}:${REDIS_PORT}
     restart: always
@@ -23,6 +29,7 @@ services:
       - no-internet
 
   web:
+    build: ./web
     ports: 
       - ${WEB_PORT}:${WEB_PORT}
     links:
@@ -47,11 +54,12 @@ services:
     networks:
       - no-internet
     environment:
-      - PYTHONUNBUFFERED=1
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-      - REDIS_SOLUTIONS_LIST_PREFIX=${REDIS_SOLUTIONS_LIST_PREFIX}
-      - REDIS_TESTS_LIST=${REDIS_TESTS_LIST}
+      - REDIS_TASK_LIST=${REDIS_TASK_LIST}
+      - REDIS_RESULT_LIST=${REDIS_RESULT_LIST}
+      - REDIS_RUNNER_USER=${REDIS_RUNNER_USER}
+      - REDIS_RUNNER_PASSWORD=${REDIS_RUNNER_PASSWORD}
 
   manage:
     build: ./manage

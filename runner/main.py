@@ -11,7 +11,7 @@ import redis
 
 from test import test_solution, PATH
 from build import build_solution, LANGS
-from schemas import TestResult, Solution
+from schemas import Task, Result
 
 def save_file(solution, field):
     data = solution[field]
@@ -82,23 +82,29 @@ def run_test(solution):
     del result['tests_passed']
     return result
 
-conn = redis.Redis(os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT'))
-solutions = os.getenv('REDIS_SOLUTIONS_LIST_PREFIX')
-tests = os.getenv('REDIS_TESTS_LIST')
+conn = redis.StrictRedis(
+        host=os.getenv('REDIS_HOST'),
+        port=os.getenv('REDIS_PORT'),
+        db=0,
+        username=os.getenv('REDIS_RUNNER_USER'),
+        password=os.getenv('REDIS_RUNNER_PASSWORD'))
+tasks = os.getenv('REDIS_TASK_LIST')
+results = os.getenv('REDIS_RESULT_LIST')
 
-solution_schema = Solution()
-test_result_schema = TestResult()
+task_schema = Task()
+result_schema = Result()
 while True:
+    task_json = None
     try:
-        _, solution_json = conn.brpop(solutions)
-        solution = solution_schema.loads(solution_json)
-        test_result = run_test(solution)
-        test_result['id'] = solution['id']
-        conn.lpush(tests, test_result_schema.dumps(test_result))
+        _, task_json = conn.brpop(tasks)
+        task = task_schema.loads(task_json)
+        result = run_test(task)
+        result['id'] = task['id']
+        conn.lpush(results, result_schema.dumps(result))
     except Exception as e:
-        logging.error(f'Exception for solution: {solution_json if solution_json else None} - {e}')
-        conn.lpush(tests, json.dumps({
-            'id': solution['id'],
+        logging.error(f'Exception for solution: {task_json if task_json else None} - {e}')
+        conn.lpush(results, json.dumps({
+            'id': task['id'],
             'internal_error': str(e)
         }))
 

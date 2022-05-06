@@ -31,9 +31,10 @@ CREATE TABLE IF NOT EXISTS tasks (
     CONSTRAINT fk_project FOREIGN KEY(project_id) REFERENCES projects(id),
     CONSTRAINT fk_unit FOREIGN KEY(unit_id) REFERENCES units(id));
 
-CREATE TABLE IF NOT EXISTS solution_templates (
+CREATE TABLE IF NOT EXISTS languages (
+    id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     extention VARCHAR(10) PRIMARY KEY,
-    source_code TEXT NOT NULL);
+    template TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS users (
     id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -54,10 +55,13 @@ CREATE TABLE IF NOT EXISTS task_completions (
 CREATE TABLE IF NOT EXISTS solutions(
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     task_id INT NOT NULL,
+    language_id INT NOT NULL,
     hash VARCHAR(128) NOT NULL,
     text TEXT NOT NULL,
     response VARCHAR(1024) NULL,
     received_times INT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_task FOREIGN KEY(task_id) REFERENCES tasks(id),
+    CONSTRAINT fk_language FOREIGN KEY(language_id) REFERENCES langauges(id),
     last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(task_id, hash));
 

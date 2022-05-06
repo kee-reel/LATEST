@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"web/limits"
 	"web/storage"
 	"web/tokens"
@@ -44,11 +45,12 @@ type endpointData struct {
 }
 
 type Controller struct {
-	storage       *storage.Storage
-	workers       *workers.Workers
-	tokens        *tokens.Tokens
-	limits        *limits.Limits
-	endpoints_map map[EndpointType]endpointData
+	storage             *storage.Storage
+	workers             *workers.Workers
+	tokens              *tokens.Tokens
+	limits              *limits.Limits
+	endpoints_map       map[EndpointType]endpointData
+	supported_languages map[string]struct{}
 }
 
 func NewController() *Controller {
@@ -59,6 +61,13 @@ func NewController() *Controller {
 		tokens.NewTokens(s),
 		limits.NewLimits(),
 		nil,
+		map[string]struct{}{},
+	}
+	for _, s := range strings.Split(utils.Env("WEB_SUPPORTED_LANGS"), ",") {
+		c.supported_languages[s] = struct{}{}
+	}
+	if len(c.supported_languages) == 0 {
+		panic("No supported languages found")
 	}
 	c.endpoints_map = makeEndpointDataMap(&c)
 	return &c

@@ -2,11 +2,11 @@ package workers
 
 import (
 	"encoding/json"
-	"web/models"
-	"web/utils"
 	"log"
 	"sync"
 	"time"
+	"web/models"
+	"web/utils"
 
 	"github.com/gomodule/redigo/redis"
 	_ "github.com/lib/pq"
@@ -17,6 +17,8 @@ type Workers struct {
 	runner_job_queue    redis.Conn
 	jobs                sync.Map
 	job_timeout         time.Duration
+	task_queue_name     string
+	result_queue_name   string
 }
 
 func NewWorkers() *Workers {
@@ -28,6 +30,8 @@ func NewWorkers() *Workers {
 		utils.CreateRedisConn(),
 		sync.Map{},
 		job_timeout,
+		utils.Env("REDIS_TASK_LIST"),
+		utils.Env("REDIS_RESULT_LIST"),
 	}
 	go w.processJobs()
 	return &w
@@ -35,7 +39,7 @@ func NewWorkers() *Workers {
 
 func (w *Workers) processJobs() {
 	for {
-		test_result_json, err := redis.ByteSlices(w.runner_result_queue.Do("BRPOP", utils.Env("REDIS_TESTS_LIST"), 0))
+		test_result_json, err := redis.ByteSlices(w.runner_result_queue.Do("BRPOP", w.result_queue_name, 0))
 		if err != nil {
 			log.Printf("Got redis error while processing jobs: %s, waiting", err)
 			time.Sleep(time.Second * 15)
@@ -63,7 +67,7 @@ func (w *Workers) DoJob(runner_data *models.RunnerData) *models.TestResult {
 
 	job_ch := make(chan *models.TestResult)
 	w.jobs.Store(runner_data.Id, &job_ch)
-	_, err = w.runner_job_queue.Do("RPUSH", utils.Env("REDIS_SOLUTIONS_LIST_PREFIX"), runner_data_json)
+	_, err = w.runner_job_queue.Do("RPUSH", w.task_queue_name, runner_data_json)
 	utils.Err(err)
 
 	select {

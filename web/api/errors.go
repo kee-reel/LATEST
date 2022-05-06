@@ -49,7 +49,7 @@ const (
 	SolutionTestFail        = 504 // Solution test failed, specific information could be found in "error_data"
 
 	LanguageNotProvided  = 600 // "lang" field not provided
-	LanguageNotSupported = 601 // Provided "lang" is not supported
+	LanguageNotSupported = 601 // Provided "lang_id" is not supported
 
 	NameNotProvided = 700 // "name" field not provided
 	NameInvalid     = 701 // "name" field is invalid, must be less than 128 symbols

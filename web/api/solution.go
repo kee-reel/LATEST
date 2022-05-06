@@ -76,7 +76,7 @@ type testResult struct {
 // @ID post-solution
 // @Produce  json
 // @Param   token   query    string  true    "Access token returned by GET /login"
-// @Param   lang   formData    string  true    "Language of passing solution"
+// @Param   lang_id   formData    int  true    "Language id of passing solution returned by GET /languages"
 // @Param   task_id   formData    int  true    "ID of task to pass with given solution"
 // @Param   source_text   formData    string  false    "Source text of passing solution - must be less than 5000 symbols"
 // @Param   source_file   formData    file  false    "File with source text of passing solution"
@@ -122,11 +122,15 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	if web_err != NoError {
 		return nil, web_err
 	}
-	lang, web_err := getFormParam(r, "lang")
+	lang_id_str, web_err := getFormParam(r, "lang_id")
 	if web_err != NoError {
 		return nil, web_err
 	}
-	if !c.isLanguageSupported(lang) {
+	lang_id, err := strconv.Atoi(lang_id_str)
+	if err != nil {
+		return nil, LanguageNotSupported
+	}
+	if _, ok := c.supported_languages[lang_id]; !ok {
 		return nil, LanguageNotSupported
 	}
 	task_id_str, web_err := getFormParam(r, "task_id")
@@ -165,7 +169,7 @@ func (c *Controller) parseSolution(r *http.Request) (*models.Solution, WebError)
 	solution.Source = string(source_text)
 	solution.Task = &task
 	solution.Token = token
-	solution.Extention = lang
+	solution.LanguageId = lang_id
 	solution.UserId = *c.storage.GetUserIdByEmail(token.Email)
 
 	return &solution, NoError
@@ -178,11 +182,11 @@ func (c *Controller) buildAndTest(task *models.Task, solution *models.Solution) 
 		Id: solution.Id,
 		UserSolution: models.SolutionData{
 			Text:      solution.Source,
-			Extention: solution.Extention,
+			Extention: c.supported_languages[solution.LanguageId],
 		},
 		CompleteSolution: models.SolutionData{
 			Text:      complete_solution_source,
-			Extention: task.Extention,
+			Extention: c.supported_languages[task.LanguageId],
 		},
 		Tests: models.SolutionTests{},
 	}

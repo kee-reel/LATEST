@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from db_helper import open_db
 
+LANGS = {}
 
 def parse_filename(filename):
     return tuple(re.findall(r'(.*?)/', filename)[1:])
@@ -68,7 +69,7 @@ def add_task(cur, desc, path, project_id, unit_id, folder):
     data = {
         'name': desc['name'],
         'position': desc.get('position', 0),
-        'extention': extention,
+        'language_id': LANGS[extention],
         'description': desc['desc'],
         'input': json.dumps(desc['input'], ensure_ascii=False),
         'output': desc['output'],
@@ -76,7 +77,19 @@ def add_task(cur, desc, path, project_id, unit_id, folder):
         'fixed_tests': fixed_tests,
         'score': desc['score'],
     }
-    return upsert(cur, 'tasks', keys, data)
+    id_ = upsert(cur, 'tasks', keys, data)
+
+    for l in LANGS:
+        fn = f'{folder_path}/template.{l}'
+        if not os.path.exists(fn):
+            continue
+        upsert(cur, 'solution_templates', {
+            'task_id': id_,
+            'language_id': LANGS[l]
+        }, {
+            'source_code': open(fn, 'r').read()
+        }, False)
+    return id_
 
 
 def add_template(cur, path):
@@ -86,13 +99,14 @@ def add_template(cur, path):
         'extention': extention,
     }
     data = {
-        'source_code': open(path, 'r').read(),
+        'template_solution': open(path, 'r').read(),
     }
-    upsert(cur, 'solution_templates', keys, data, False)
+    LANGS[extention] = upsert(cur, 'languages', keys, data)
 
 
 conn = open_db()
 cur = conn.cursor()
+
 type_to_paths = OrderedDict()
 expansion = '/*'
 for t in ('project', 'unit', 'task'):
@@ -100,6 +114,9 @@ for t in ('project', 'unit', 'task'):
     paths.sort()
     type_to_paths[t] = paths
     expansion += '/*'
+
+for f in glob('tests/templates/*'):
+    add_template(cur, f)
 
 folders_to_id = {}
 for t, paths in type_to_paths.items():
@@ -115,9 +132,6 @@ for t, paths in type_to_paths.items():
         data = json.loads(open(p, 'r', encoding='utf-8').read(), strict=False)
         id_ = globals().get(f'add_{t}')(cur, data, p, *folders_data)
         folders_to_id[folders] = id_
-
-for f in glob('tests/templates/*'):
-    add_template(cur, f)
 
 conn.commit()
 

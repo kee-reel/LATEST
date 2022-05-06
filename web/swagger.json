@@ -564,9 +564,9 @@
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Language of passing solution",
-                        "name": "lang",
+                        "type": "integer",
+                        "description": "Language id of passing solution returned by GET /languages",
+                        "name": "lang_id",
                         "in": "formData",
                         "required": true
                     },
@@ -728,9 +728,9 @@
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Language of template",
-                        "name": "lang",
+                        "type": "integer",
+                        "description": "Language id of passing solution returned by GET /languages",
+                        "name": "lang_id",
                         "in": "query",
                         "required": true
                     },
@@ -819,15 +819,15 @@
             "type": "object",
             "properties": {
                 "langs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
                     },
-                    "example": [
-                        "c",
-                        "py",
-                        "pas"
-                    ]
+                    "example": {
+                        "\"pas\"": 3,
+                        "\"py\"": 2,
+                        "{\"c\"": 1
+                    }
                 }
             }
         },

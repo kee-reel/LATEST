@@ -5,7 +5,7 @@ import (
 )
 
 type APILangsResponse struct {
-	Langs []string `json:"langs" example:"c,py,pas"'`
+	Langs map[string]int `json:"langs" example:"{\"c\":1,\"py\":2,\"pas\":3"}`
 }
 
 // @Tags languages
@@ -22,11 +22,9 @@ func (c *Controller) GetLanguages(r *http.Request) (interface{}, WebError) {
 	if web_err != NoError {
 		return nil, web_err
 	}
-	j := 0
-	langs := make([]string, len(c.supported_languages))
-	for k := range c.supported_languages {
-		langs[j] = k
-		j++
+	langs := map[string]int{}
+	for k, v := range c.supported_languages {
+		langs[v] = k
 	}
 	resp := APILangsResponse{
 		Langs: langs,

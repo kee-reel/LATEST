@@ -37,7 +37,7 @@ type Task struct {
 	Completion float32         `json:"completion" example:"0.58"`
 	Project    *Project        `json:"-"`
 	Unit       *Unit           `json:"-"`
-	Extention  string          `json:"-"`
+	LanguageId int             `json:"-"`
 	Path       string          `json:"-"`
 }
 
@@ -60,7 +60,7 @@ type Solution struct {
 	Task                 *Task
 	Source               string
 	Path                 string
-	Extention            string
+	LanguageId           int
 	ExecFilename         string
 	CompleteExecFilename string
 	Token                *Token

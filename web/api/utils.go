@@ -60,7 +60,7 @@ func validateParam(name string, value string) (string, WebError) {
 		if len(value) > 128 {
 			return "", NameInvalid
 		}
-	case "lang":
+	case "lang_id":
 		if len(value) == 0 {
 			return "", LanguageNotProvided
 		}
@@ -72,11 +72,6 @@ func validateParam(name string, value string) (string, WebError) {
 		panic("Unsupported parameter")
 	}
 	return value, NoError
-}
-
-func (c *Controller) isLanguageSupported(lang string) bool {
-	_, ok := c.supported_languages[lang]
-	return ok
 }
 
 func (c *Controller) getToken(r *http.Request) (*models.Token, WebError) {

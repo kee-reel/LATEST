@@ -29,13 +29,14 @@ echo "Existing tasks: $TASKS"
 TASK_ID=$(echo $TASKS | jq '.sample_tests["units"]["unit-2"]["tasks"]["task-1"]["id"]')
 echo "Test task $TASK_ID"
 
-echo "Languages: $(curl -s ${DOMAIN}languages?token=$TOKEN)"
+LANGS=$(curl -s ${DOMAIN}languages?token=$TOKEN)
+echo "Languages: $LANGS"
 
 VERBOSE='false'
 send-solution() {
     RESP=$(curl -s -X POST ${DOMAIN}solution?token=$TOKEN \
         -F task_id=$TASK_ID \
-        -F lang=$2 \
+        -F lang_id=$(echo $LANGS | jq ".langs[\"$2\"]") \
         -F verbose=$VERBOSE \
         --form-string source_text="$3")
     WAIT=$(echo $RESP | jq '.["wait"]')
@@ -105,6 +106,8 @@ VERBOSE='true'
 send-solution 'malformed' 'c' '#include <stdio.h>
 int main(){nt a,b;canf("%d%d",&a,&b);printf("%d",a+1+b);}'
 
-echo "Get template for C: $(curl -s ${DOMAIN}template?token=$TOKEN\&lang='c')"
+echo "Get general template for C: $(curl -s ${DOMAIN}template?token=$TOKEN\&lang_id=$(echo $LANGS | jq '.langs["c"]'))"
+
+echo "Get task $TASK_ID template for C: $(curl -s ${DOMAIN}template?token=$TOKEN\&task_id=$TASK_ID\&lang_id=$(echo $LANGS | jq '.langs["c"]'))"
 
 echo "Leaderboard: $(curl -s ${DOMAIN}leaderboard?token=$TOKEN)"

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
-	"strings"
 	"web/limits"
 	"web/storage"
 	"web/tokens"
@@ -50,7 +49,7 @@ type Controller struct {
 	tokens              *tokens.Tokens
 	limits              *limits.Limits
 	endpoints_map       map[EndpointType]endpointData
-	supported_languages map[string]struct{}
+	supported_languages map[int]string
 }
 
 func NewController() *Controller {
@@ -61,10 +60,7 @@ func NewController() *Controller {
 		tokens.NewTokens(s),
 		limits.NewLimits(),
 		nil,
-		map[string]struct{}{},
-	}
-	for _, s := range strings.Split(utils.Env("WEB_SUPPORTED_LANGS"), ",") {
-		c.supported_languages[s] = struct{}{}
+		s.GetLanguages(),
 	}
 	if len(c.supported_languages) == 0 {
 		panic("No supported languages found")
@@ -84,7 +80,7 @@ func makeEndpointDataMap(c *Controller) map[EndpointType]endpointData {
 		TasksFlat:      {"/tasks/flat", limits.Limit{0.2, 1}, c.GetTasksFlat, nil},
 		TasksHierarchy: {"/tasks/hierarchy", limits.Limit{0.2, 1}, c.GetTasksHierarchy, nil},
 		Languages:      {"/languages", limits.Limit{0.2, 1}, c.GetLanguages, nil},
-		Template:       {"/template", limits.Limit{0.2, 1}, c.GetTemplate, nil},
+		Template:       {"/template", limits.Limit{1, 2}, c.GetTemplate, nil},
 		Solution:       {"/solution", limits.Limit{1, 10}, c.GetSolution, c.PostSolution},
 		Leaderboard:    {"/leaderboard", limits.Limit{0.2, 1}, c.GetLeaderboard, nil},
 		Profile:        {"/profile", limits.Limit{0.2, 1}, c.GetProfile, nil},

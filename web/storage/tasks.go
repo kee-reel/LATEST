@@ -17,18 +17,23 @@ func (s *Storage) GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 	units := map[int]*models.Unit{}
 	projects := map[int]*models.Project{}
 	for task_index, task_id := range task_ids {
-		query, err := s.db.Prepare(`SELECT t.project_id, t.unit_id, t.position, t.extention, t.folder_name,
-			t.name, t.description, t.input, t.output, t.score
-			FROM tasks AS t WHERE t.id = $1`)
+		query, err := s.db.Prepare(`SELECT 
+				t.project_id, t.unit_id, t.position, 
+				t.language_id, t.folder_name, t.name, 
+				t.description, t.input, t.output,
+				t.score, c.completion
+			FROM tasks AS t
+			JOIN task_completions AS c ON c.user_id = $1 AND c.task_id = t.id 
+			WHERE t.id = $2`)
 		utils.Err(err)
 
 		var task models.Task
 		var in_params_str []byte
 		var project_id int
 		var unit_id int
-		err = query.QueryRow(task_id).Scan(
-			&project_id, &unit_id, &task.Number, &task.Extention, &task.FolderName,
-			&task.Name, &task.Desc, &in_params_str, &task.Output, &task.Score)
+		err = query.QueryRow(token.UserId, task_id).Scan(
+			&project_id, &unit_id, &task.Number, &task.LanguageId, &task.FolderName,
+			&task.Name, &task.Desc, &in_params_str, &task.Output, &task.Score, &task.Completion)
 		utils.Err(err)
 
 		project, ok := projects[project_id]
@@ -46,15 +51,6 @@ func (s *Storage) GetTasks(token *models.Token, task_ids []int) *[]models.Task {
 		}
 		task.Unit = unit
 		task.UnitId = unit.Id
-
-		/*
-			query, err = s.db.Prepare(`SELECT MAX(s.completion) FROM solutions AS s
-				WHERE s.user_id = $1 AND s.task_id = $2 GROUP BY s.task_id`)
-			utils.Err(err)
-
-			task.Completion = 0
-		*/
-		_ = query.QueryRow(token.UserId, task_id).Scan(&task.Completion)
 
 		err = json.Unmarshal(in_params_str, &task.Input)
 		utils.Err(err)
@@ -111,14 +107,23 @@ func (s *Storage) GetTaskTestData(task_id int) (string, string) {
 	return source_code, fixed_tests
 }
 
-func (s *Storage) GetTaskTemplate(lang string, task_id *int) string {
-	query, err := s.db.Prepare(`SELECT t.source_code FROM solution_templates AS t WHERE t.extention = $1`)
-	utils.Err(err)
-
+func (s *Storage) GetTaskTemplate(task_id *int, lang_id int) string {
 	var source_code string
-	err = query.QueryRow(lang).Scan(&source_code)
-	utils.Err(err)
+	if task_id != nil {
+		query, err := s.db.Prepare(`SELECT s.source_code FROM solution_templates AS s 
+			WHERE s.task_id = $1 AND s.language_id = $2`)
+		utils.Err(err)
+		err = query.QueryRow(task_id, lang_id).Scan(&source_code)
+	}
+	if len(source_code) != 0 {
+		return source_code
+	}
 
+	query, err := s.db.Prepare(`SELECT l.template_solution FROM languages AS l 
+		WHERE l.id = $1`)
+	utils.Err(err)
+	err = query.QueryRow(lang_id).Scan(&source_code)
+	utils.Err(err)
 	return source_code
 }
 

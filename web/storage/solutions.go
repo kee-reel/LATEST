@@ -13,7 +13,7 @@ import (
 
 func (s *Storage) CreateSolutionAttempt(solution *models.Solution) (int64, *models.TestResult) {
 	query, err := s.db.Prepare(`SELECT id, response, received_times FROM solutions
-		WHERE task_id = $1 AND hash = $2`)
+		WHERE task_id = $1 AND language_id = $2 AND hash = $3`)
 	utils.Err(err)
 
 	var test_result *models.TestResult
@@ -23,7 +23,7 @@ func (s *Storage) CreateSolutionAttempt(solution *models.Solution) (int64, *mode
 	hash := make([]byte, 64)
 	sha3.ShakeSum256(hash, []byte(solution.Source))
 	hash_str := fmt.Sprintf("%x", hash)
-	err = query.QueryRow(solution.Task.Id, hash_str).Scan(&solution_id, &response, &received_times)
+	err = query.QueryRow(solution.Task.Id, solution.LanguageId, hash_str).Scan(&solution_id, &response, &received_times)
 	if err == nil {
 		if response != nil && received_times > s.solution_cache_threshold {
 			var error_data *models.SolutionErrorData
@@ -43,10 +43,10 @@ func (s *Storage) CreateSolutionAttempt(solution *models.Solution) (int64, *mode
 		}
 	} else {
 		query, err = s.db.Prepare(`INSERT INTO 
-		solutions(task_id, hash, text) VALUES($1, $2, $3)
-		ON CONFLICT (task_id, hash) DO NOTHING RETURNING id`)
+		solutions(task_id, language_id, hash, text) VALUES($1, $2, $3, $4)
+		ON CONFLICT (task_id, language_id, hash) DO NOTHING RETURNING id`)
 		utils.Err(err)
-		err = query.QueryRow(solution.Task.Id, hash_str, solution.Source).Scan(&solution_id)
+		err = query.QueryRow(solution.Task.Id, solution.LanguageId, hash_str, solution.Source).Scan(&solution_id)
 		utils.Err(err)
 	}
 
